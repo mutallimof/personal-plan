@@ -40,10 +40,10 @@ function Onboarding() {
   const gen = useServerFn(generatePlan);
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
-  const [goal, setGoal] = useState(GOALS[0]);
+  const [goal, setGoal] = useState<string>(GOALS[0] ?? "");
   const [perWeek, setPerWeek] = useState<number>(4);
   const [custom, setCustom] = useState("");
-  const [level, setLevel] = useState(LEVELS[1]);
+  const [level, setLevel] = useState<string>(LEVELS[1] ?? "");
   const [busy, setBusy] = useState<null | "ai" | "example">(null);
 
   const sessions = perWeek === 0 ? Number(custom) || 6 : perWeek;

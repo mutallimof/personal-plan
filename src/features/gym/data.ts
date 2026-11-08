@@ -22,10 +22,16 @@ function check<T>(res: { data: T; error: { message: string } | null }): T {
   return res.data;
 }
 
+function checkRow<T>(res: { data: T; error: { message: string } | null }): NonNullable<T> {
+  if (res.error) throw new Error(res.error.message);
+  if (res.data == null) throw new Error("No data returned");
+  return res.data;
+}
+
 export const exercisesQuery = queryOptions({
   queryKey: ["gym", "exercises"],
   staleTime: 1000 * 60 * 30,
-  queryFn: async () => check(await supabase.from("exercises").select("*").order("name")),
+  queryFn: async () => check(await supabase.from("exercises").select("*").order("name")) ?? [],
 });
 
 export const planQuery = queryOptions({
@@ -84,7 +90,7 @@ export const gym = {
   },
   async createSession(name: string, position: number) {
     const user_id = await uid();
-    return check(await supabase.from("sessions").insert({ user_id, name, position }).select().single());
+    return checkRow(await supabase.from("sessions").insert({ user_id, name, position }).select().single());
   },
   async renameSession(id: string, name: string) {
     check(await supabase.from("sessions").update({ name }).eq("id", id));

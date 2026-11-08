@@ -19,6 +19,10 @@ import { Route as AuthenticatedShellLanguagesRouteImport } from './routes/_authe
 import { Route as AuthenticatedShellPantryRouteImport } from './routes/_authenticated/_shell/pantry'
 import { Route as AuthenticatedShellGymIndexRouteImport } from './routes/_authenticated/_shell/gym.index'
 import { Route as AuthenticatedShellGymLibraryRouteImport } from './routes/_authenticated/_shell/gym.library'
+import { Route as AuthenticatedShellGymMonthRouteImport } from './routes/_authenticated/_shell/gym.month'
+import { Route as AuthenticatedShellGymWeekRouteImport } from './routes/_authenticated/_shell/gym.week'
+import { Route as AuthenticatedShellGymExerciseIdRouteImport } from './routes/_authenticated/_shell/gym.exercise.$id'
+import { Route as AuthenticatedShellGymSessionIdRouteImport } from './routes/_authenticated/_shell/gym.session.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -72,6 +76,30 @@ const AuthenticatedShellGymLibraryRoute =
     path: '/library',
     getParentRoute: () => AuthenticatedShellGymRoute,
   } as any)
+const AuthenticatedShellGymMonthRoute =
+  AuthenticatedShellGymMonthRouteImport.update({
+    id: '/month',
+    path: '/month',
+    getParentRoute: () => AuthenticatedShellGymRoute,
+  } as any)
+const AuthenticatedShellGymWeekRoute =
+  AuthenticatedShellGymWeekRouteImport.update({
+    id: '/week',
+    path: '/week',
+    getParentRoute: () => AuthenticatedShellGymRoute,
+  } as any)
+const AuthenticatedShellGymExerciseIdRoute =
+  AuthenticatedShellGymExerciseIdRouteImport.update({
+    id: '/exercise/$id',
+    path: '/exercise/$id',
+    getParentRoute: () => AuthenticatedShellGymRoute,
+  } as any)
+const AuthenticatedShellGymSessionIdRoute =
+  AuthenticatedShellGymSessionIdRouteImport.update({
+    id: '/session/$id',
+    path: '/session/$id',
+    getParentRoute: () => AuthenticatedShellGymRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,7 +109,11 @@ export interface FileRoutesByFullPath {
   '/languages': typeof AuthenticatedShellLanguagesRoute
   '/pantry': typeof AuthenticatedShellPantryRoute
   '/gym/library': typeof AuthenticatedShellGymLibraryRoute
+  '/gym/month': typeof AuthenticatedShellGymMonthRoute
+  '/gym/week': typeof AuthenticatedShellGymWeekRoute
   '/gym/': typeof AuthenticatedShellGymIndexRoute
+  '/gym/exercise/$id': typeof AuthenticatedShellGymExerciseIdRoute
+  '/gym/session/$id': typeof AuthenticatedShellGymSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,7 +122,11 @@ export interface FileRoutesByTo {
   '/languages': typeof AuthenticatedShellLanguagesRoute
   '/pantry': typeof AuthenticatedShellPantryRoute
   '/gym/library': typeof AuthenticatedShellGymLibraryRoute
+  '/gym/month': typeof AuthenticatedShellGymMonthRoute
+  '/gym/week': typeof AuthenticatedShellGymWeekRoute
   '/gym': typeof AuthenticatedShellGymIndexRoute
+  '/gym/exercise/$id': typeof AuthenticatedShellGymExerciseIdRoute
+  '/gym/session/$id': typeof AuthenticatedShellGymSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,7 +139,11 @@ export interface FileRoutesById {
   '/_authenticated/_shell/languages': typeof AuthenticatedShellLanguagesRoute
   '/_authenticated/_shell/pantry': typeof AuthenticatedShellPantryRoute
   '/_authenticated/_shell/gym/library': typeof AuthenticatedShellGymLibraryRoute
+  '/_authenticated/_shell/gym/month': typeof AuthenticatedShellGymMonthRoute
+  '/_authenticated/_shell/gym/week': typeof AuthenticatedShellGymWeekRoute
   '/_authenticated/_shell/gym/': typeof AuthenticatedShellGymIndexRoute
+  '/_authenticated/_shell/gym/exercise/$id': typeof AuthenticatedShellGymExerciseIdRoute
+  '/_authenticated/_shell/gym/session/$id': typeof AuthenticatedShellGymSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -115,7 +155,11 @@ export interface FileRouteTypes {
     | '/languages'
     | '/pantry'
     | '/gym/library'
+    | '/gym/month'
+    | '/gym/week'
     | '/gym/'
+    | '/gym/exercise/$id'
+    | '/gym/session/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -124,7 +168,11 @@ export interface FileRouteTypes {
     | '/languages'
     | '/pantry'
     | '/gym/library'
+    | '/gym/month'
+    | '/gym/week'
     | '/gym'
+    | '/gym/exercise/$id'
+    | '/gym/session/$id'
   id:
     | '__root__'
     | '/'
@@ -136,7 +184,11 @@ export interface FileRouteTypes {
     | '/_authenticated/_shell/languages'
     | '/_authenticated/_shell/pantry'
     | '/_authenticated/_shell/gym/library'
+    | '/_authenticated/_shell/gym/month'
+    | '/_authenticated/_shell/gym/week'
     | '/_authenticated/_shell/gym/'
+    | '/_authenticated/_shell/gym/exercise/$id'
+    | '/_authenticated/_shell/gym/session/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -217,17 +269,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShellGymLibraryRouteImport
       parentRoute: typeof AuthenticatedShellGymRoute
     }
+    '/_authenticated/_shell/gym/month': {
+      id: '/_authenticated/_shell/gym/month'
+      path: '/month'
+      fullPath: '/gym/month'
+      preLoaderRoute: typeof AuthenticatedShellGymMonthRouteImport
+      parentRoute: typeof AuthenticatedShellGymRoute
+    }
+    '/_authenticated/_shell/gym/week': {
+      id: '/_authenticated/_shell/gym/week'
+      path: '/week'
+      fullPath: '/gym/week'
+      preLoaderRoute: typeof AuthenticatedShellGymWeekRouteImport
+      parentRoute: typeof AuthenticatedShellGymRoute
+    }
+    '/_authenticated/_shell/gym/exercise/$id': {
+      id: '/_authenticated/_shell/gym/exercise/$id'
+      path: '/exercise/$id'
+      fullPath: '/gym/exercise/$id'
+      preLoaderRoute: typeof AuthenticatedShellGymExerciseIdRouteImport
+      parentRoute: typeof AuthenticatedShellGymRoute
+    }
+    '/_authenticated/_shell/gym/session/$id': {
+      id: '/_authenticated/_shell/gym/session/$id'
+      path: '/session/$id'
+      fullPath: '/gym/session/$id'
+      preLoaderRoute: typeof AuthenticatedShellGymSessionIdRouteImport
+      parentRoute: typeof AuthenticatedShellGymRoute
+    }
   }
 }
 
 interface AuthenticatedShellGymRouteChildren {
   AuthenticatedShellGymLibraryRoute: typeof AuthenticatedShellGymLibraryRoute
+  AuthenticatedShellGymMonthRoute: typeof AuthenticatedShellGymMonthRoute
+  AuthenticatedShellGymWeekRoute: typeof AuthenticatedShellGymWeekRoute
   AuthenticatedShellGymIndexRoute: typeof AuthenticatedShellGymIndexRoute
+  AuthenticatedShellGymExerciseIdRoute: typeof AuthenticatedShellGymExerciseIdRoute
+  AuthenticatedShellGymSessionIdRoute: typeof AuthenticatedShellGymSessionIdRoute
 }
 
 const AuthenticatedShellGymRouteChildren: AuthenticatedShellGymRouteChildren = {
   AuthenticatedShellGymLibraryRoute: AuthenticatedShellGymLibraryRoute,
+  AuthenticatedShellGymMonthRoute: AuthenticatedShellGymMonthRoute,
+  AuthenticatedShellGymWeekRoute: AuthenticatedShellGymWeekRoute,
   AuthenticatedShellGymIndexRoute: AuthenticatedShellGymIndexRoute,
+  AuthenticatedShellGymExerciseIdRoute: AuthenticatedShellGymExerciseIdRoute,
+  AuthenticatedShellGymSessionIdRoute: AuthenticatedShellGymSessionIdRoute,
 }
 
 const AuthenticatedShellGymRouteWithChildren =

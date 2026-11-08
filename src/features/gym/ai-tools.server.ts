@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, TablesUpdate } from "@/integrations/supabase/types";
 
 type DB = SupabaseClient<Database>;
 type Args = Record<string, unknown>;
@@ -31,14 +31,30 @@ export const TOOL_DEFS = [
   { name: "update_profile", description: "Update profile fields.", parameters: obj({ height_cm: num, weight_kg: num, goal: str, sessions_per_week: int, experience: str }) },
 ].map((t) => ({ type: "function" as const, ...t, strict: false }));
 
-function pick(a: Args, keys: string[]) {
-  const out: Record<string, unknown> = {};
-  for (const k of keys) if (a[k] !== undefined && a[k] !== null) out[k] = a[k];
-  return out;
-}
+// Tool arguments come from the model, so every value is checked before it reaches the database.
+const optStr = (a: Args, k: string): string | undefined => {
+  const v = a[k];
+  return typeof v === "string" && v !== "" ? v : undefined;
+};
+const optNum = (a: Args, k: string): number | undefined => {
+  const v = a[k];
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+};
+const optInt = (a: Args, k: string): number | undefined => {
+  const v = optNum(a, k);
+  return v !== undefined && Number.isInteger(v) ? v : undefined;
+};
+const strList = (a: Args, k: string): string[] => {
+  const v = a[k];
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+};
+// Drops undefined entries so optional table columns are simply left out of the update.
+type Defined<T> = { [K in keyof T]?: Exclude<T[K], undefined> };
+const compact = <T extends object>(o: T): Defined<T> =>
+  Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Defined<T>;
 
 export async function runTool(db: DB, userId: string, name: string, a: Args): Promise<unknown> {
-  const s = (k: string) => String(a[k] ?? "");
+  const s = (k: string) => optStr(a, k) ?? "";
   const fail = (e: { message: string } | null) => {
     if (e) throw new Error(e.message);
   };
@@ -56,15 +72,24 @@ export async function runTool(db: DB, userId: string, name: string, a: Args): Pr
     }
     case "search_exercises": {
       let q = db.from("exercises").select("id,name,family,equipment,muscle_group,primary_muscles,secondary_muscles");
-      if (a.query) q = q.ilike("name", `%${s("query")}%`);
-      if (a.muscle_group) q = q.eq("muscle_group", s("muscle_group"));
-      if (a.equipment) q = q.eq("equipment", s("equipment"));
+      const query = optStr(a, "query");
+      const muscleGroup = optStr(a, "muscle_group");
+      const equipment = optStr(a, "equipment");
+      if (query) q = q.ilike("name", `%${query}%`);
+      if (muscleGroup) q = q.eq("muscle_group", muscleGroup);
+      if (equipment) q = q.eq("equipment", equipment);
       const { data, error } = await q.order("name");
       fail(error);
       return data;
     }
     case "update_item": {
-      const { error } = await db.from("session_exercises").update(pick(a, ["sets", "reps", "weight_kg", "weight_note"])).eq("id", s("id"));
+      const patch: TablesUpdate<"session_exercises"> = compact({
+        sets: optInt(a, "sets"),
+        reps: optStr(a, "reps"),
+        weight_kg: optNum(a, "weight_kg"),
+        weight_note: optStr(a, "weight_note"),
+      });
+      const { error } = await db.from("session_exercises").update(patch).eq("id", s("id"));
       fail(error);
       return { ok: true };
     }
@@ -79,10 +104,10 @@ export async function runTool(db: DB, userId: string, name: string, a: Args): Pr
         user_id: userId,
         session_id: s("session_id"),
         exercise_id: s("exercise_id"),
-        sets: typeof a.sets === "number" ? a.sets : 3,
-        reps: a.reps ? s("reps") : "8-12",
-        weight_kg: typeof a.weight_kg === "number" ? a.weight_kg : null,
-        weight_note: a.weight_note ? s("weight_note") : null,
+        sets: optInt(a, "sets") ?? 3,
+        reps: optStr(a, "reps") ?? "8-12",
+        weight_kg: optNum(a, "weight_kg") ?? null,
+        weight_note: optStr(a, "weight_note") ?? null,
         position: count ?? 0,
       });
       fail(error);
@@ -94,7 +119,7 @@ export async function runTool(db: DB, userId: string, name: string, a: Args): Pr
       return { ok: true };
     }
     case "reorder_session": {
-      const ids = (a.ordered_item_ids as string[]) ?? [];
+      const ids = strList(a, "ordered_item_ids");
       await Promise.all(ids.map((id, i) => db.from("session_exercises").update({ position: i }).eq("id", id).eq("session_id", s("session_id"))));
       return { ok: true };
     }
@@ -130,7 +155,14 @@ export async function runTool(db: DB, userId: string, name: string, a: Args): Pr
       return { ok: true };
     }
     case "update_profile": {
-      const { error } = await db.from("profiles").update(pick(a, ["height_cm", "weight_kg", "goal", "sessions_per_week", "experience"])).eq("id", userId);
+      const patch: TablesUpdate<"profiles"> = compact({
+        height_cm: optNum(a, "height_cm"),
+        weight_kg: optNum(a, "weight_kg"),
+        goal: optStr(a, "goal"),
+        sessions_per_week: optInt(a, "sessions_per_week"),
+        experience: optStr(a, "experience"),
+      });
+      const { error } = await db.from("profiles").update(patch).eq("id", userId);
       fail(error);
       return { ok: true };
     }
