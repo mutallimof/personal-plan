@@ -1,15 +1,21 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { gym } from "@/features/gym/data";
 import { generatePlan } from "@/features/gym/ai.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
+  // Already set up? Skip straight to the app. New users (no profile or onboarded = false) stay here.
+  beforeLoad: async ({ context }) => {
+    const { data } = await supabase.from("profiles").select("onboarded").eq("id", context.user.id).maybeSingle();
+    if (data?.onboarded) throw redirect({ to: "/gym" });
+  },
   head: () => ({ meta: [{ title: "Get started — Lifeplan" }] }),
   component: Onboarding,
 });
