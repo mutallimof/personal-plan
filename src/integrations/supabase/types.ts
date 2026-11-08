@@ -14,13 +14,209 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exercises: {
+        Row: {
+          equipment: string
+          family: string
+          id: string
+          muscle_group: string
+          name: string
+          primary_muscles: string[]
+          secondary_muscles: string[]
+          slug: string
+          steps: string[]
+        }
+        Insert: {
+          equipment: string
+          family: string
+          id?: string
+          muscle_group: string
+          name: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          slug: string
+          steps?: string[]
+        }
+        Update: {
+          equipment?: string
+          family?: string
+          id?: string
+          muscle_group?: string
+          name?: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          slug?: string
+          steps?: string[]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          experience: string | null
+          goal: string | null
+          height_cm: number | null
+          id: string
+          onboarded: boolean
+          sessions_per_week: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          created_at?: string
+          experience?: string | null
+          goal?: string | null
+          height_cm?: number | null
+          id: string
+          onboarded?: boolean
+          sessions_per_week?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          created_at?: string
+          experience?: string | null
+          goal?: string | null
+          height_cm?: number | null
+          id?: string
+          onboarded?: boolean
+          sessions_per_week?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      scheduled_sessions: {
+        Row: {
+          date: string
+          id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          date: string
+          id?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_sessions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_exercises: {
+        Row: {
+          exercise_id: string
+          id: string
+          position: number
+          reps: string
+          session_id: string
+          sets: number
+          user_id: string
+          weight_kg: number | null
+          weight_note: string | null
+        }
+        Insert: {
+          exercise_id: string
+          id?: string
+          position?: number
+          reps?: string
+          session_id: string
+          sets?: number
+          user_id: string
+          weight_kg?: number | null
+          weight_note?: string | null
+        }
+        Update: {
+          exercise_id?: string
+          id?: string
+          position?: number
+          reps?: string
+          session_id?: string
+          sets?: number
+          user_id?: string
+          weight_kg?: number | null
+          weight_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_exercises_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          position: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      seed_example_plan: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
