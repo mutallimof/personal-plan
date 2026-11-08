@@ -1,23 +1,41 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Lifeplan — your personal life planner" },
+      { name: "description", content: "Plan your gym sessions, week and month. Edit by hand or just tell the chat." },
+      { property: "og:title", content: "Lifeplan — your personal life planner" },
+      { property: "og:description", content: "Plan your gym sessions, week and month. Edit by hand or just tell the chat." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/gym" });
+    });
+  }, [navigate]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 text-center">
+      <div className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-full bg-primary" />
+        <span className="text-lg font-semibold tracking-tight">Lifeplan</span>
+      </div>
+      <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">Your training, planned.</h1>
+      <p className="max-w-md text-muted-foreground">Sessions, weights and schedule — change anything by tapping or by asking.</p>
+      <Button asChild size="lg" className="h-12 rounded-full px-8">
+        <Link to="/auth">Get started</Link>
+      </Button>
+    </main>
   );
 }
