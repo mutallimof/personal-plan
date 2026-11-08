@@ -1,0 +1,127 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { gym } from "@/features/gym/data";
+import { generatePlan } from "@/features/gym/ai.functions";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/_authenticated/onboarding")({
+  head: () => ({ meta: [{ title: "Get started — Lifeplan" }] }),
+  component: Onboarding,
+});
+
+const GOALS = ["Wider shoulders", "Stronger back", "Bigger arms", "Legs", "General fitness"];
+const LEVELS = ["Beginner", "Intermediate", "Advanced"];
+
+function Chips({ options, value, onChange }: { options: (string | number)[]; value: string | number; onChange: (v: never) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => (
+        <button
+          type="button"
+          key={o}
+          onClick={() => onChange(o as never)}
+          className={cn("h-11 rounded-full border px-4 text-sm", value === o ? "border-primary bg-accent text-accent-foreground" : "bg-background")}
+        >
+          {o}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Onboarding() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const gen = useServerFn(generatePlan);
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [goal, setGoal] = useState(GOALS[0]);
+  const [perWeek, setPerWeek] = useState<number>(4);
+  const [custom, setCustom] = useState("");
+  const [level, setLevel] = useState(LEVELS[1]);
+  const [busy, setBusy] = useState<null | "ai" | "example">(null);
+
+  const sessions = perWeek === 0 ? Number(custom) || 6 : perWeek;
+
+  async function save(onboarded: boolean) {
+    await gym.saveProfile({
+      height_cm: height ? Number(height) : null,
+      weight_kg: weight ? Number(weight) : null,
+      goal,
+      sessions_per_week: sessions,
+      experience: level,
+      onboarded,
+    });
+  }
+
+  async function run(kind: "ai" | "example") {
+    setBusy(kind);
+    try {
+      if (kind === "ai") {
+        await save(false);
+        await gen();
+      } else {
+        await save(true);
+        await gym.seedExample();
+      }
+      await qc.invalidateQueries({ queryKey: ["gym"] });
+      navigate({ to: "/gym" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
+    }
+    setBusy(null);
+  }
+
+  return (
+    <main className="mx-auto max-w-lg space-y-8 px-5 py-10">
+      <div className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-full bg-primary" />
+        <span className="font-semibold">Lifeplan</span>
+      </div>
+      <h1 className="text-3xl font-semibold tracking-tight">Let's set up your plan</h1>
+
+      <div className="grid grid-cols-2 gap-3">
+        <label className="space-y-1.5 text-sm font-medium">
+          Height (cm)
+          <Input className="h-12" inputMode="decimal" value={height} onChange={(e) => setHeight(e.target.value)} placeholder="180" />
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">
+          Weight (kg)
+          <Input className="h-12" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="75" />
+        </label>
+      </div>
+      <section className="space-y-2">
+        <p className="text-sm font-medium">Goal</p>
+        <Chips options={GOALS} value={goal} onChange={setGoal} />
+      </section>
+      <section className="space-y-2">
+        <p className="text-sm font-medium">Sessions per week</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Chips options={[3, 4, 5]} value={perWeek} onChange={setPerWeek} />
+          <button type="button" onClick={() => setPerWeek(0)} className={cn("h-11 rounded-full border px-4 text-sm", perWeek === 0 ? "border-primary bg-accent text-accent-foreground" : "")}>
+            More
+          </button>
+          {perWeek === 0 && <Input className="h-11 w-20" inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="6" />}
+        </div>
+      </section>
+      <section className="space-y-2">
+        <p className="text-sm font-medium">Experience</p>
+        <Chips options={LEVELS} value={level} onChange={setLevel} />
+      </section>
+
+      <div className="space-y-3">
+        <Button className="h-12 w-full" disabled={!!busy} onClick={() => run("ai")}>
+          {busy === "ai" ? "Building your plan…" : "Generate my plan"}
+        </Button>
+        <Button variant="secondary" className="h-12 w-full" disabled={!!busy} onClick={() => run("example")}>
+          {busy === "example" ? "Loading…" : "Use the example plan"}
+        </Button>
+      </div>
+    </main>
+  );
+}
