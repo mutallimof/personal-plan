@@ -1,0 +1,158 @@
+{
+  "sourceTotal": 876,
+  "toInsert": 847,
+  "skippedAlreadyHave": 18,
+  "skippedSameNameAsExisting": 11,
+  "skippedDuplicateInDataset": 0,
+  "noMuscleMatchCount": 8,
+  "noMuscleMatch": [
+    "Chin To Chest Stretch",
+    "Isometric Neck Exercise - Front And Back",
+    "Isometric Neck Exercise - Sides",
+    "Lying Face Down Plate Neck Resistance",
+    "Lying Face Up Plate Neck Resistance",
+    "Neck-SMR",
+    "Seated Head Harness Neck Resistance",
+    "Side Neck Stretch"
+  ],
+  "parts": 6,
+  "families": 227,
+  "topFamilies": [
+    [
+      "stretch",
+      103
+    ],
+    [
+      "squat",
+      51
+    ],
+    [
+      "triceps",
+      47
+    ],
+    [
+      "olympic-lift",
+      43
+    ],
+    [
+      "curl",
+      41
+    ],
+    [
+      "row",
+      37
+    ],
+    [
+      "crunch",
+      30
+    ],
+    [
+      "flat-press",
+      23
+    ],
+    [
+      "push-up",
+      20
+    ],
+    [
+      "shoulder-press",
+      19
+    ],
+    [
+      "deadlift",
+      19
+    ],
+    [
+      "calf",
+      19
+    ],
+    [
+      "fly",
+      16
+    ],
+    [
+      "lunge",
+      16
+    ],
+    [
+      "vertical-pull",
+      15
+    ],
+    [
+      "rear-delt",
+      14
+    ],
+    [
+      "cardio",
+      14
+    ],
+    [
+      "wrist-curl",
+      13
+    ],
+    [
+      "hinge",
+      12
+    ],
+    [
+      "shrug",
+      10
+    ],
+    [
+      "incline-press",
+      9
+    ],
+    [
+      "hip-thrust",
+      8
+    ],
+    [
+      "dips",
+      7
+    ],
+    [
+      "leg-raise",
+      7
+    ],
+    [
+      "hammer-curl",
+      6
+    ]
+  ],
+  "skipped": {
+    "alreadyHave": [
+      "Butterfly -> pec-deck",
+      "Close-Grip Barbell Bench Press -> close-grip-press",
+      "Dips - Triceps Version -> dips",
+      "Dumbbell Bench Press -> flat-db-press",
+      "Dumbbell Bicep Curl -> biceps-curl",
+      "Hammer Curls -> hammer-curl",
+      "Incline Dumbbell Press -> incline-db-press",
+      "Lying Leg Curls -> leg-curl",
+      "Machine Shoulder (Military) Press -> machine-shoulder-press",
+      "Pullups -> pull-up",
+      "Pushups -> push-up",
+      "Reverse Flyes -> rear-delt-fly",
+      "Seated Cable Rows -> seated-cable-row",
+      "Seated Dumbbell Press -> seated-db-shoulder-press",
+      "Side Lateral Raise -> lateral-raise",
+      "Standing Biceps Cable Curl -> cable-curl",
+      "Standing Calf Raises -> calf-raise",
+      "Wide-Grip Lat Pulldown -> lat-pulldown"
+    ],
+    "sameNameAsExisting": [
+      "Barbell Squat",
+      "Close-Grip EZ Bar Curl",
+      "EZ-Bar Curl",
+      "Face Pull",
+      "Goblet Squat",
+      "Hanging Leg Raise",
+      "Leg Press",
+      "One-Arm Dumbbell Row",
+      "Plank",
+      "Romanian Deadlift",
+      "Triceps Pushdown"
+    ],
+    "duplicateInDataset": []
+  }
+}

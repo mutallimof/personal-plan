@@ -9,7 +9,7 @@ export type Scheduled = Tables<"scheduled_sessions">;
 export type Profile = Tables<"profiles">;
 
 export const MUSCLE_GROUPS = ["chest", "back", "shoulders", "arms", "core", "legs"] as const;
-export const EQUIPMENT = ["dumbbell", "barbell", "cable", "machine", "bodyweight"] as const;
+export const EQUIPMENT = ["dumbbell", "barbell", "cable", "machine", "bodyweight", "other"] as const;
 
 async function uid() {
   const { data } = await supabase.auth.getUser();
