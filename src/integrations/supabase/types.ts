@@ -74,6 +74,45 @@ export type Database = {
         }
         Relationships: []
       }
+      product_aliases: {
+        Row: {
+          category: string
+          created_at: string
+          default_location_kind: string | null
+          default_quantity: number | null
+          default_unit: string
+          id: string
+          product_name: string
+          raw_text: string
+          store: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          default_location_kind?: string | null
+          default_quantity?: number | null
+          default_unit?: string
+          id?: string
+          product_name: string
+          raw_text: string
+          store?: string | null
+          user_id?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_location_kind?: string | null
+          default_quantity?: number | null
+          default_unit?: string
+          id?: string
+          product_name?: string
+          raw_text?: string
+          store?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -282,14 +321,17 @@ export type Database = {
       }
       pantry_settings: {
         Row: {
+          aliases_seeded: boolean
           locations_seeded: boolean
           user_id: string
         }
         Insert: {
+          aliases_seeded?: boolean
           locations_seeded?: boolean
           user_id?: string
         }
         Update: {
+          aliases_seeded?: boolean
           locations_seeded?: boolean
           user_id?: string
         }
