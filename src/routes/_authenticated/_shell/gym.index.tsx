@@ -33,7 +33,7 @@ function PlanPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">Plan</h1>
 
-      {isError && <QueryError onRetry={() => refetch()} />}
+      {isError && !sessions.length && <QueryError onRetry={() => refetch()} />}
 
       {next && next.session.items.length > 0 && (
         <section className="flex items-center justify-between gap-3 rounded-2xl bg-accent p-4 sm:p-5" aria-label="Next session">
@@ -94,7 +94,7 @@ function PlanPage() {
           ))}
           <button
             onClick={add}
-            className="flex min-h-36 items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-36 items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Plus className="h-5 w-5" /> Add session
           </button>

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Lifeplan — your personal life planner" },
       { property: "og:description", content: "Plan your gym sessions, week and month. Edit by hand or just tell the chat." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Index,

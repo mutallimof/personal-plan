@@ -21,7 +21,7 @@ function GymLayout() {
             key={t.to}
             to={t.to}
             activeOptions={{ exact: t.exact }}
-            className="flex h-10 flex-1 items-center justify-center rounded-full text-sm font-medium text-muted-foreground"
+            className="flex h-11 flex-1 items-center justify-center rounded-full text-sm font-medium text-muted-foreground"
             activeProps={{ className: "bg-background text-foreground shadow-sm" }}
           >
             {t.label}

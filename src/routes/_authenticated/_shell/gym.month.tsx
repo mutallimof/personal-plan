@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { QueryError } from "@/components/states";
 import { cn } from "@/lib/utils";
 import { planQuery, scheduleQuery } from "@/features/gym/data";
 import { WEEKDAYS, fromISO, monthGrid, toISO } from "@/features/gym/dates";
@@ -31,7 +32,8 @@ function MonthPage() {
   const todayISO = toISO(new Date());
 
   const { data: sessions = [] } = useQuery(planQuery);
-  const { data: scheduled } = useQuery(scheduleQuery(first, last));
+  const schedQuery = useQuery(scheduleQuery(first, last));
+  const scheduled = schedQuery.data;
   const actions = useScheduleActions();
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -58,6 +60,7 @@ function MonthPage() {
         onNext={() => go(new Date(year, month + 1, 1))}
         onToday={() => go(new Date())}
       />
+      {schedQuery.isError && <QueryError onRetry={() => schedQuery.refetch()} />}
       <div className="overflow-hidden rounded-2xl border bg-card">
         <div className="grid grid-cols-7 border-b text-center text-xs font-medium text-muted-foreground">
           {WEEKDAYS.map((w) => (
@@ -140,7 +143,7 @@ function MonthPage() {
                     type="button"
                     aria-label={`Remove ${e.name}`}
                     onClick={() => void actions.remove(e.id)}
-                    className="flex h-10 w-10 items-center justify-center"
+                    className="flex h-11 w-11 items-center justify-center"
                   >
                     <X className="h-4 w-4" />
                   </button>

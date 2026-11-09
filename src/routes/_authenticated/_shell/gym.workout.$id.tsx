@@ -74,7 +74,7 @@ function WorkoutPage() {
     return (
       <div className="space-y-3">
         <p className="text-muted-foreground">This session has no exercises.</p>
-        <Link to="/gym/session/$id" params={{ id }} className="text-primary underline">
+        <Link to="/gym/session/$id" params={{ id }} className="text-primary-ink underline">
           Add exercises
         </Link>
       </div>

@@ -54,7 +54,7 @@ function AddToSession({ exercise, onClose }: { exercise: Exercise; onClose: () =
     return (
       <p className="py-4 text-center text-sm text-muted-foreground">
         No sessions yet.{" "}
-        <Link to="/gym" className="text-primary underline">
+        <Link to="/gym" className="text-primary-ink underline">
           Create one in your plan
         </Link>
       </p>
@@ -71,7 +71,7 @@ function AddToSession({ exercise, onClose }: { exercise: Exercise; onClose: () =
             aria-checked={chosen?.id === s.id}
             onClick={() => setSessionId(s.id)}
             className={
-              "h-10 rounded-full border px-4 text-sm " +
+              "h-11 rounded-full border px-4 text-sm " +
               (chosen?.id === s.id
                 ? "border-primary bg-accent text-accent-foreground"
                 : "bg-background text-muted-foreground")

@@ -46,13 +46,13 @@ export function PeriodNav({
     <div className="flex items-center justify-between gap-2">
       <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
       <div className="flex items-center gap-1">
-        <Button variant="outline" size="sm" className="h-10 rounded-full px-4" onClick={onToday}>
+        <Button variant="outline" size="sm" className="h-11 rounded-full px-4" onClick={onToday}>
           Today
         </Button>
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 rounded-full"
+          className="h-11 w-11 rounded-full"
           aria-label={`Previous ${unit}`}
           onClick={onPrev}
         >
@@ -61,7 +61,7 @@ export function PeriodNav({
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 rounded-full"
+          className="h-11 w-11 rounded-full"
           aria-label={`Next ${unit}`}
           onClick={onNext}
         >
@@ -79,7 +79,7 @@ export function SessionPicker({ onPick }: { onPick: (sessionId: string) => void 
     return (
       <p className="p-2 text-sm text-muted-foreground">
         No sessions yet.{" "}
-        <Link to="/gym" className="text-primary underline">
+        <Link to="/gym" className="text-primary-ink underline">
           Create one
         </Link>{" "}
         first.

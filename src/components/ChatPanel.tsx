@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useRouterState } from "@tanstack/react-router";
 import { ArrowUp, MessageCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { sendChat } from "@/features/gym/ai.functions";
@@ -23,6 +24,8 @@ export function ChatPanel() {
   const [text, setText] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const qc = useQueryClient();
+  // The workout screen has its own fixed Finish bar; keep the chat button out of its way.
+  const onWorkout = useRouterState({ select: (s) => s.location.pathname.startsWith("/gym/workout") });
   const send = useServerFn(sendChat);
   const { data: messages = [] } = useQuery({ ...chatQuery, enabled: open });
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -56,7 +59,7 @@ export function ChatPanel() {
         onClick={() => setOpen(true)}
         className={cn(
           "fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6 md:right-6",
-          open && "hidden",
+          (open || onWorkout) && "hidden",
         )}
       >
         <MessageCircle className="h-6 w-6" />
@@ -99,6 +102,7 @@ export function ChatPanel() {
               <textarea
                 ref={inputRef}
                 rows={1}
+                aria-label="Message"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
@@ -108,9 +112,9 @@ export function ChatPanel() {
                   }
                 }}
                 placeholder="e.g. lateral raise is now 8 kg"
-                className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-base outline-none placeholder:text-muted-foreground"
+                className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-base outline-none placeholder:text-muted-foreground"
               />
-              <Button type="submit" size="icon" className="h-10 w-10 shrink-0 rounded-full" disabled={!text.trim() || !!pending} aria-label="Send">
+              <Button type="submit" size="icon" className="h-11 w-11 shrink-0 rounded-full" disabled={!text.trim() || !!pending} aria-label="Send">
                 <ArrowUp className="h-5 w-5" />
               </Button>
             </div>

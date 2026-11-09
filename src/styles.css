@@ -22,6 +22,7 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-soft: var(--primary-soft);
+  --color-primary-ink: var(--primary-ink);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -61,19 +62,22 @@
   --popover-foreground: oklch(0.2 0.01 260);
   /* #22C55E */
   --primary: oklch(0.723 0.192 149.58);
-  --primary-foreground: oklch(1 0 0);
+  /* dark text on the green: white on #22C55E is only 2.3:1, this is 7.9:1 */
+  --primary-foreground: oklch(0.2 0.01 260);
+  /* dark green for green-coloured text and focus rings on light backgrounds (6:1) */
+  --primary-ink: oklch(0.45 0.11 152);
   --primary-soft: oklch(0.9 0.09 152);
   --secondary: oklch(0.95 0.003 260);
   --secondary-foreground: oklch(0.25 0.01 260);
   --muted: oklch(0.95 0.003 260);
-  --muted-foreground: oklch(0.55 0.01 260);
+  --muted-foreground: oklch(0.5 0.01 260);
   --accent: oklch(0.94 0.04 152);
   --accent-foreground: oklch(0.35 0.1 150);
   --destructive: oklch(0.6 0.2 27);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.92 0.004 260);
   --input: oklch(0.9 0.004 260);
-  --ring: oklch(0.723 0.192 149.58);
+  --ring: oklch(0.45 0.11 152);
   --body-base: oklch(0.93 0.004 260);
   --muscle-idle: oklch(0.86 0.005 260);
   --chart-1: oklch(0.723 0.192 149.58);
@@ -84,7 +88,7 @@
   --sidebar: oklch(0.985 0.002 260);
   --sidebar-foreground: oklch(0.2 0.01 260);
   --sidebar-primary: oklch(0.723 0.192 149.58);
-  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-primary-foreground: oklch(0.2 0.01 260);
   --sidebar-accent: oklch(0.94 0.04 152);
   --sidebar-accent-foreground: oklch(0.35 0.1 150);
   --sidebar-border: oklch(0.92 0.004 260);

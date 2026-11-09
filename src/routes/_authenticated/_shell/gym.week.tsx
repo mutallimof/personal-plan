@@ -15,6 +15,7 @@ import {
 import { Check, Plus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QueryError } from "@/components/states";
 import { cn } from "@/lib/utils";
 import { planQuery, scheduleQuery, type Scheduled, type Session } from "@/features/gym/data";
 import { WEEKDAYS, addDays, fromISO, startOfWeek, toISO } from "@/features/gym/dates";
@@ -57,7 +58,7 @@ function Chip({
         type="button"
         {...attributes}
         {...listeners}
-        className="flex min-h-10 min-w-0 flex-1 cursor-grab touch-manipulation items-center gap-1.5 px-3.5 text-left font-medium active:cursor-grabbing"
+        className="flex min-h-11 min-w-0 flex-1 cursor-grab touch-manipulation items-center gap-1.5 px-3.5 text-left font-medium active:cursor-grabbing"
       >
         {placed && <Check className="h-3.5 w-3.5 shrink-0" aria-label="planned this week" />}
         <span className="truncate">{label}</span>
@@ -67,7 +68,7 @@ function Chip({
           type="button"
           aria-label={`Remove ${label}`}
           onClick={onRemove}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent-foreground/70 hover:text-accent-foreground"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-accent-foreground/70 hover:text-accent-foreground"
         >
           <X className="h-4 w-4" />
         </button>
@@ -105,13 +106,13 @@ function DayCard({
       )}
     >
       <header className="flex items-center justify-between">
-        <h2 className={cn("text-sm font-semibold", isToday && "text-primary")}>{label}</h2>
+        <h2 className={cn("text-sm font-semibold", isToday && "text-primary-ink")}>{label}</h2>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
               aria-label={`Add session on ${label}`}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -179,7 +180,8 @@ function WeekPage() {
   const todayISO = toISO(new Date());
 
   const { data: sessions = [] } = useQuery(planQuery);
-  const { data: scheduled } = useQuery(scheduleQuery(toISO(start), toISO(end)));
+  const schedQuery = useQuery(scheduleQuery(toISO(start), toISO(end)));
+  const scheduled = schedQuery.data;
   const rows: Scheduled[] = scheduled ?? [];
   const actions = useScheduleActions();
   const [activeLabel, setActiveLabel] = useState<string | null>(null);
@@ -239,6 +241,7 @@ function WeekPage() {
         onNext={() => go(addDays(start, 7))}
         onToday={() => go(new Date())}
       />
+      {schedQuery.isError && <QueryError onRetry={() => schedQuery.refetch()} />}
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}

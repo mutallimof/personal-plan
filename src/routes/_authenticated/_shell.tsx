@@ -1,9 +1,10 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Dumbbell, Languages, LogOut, ShoppingBasket, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { profileQuery } from "@/features/gym/data";
+import { planQuery, profileQuery, type Session } from "@/features/gym/data";
+import { clearPlanCache, readPlanCache, writePlanCache } from "@/lib/plan-cache";
 import { ChatPanel } from "@/components/ChatPanel";
 
 export const Route = createFileRoute("/_authenticated/_shell")({
@@ -20,12 +21,41 @@ const NAV = [
 function Shell() {
   const navigate = useNavigate();
   const { data: profile, isSuccess } = useQuery(profileQuery);
+  const qc = useQueryClient();
+  const { user } = Route.useRouteContext();
+
+  // Offline copy of the plan: restore the last one right away, keep it up to date after every load.
+  useEffect(() => {
+    try {
+      if (!qc.getQueryData(planQuery.queryKey)) {
+        const cached = readPlanCache(localStorage, user.id);
+        if (cached) qc.setQueryData(planQuery.queryKey, cached as Session[]);
+      }
+    } catch {
+      /* storage blocked */
+    }
+    return qc.getQueryCache().subscribe((e) => {
+      const q = e.query;
+      if (e.type === "updated" && q.queryKey.join("/") === planQuery.queryKey.join("/") && q.state.status === "success") {
+        try {
+          writePlanCache(localStorage, user.id, q.state.data);
+        } catch {
+          /* storage blocked */
+        }
+      }
+    });
+  }, [qc, user.id]);
 
   useEffect(() => {
     if (isSuccess && !profile?.onboarded) navigate({ to: "/onboarding" });
   }, [isSuccess, profile, navigate]);
 
   async function signOut() {
+    try {
+      clearPlanCache(localStorage);
+    } catch {
+      /* storage blocked */
+    }
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
@@ -66,7 +96,7 @@ function Shell() {
             key={to}
             to={to}
             className="flex h-16 flex-col items-center justify-center gap-1 text-xs text-muted-foreground"
-            activeProps={{ className: "text-primary" }}
+            activeProps={{ className: "text-primary-ink" }}
           >
             <Icon className="h-5 w-5" /> {label}
           </Link>

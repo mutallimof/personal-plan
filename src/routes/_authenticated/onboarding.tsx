@@ -31,7 +31,8 @@ function Chips({ options, value, onChange }: { options: (string | number)[]; val
           type="button"
           key={o}
           onClick={() => onChange(o as never)}
-          className={cn("h-11 rounded-full border px-4 text-sm", value === o ? "border-primary bg-accent text-accent-foreground" : "bg-background")}
+          aria-pressed={value === o}
+          className={cn("h-11 rounded-full border px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", value === o ? "border-primary bg-accent text-accent-foreground" : "bg-background")}
         >
           {o}
         </button>
@@ -109,10 +110,10 @@ function Onboarding() {
         <p className="text-sm font-medium">Sessions per week</p>
         <div className="flex flex-wrap items-center gap-2">
           <Chips options={[3, 4, 5]} value={perWeek} onChange={setPerWeek} />
-          <button type="button" onClick={() => setPerWeek(0)} className={cn("h-11 rounded-full border px-4 text-sm", perWeek === 0 ? "border-primary bg-accent text-accent-foreground" : "")}>
+          <button type="button" onClick={() => setPerWeek(0)} aria-pressed={perWeek === 0} className={cn("h-11 rounded-full border px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", perWeek === 0 ? "border-primary bg-accent text-accent-foreground" : "")}>
             More
           </button>
-          {perWeek === 0 && <Input className="h-11 w-20" inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="6" />}
+          {perWeek === 0 && <Input className="h-11 w-20" aria-label="Sessions per week" inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="6" />}
         </div>
       </section>
       <section className="space-y-2">
