@@ -45,7 +45,7 @@ Needs a `.env` with your Supabase URL and publishable key. Copy `.env.example` a
 
 ## Pantry
 Tabs: **Items**, **Receipt**, **Dictionary**. All tables are private to the signed-in user (row-level security, see
-`migrations/0004` and `0005`).
+`migrations/0004` to `0006`).
 
 **Items.** Items live in places (fridge, vegetable drawer, freezer, shelves, ...; a default set is created once).
 Adding an item with the same name and unit in the same place adds to the existing one. Items expiring within three
@@ -82,6 +82,14 @@ prices are misread more often than names. Expect to correct some lines. Tips for
 - Fill the frame with the receipt and keep it upright; photograph a long receipt in two parts.
 - Hold still, tap to focus on the text, and check that the photo is sharp before using it.
 - If faint print is lost, try the *Black and white* switch.
+
+**Optional AI check (off by default).** The *AI check for unknown lines* switch on the Receipt tab is stored per user
+(`pantry_settings`, `migrations/0006`). When it is on, the text of lines the dictionary could not match goes to the AI
+provider you configured with the `AI_*` variables (`ai.functions.ts`, server side, the key never reaches the browser).
+What is sent is only the normalized text of those lines (no prices or weights), never a photo, a whole receipt or
+anything from your pantry. The answer (name, category, usual place) appears as a suggestion on the line; it is applied
+only when you tap *Use*, and the line still has to be confirmed. A counter shows how many lines have been sent so far.
+If the provider fails or is not configured, you get a message and the import carries on.
 
 **Measuring accuracy.** `npm run ocr:eval` runs the same pipeline over your own photos and prints line-level accuracy;
 see `scripts/ocr-eval/README.md`. Receipt photos and text are private: never commit them (the samples folder is

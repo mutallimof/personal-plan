@@ -53,6 +53,17 @@ export const itemsQuery = queryOptions({
   queryFn: async (): Promise<PantryItem[]> => check(await supabase.from("pantry_items").select("*").order("name")) ?? [],
 });
 
+export type PantrySettings = { aiCheck: boolean; aiLinesSent: number };
+
+export const settingsQuery = queryOptions({
+  queryKey: ["pantry", "settings"],
+  queryFn: async (): Promise<PantrySettings> => {
+    const user_id = await uid();
+    const row = check(await supabase.from("pantry_settings").select("*").eq("user_id", user_id).maybeSingle());
+    return { aiCheck: row?.ai_check ?? false, aiLinesSent: row?.ai_lines_sent ?? 0 };
+  },
+});
+
 export function useInvalidatePantry() {
   const qc = useQueryClient();
   return () => qc.invalidateQueries({ queryKey: ["pantry"] });
@@ -61,6 +72,10 @@ export function useInvalidatePantry() {
 export type NewItem = Omit<TablesInsert<"pantry_items">, "id" | "user_id" | "added_at">;
 
 export const pantry = {
+  async setAiCheck(on: boolean): Promise<void> {
+    const user_id = await uid();
+    check(await supabase.from("pantry_settings").upsert({ user_id, ai_check: on }));
+  },
   /**
    * Adds an item. If the same name and unit already sit in the same place, adds to that item instead
    * and returns it; returns null when a new row was created.

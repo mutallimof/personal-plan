@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, FileText, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -7,14 +8,15 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Loading, QueryError } from "@/components/states";
-import { pantry, locationsQuery, useInvalidatePantry } from "./data";
+import { suggestProducts } from "./ai.functions";
+import { pantry, locationsQuery, settingsQuery, useInvalidatePantry } from "./data";
 import { aliasesQuery, writeAliases } from "./dictionary-data";
 import { cleanStore } from "./aliases";
 import { confidenceByLine, ocrText, recognize, type OcrProgress } from "./ocr";
 import { preparePhoto } from "./photo";
 import { parseReceipt } from "./receipt";
 import { readReceiptFile } from "./receipt-input";
-import { aliasesToLearn, buildReview, itemsToSave, type ReviewLine } from "./review";
+import { aliasesToLearn, buildReview, itemsToSave, withSuggestions, type ReviewLine } from "./review";
 import { ReviewScreen } from "./ReviewScreen";
 
 type Review = { store: string; lines: ReviewLine[] };
@@ -22,10 +24,13 @@ type Review = { store: string; lines: ReviewLine[] };
 export function ReceiptPage() {
   const aliases = useQuery(aliasesQuery);
   const locations = useQuery(locationsQuery);
+  const settings = useQuery(settingsQuery);
+  const suggest = useServerFn(suggestProducts);
   const invalidate = useInvalidatePantry();
   const [pasted, setPasted] = useState("");
   const [review, setReview] = useState<Review | null>(null);
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(0);
   const [progress, setProgress] = useState<OcrProgress | null>(null);
   const [blackWhite, setBlackWhite] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
@@ -53,7 +58,35 @@ export function ReceiptPage() {
       toast.error("No items found in that receipt.");
       return;
     }
-    setReview({ store: store ?? "", lines: buildReview(lines, dictionary, store, places, confidence) });
+    const built = buildReview(lines, dictionary, store, places, confidence);
+    setReview({ store: store ?? "", lines: built });
+    if (settings.data?.aiCheck) void askAi(built);
+  }
+
+  /** Optional AI check: only the text of lines the dictionary could not match is sent. Failures never stop the import. */
+  async function askAi(lines: ReviewLine[]) {
+    const unknown = lines.filter((l) => l.status === "unknown");
+    if (!unknown.length) return;
+    setChecking(unknown.length);
+    try {
+      const res = await suggest({ data: { lines: unknown.map((l) => l.rawText) } });
+      if (res.ok) setReview((r) => (r ? { ...r, lines: withSuggestions(r.lines, res.suggestions) } : r));
+      else toast.error(res.error);
+      await invalidate();
+    } catch {
+      toast.error("The AI check failed.");
+    } finally {
+      setChecking(0);
+    }
+  }
+
+  async function onAiToggle(on: boolean) {
+    try {
+      await pantry.setAiCheck(on);
+      await invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save");
+    }
   }
 
   async function onFile(file: File | undefined) {
@@ -129,6 +162,7 @@ export function ReceiptPage() {
         onSave={save}
         onBack={() => setReview(null)}
         saving={busy}
+        checking={checking}
       />
     );
   }
@@ -160,6 +194,15 @@ export function ReceiptPage() {
         Black and white
         <Switch checked={blackWhite} onCheckedChange={setBlackWhite} disabled={busy} aria-label="Black and white" />
       </label>
+      <div className="rounded-2xl bg-card px-4 py-2 text-sm">
+        <label className="flex min-h-11 items-center justify-between">
+          AI check for unknown lines
+          <Switch checked={settings.data?.aiCheck ?? false} onCheckedChange={onAiToggle} disabled={!settings.data} aria-label="AI check for unknown lines" />
+        </label>
+        {(settings.data?.aiCheck || (settings.data?.aiLinesSent ?? 0) > 0) && (
+          <p className="pb-2 text-xs text-muted-foreground">{settings.data?.aiLinesSent ?? 0} lines sent so far</p>
+        )}
+      </div>
       {progress && (
         <div role="status" className="space-y-2 rounded-2xl bg-card p-4 text-sm">
           <div className="flex justify-between">

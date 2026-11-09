@@ -4,7 +4,8 @@ import { firstOfKind } from "./locations";
 import { draftFromCorrection } from "./learn";
 import { matchAlias } from "./match";
 import { CATEGORY_KIND, isCategory, isLocationKind, isUnit, type Category, type LocationKind, type PantryLocation, type Unit } from "./model";
-import { displayName } from "./normalize";
+import { displayName, normalizeReceiptText } from "./normalize";
+import type { Suggestion } from "./ai-suggest";
 import type { ParsedLine } from "./receipt";
 import { roundQty } from "./items";
 import { LOW_CONFIDENCE } from "./ocr";
@@ -27,6 +28,8 @@ export type ReviewLine = {
   skip: boolean;
   /** Changed by hand (or confirmed as a correction), so it is written back to the dictionary. */
   edited: boolean;
+  /** A guess from the optional AI check. Only used when the person accepts it. */
+  suggestion: Suggestion | null;
   name: string;
   quantity: number;
   unit: Unit;
@@ -36,8 +39,8 @@ export type ReviewLine = {
 
 type Fields = Pick<ReviewLine, "name" | "quantity" | "unit" | "category" | "locationId">;
 
-function placeFor(locations: readonly PantryLocation[], alias: Alias | null, category: Category): string | null {
-  const wanted = alias?.default_location_kind;
+/** First place of the wanted kind, else the usual kind for the category, else none. */
+function placeFor(locations: readonly PantryLocation[], wanted: string | null | undefined, category: Category): string | null {
   const preferred = isLocationKind(wanted) ? firstOfKind(locations, wanted) : undefined;
   return (preferred ?? firstOfKind(locations, CATEGORY_KIND[category]))?.id ?? null;
 }
@@ -52,7 +55,7 @@ function fieldsFor(line: ParsedLine, alias: Alias | null, locations: readonly Pa
     unit: line.unit ?? aliasUnit,
     quantity: weighed ? line.quantity : roundQty((alias?.default_quantity ?? 1) * line.quantity),
     category,
-    locationId: placeFor(locations, alias, category),
+    locationId: placeFor(locations, alias?.default_location_kind, category),
   };
 }
 
@@ -84,6 +87,7 @@ export function buildReview(
       confirmed: m.kind === "exact" && !isLowConfidence({ confidence: conf }),
       skip: false,
       edited: false,
+      suggestion: null,
       ...fieldsFor(p, alias, locations),
     };
   });
@@ -97,6 +101,22 @@ export function buildReview(
 /** Changes fields by hand. Editing counts as confirming. */
 export function editLine(l: ReviewLine, patch: Partial<Fields>): ReviewLine {
   return { ...l, ...patch, edited: true, confirmed: true };
+}
+
+/** Attaches AI suggestions to the unknown lines they answer. Nothing else about the lines changes. */
+export function withSuggestions(lines: readonly ReviewLine[], suggestions: readonly Suggestion[]): ReviewLine[] {
+  const byText = new Map(suggestions.map((s) => [s.text, s]));
+  return lines.map((l) => {
+    const suggestion = l.status === "unknown" ? byText.get(normalizeReceiptText(l.rawText)) : undefined;
+    return suggestion ? { ...l, suggestion } : l;
+  });
+}
+
+/** Fills the line from its suggestion. This is the person accepting it, so it counts as an edit. */
+export function applySuggestion(l: ReviewLine, locations: readonly PantryLocation[]): ReviewLine {
+  const s = l.suggestion;
+  if (!s) return l;
+  return { ...editLine(l, { name: s.name, category: s.category, locationId: placeFor(locations, s.kind, s.category) }), suggestion: null };
 }
 
 export const confirmLine = (l: ReviewLine): ReviewLine => ({ ...l, confirmed: true });

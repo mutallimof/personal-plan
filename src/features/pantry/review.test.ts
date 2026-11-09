@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   aliasesToLearn,
+  applySuggestion,
   buildReview,
   canSave,
   confirmLine,
@@ -10,6 +11,7 @@ import {
   lineProblem,
   toggleSkip,
   unresolvedCount,
+  withSuggestions,
   type ReviewLine,
 } from "./review";
 import { alias, loc, SYNTHETIC_RECEIPT } from "./fixtures";
@@ -150,6 +152,50 @@ describe("OCR confidence", () => {
     expect(isLowConfidence({ confidence: LOW_CONFIDENCE })).toBe(false);
     expect(isLowConfidence({ confidence: LOW_CONFIDENCE - 1 })).toBe(true);
     expect(isLowConfidence({ confidence: null })).toBe(false);
+  });
+});
+
+describe("AI suggestions", () => {
+  const suggestion = { text: "ZZZ", name: "Chicken breast", category: "meat", kind: "fridge" } as const;
+  const [unknown, matched] = buildReview([parsed({ raw_text: "ZZZ 1,99 B" }, 1), parsed({ raw_text: "SPAGHETTI" }, 2)], dict, null, places) as [ReviewLine, ReviewLine];
+
+  it("attaches a suggestion to the unknown line it answers, and changes nothing else", () => {
+    const [a, b] = withSuggestions([unknown, matched], [suggestion]) as [ReviewLine, ReviewLine];
+    expect(a.suggestion).toEqual(suggestion);
+    expect(a).toMatchObject({ name: unknown.name, confirmed: false, edited: false, category: "other" });
+    expect(b).toBe(matched);
+  });
+
+  it("never attaches to a matched line", () => {
+    const [m] = withSuggestions([matched], [{ ...suggestion, text: "SPAGHETTI" }]) as [ReviewLine];
+    expect(m.suggestion).toBeNull();
+  });
+
+  it("saves nothing until accepted: a suggested line is still unresolved", () => {
+    const [a] = withSuggestions([unknown], [suggestion]) as [ReviewLine];
+    expect(unresolvedCount([a])).toBe(1);
+    expect(canSave([a])).toBe(false);
+  });
+
+  it("accepting fills the fields, picks the place of that kind, and counts as an edit", () => {
+    const [a] = withSuggestions([unknown], [suggestion]) as [ReviewLine];
+    expect(applySuggestion(a, places)).toMatchObject({
+      name: "Chicken breast",
+      category: "meat",
+      locationId: "fridge",
+      confirmed: true,
+      edited: true,
+      suggestion: null,
+    });
+  });
+
+  it("falls back to the category place when the suggestion has no place", () => {
+    const [a] = withSuggestions([unknown], [{ ...suggestion, kind: null, category: "frozen" }]) as [ReviewLine];
+    expect(applySuggestion(a, places).locationId).toBe("freezer");
+  });
+
+  it("does nothing without a suggestion", () => {
+    expect(applySuggestion(unknown, places)).toBe(unknown);
   });
 });
 

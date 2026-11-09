@@ -2,7 +2,7 @@ import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ReviewScreen } from "./ReviewScreen";
-import { buildReview, type ReviewLine } from "./review";
+import { buildReview, withSuggestions, type ReviewLine } from "./review";
 import { alias, loc } from "./fixtures";
 import type { ParsedLine } from "./receipt";
 
@@ -63,5 +63,29 @@ describe("ReviewScreen", () => {
     expect(screen.getByText("58%")).toBeInTheDocument();
     expect(screen.getByText("Unsure")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "1 to check" })).toBeDisabled();
+  });
+
+  it("offers an AI suggestion, applies it only when asked, and still needs no automatic save", () => {
+    const onSave = vi.fn();
+    const base = buildReview([parsed("ZZZ ONE", 1)], dict, null, places);
+    const lines = withSuggestions(base, [{ text: "ZZZ ONE", name: "Chicken breast", category: "meat", kind: "fridge" }]);
+    function WithSuggestion() {
+      const [ls, setLs] = useState(lines);
+      return <ReviewScreen lines={ls} locations={places} store="" onStore={() => {}} onChange={setLs} onSave={onSave} onBack={() => {}} saving={false} />;
+    }
+    render(<WithSuggestion />);
+    expect(screen.getByText("Chicken breast")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1 to check" })).toBeDisabled();
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Use" }));
+    expect(screen.getByLabelText("Name")).toHaveValue("Chicken breast");
+    expect(screen.getByRole("button", { name: "Save 1 item" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Use" })).not.toBeInTheDocument();
+  });
+
+  it("shows that the AI check is running", () => {
+    const lines = buildReview([parsed("ZZZ ONE", 1)], dict, null, places);
+    render(<ReviewScreen lines={lines} locations={places} store="" onStore={() => {}} onChange={() => {}} onSave={() => {}} onBack={() => {}} saving={false} checking={3} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Checking 3 lines");
   });
 });

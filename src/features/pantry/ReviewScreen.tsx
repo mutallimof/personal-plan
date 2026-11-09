@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, isCategory, isUnit, UNITS, type PantryLocation } from "./model";
-import { canSave, confirmLine, editLine, isLowConfidence, lineProblem, toggleSkip, unresolvedCount, type ReviewLine } from "./review";
+import { applySuggestion, canSave, confirmLine, editLine, isLowConfidence, lineProblem, toggleSkip, unresolvedCount, type ReviewLine } from "./review";
 import { asOptions, Choice, locationOptions, QuantityField } from "./ui";
 
 const STATUS: Record<ReviewLine["status"], string> = { matched: "Known", uncertain: "Check", unknown: "Unknown" };
@@ -88,6 +88,20 @@ function Row({
               />
             </label>
           </div>
+          {line.suggestion && !line.edited && (
+            <div className="flex items-center gap-2 rounded-xl bg-background px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{line.suggestion.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  AI · {line.suggestion.category}
+                  {line.suggestion.kind ? ` · ${line.suggestion.kind}` : ""}
+                </span>
+              </span>
+              <Button variant="outline" className="h-11" onClick={() => onChange(applySuggestion(line, locations))}>
+                Use
+              </Button>
+            </div>
+          )}
           {problem && <p className="text-xs text-destructive">{problem}</p>}
           {needs && (
             <Button variant="outline" className="h-11 w-full bg-background" onClick={() => onChange(confirmLine(line))}>
@@ -109,6 +123,7 @@ export function ReviewScreen({
   onSave,
   onBack,
   saving,
+  checking = 0,
 }: {
   lines: readonly ReviewLine[];
   locations: readonly PantryLocation[];
@@ -118,6 +133,8 @@ export function ReviewScreen({
   onSave: () => void;
   onBack: () => void;
   saving: boolean;
+  /** Number of lines the AI check is working on right now. */
+  checking?: number;
 }) {
   const open = unresolvedCount(lines);
   const count = lines.filter((l) => !l.skip).length;
@@ -132,6 +149,12 @@ export function ReviewScreen({
           Back
         </Button>
       </div>
+
+      {checking > 0 && (
+        <p role="status" className="text-sm text-muted-foreground">
+          Checking {checking} {checking === 1 ? "line" : "lines"}…
+        </p>
+      )}
 
       <ul className="space-y-3">
         {lines.map((l) => (

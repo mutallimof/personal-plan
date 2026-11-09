@@ -321,16 +321,22 @@ export type Database = {
       }
       pantry_settings: {
         Row: {
+          ai_check: boolean
+          ai_lines_sent: number
           aliases_seeded: boolean
           locations_seeded: boolean
           user_id: string
         }
         Insert: {
+          ai_check?: boolean
+          ai_lines_sent?: number
           aliases_seeded?: boolean
           locations_seeded?: boolean
           user_id?: string
         }
         Update: {
+          ai_check?: boolean
+          ai_lines_sent?: number
           aliases_seeded?: boolean
           locations_seeded?: boolean
           user_id?: string
