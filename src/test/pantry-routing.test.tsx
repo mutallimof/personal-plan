@@ -12,6 +12,7 @@ describe("Pantry routes", () => {
     ["/pantry/receipt", "/_authenticated/_shell/pantry/receipt"],
     ["/pantry/dictionary", "/_authenticated/_shell/pantry/dictionary"],
     ["/pantry/kitchen", "/_authenticated/_shell/pantry/kitchen"],
+    ["/pantry/cook", "/_authenticated/_shell/pantry/cook"],
   ])("%s matches its page inside the Pantry layout", (path, routeId) => {
     const matches = router.matchRoutes(path);
     expect(matches.at(-1)?.routeId).toBe(routeId);

@@ -1,0 +1,45 @@
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { missingText, type LineStatus } from "./can-cook";
+import { approxLabel, formatKcal, formatProtein, type RecipeNutrition } from "./nutrition";
+
+export function NutritionLine({ facts }: { facts: RecipeNutrition }) {
+  return (
+    <p className="text-sm text-muted-foreground">
+      {formatKcal(facts.perServing.kcal)} · {formatProtein(facts.perServing.protein_g)} per serving ({approxLabel(facts.missing.length)})
+    </p>
+  );
+}
+
+type Props = {
+  title: string;
+  servings: number;
+  facts: RecipeNutrition;
+  /** Ingredients that are not fully in the pantry. */
+  missing?: readonly LineStatus[];
+  expiring?: boolean;
+  actions?: ReactNode;
+  className?: string;
+};
+
+export function RecipeCard({ title, servings, facts, missing = [], expiring = false, actions, className }: Props) {
+  return (
+    <article className={cn("space-y-2 rounded-2xl bg-card p-4", className)}>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-medium">{title}</h3>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {servings} {servings === 1 ? "serving" : "servings"}
+        </span>
+      </div>
+      <NutritionLine facts={facts} />
+      {expiring && <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Uses food that expires soon</span>}
+      {missing.length > 0 && (
+        <p className="text-sm">
+          <span className="font-medium">Missing: </span>
+          {missing.map(missingText).join(", ")}
+        </p>
+      )}
+      {actions && <div className="flex flex-wrap gap-2 pt-1">{actions}</div>}
+    </article>
+  );
+}

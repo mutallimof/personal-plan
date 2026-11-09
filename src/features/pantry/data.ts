@@ -53,14 +53,19 @@ export const itemsQuery = queryOptions({
   queryFn: async (): Promise<PantryItem[]> => check(await supabase.from("pantry_items").select("*").order("name")) ?? [],
 });
 
-export type PantrySettings = { aiCheck: boolean; aiLinesSent: number };
+export type PantrySettings = { aiCheck: boolean; aiLinesSent: number; aiRecipes: boolean; aiRecipeRequests: number };
 
 export const settingsQuery = queryOptions({
   queryKey: ["pantry", "settings"],
   queryFn: async (): Promise<PantrySettings> => {
     const user_id = await uid();
     const row = check(await supabase.from("pantry_settings").select("*").eq("user_id", user_id).maybeSingle());
-    return { aiCheck: row?.ai_check ?? false, aiLinesSent: row?.ai_lines_sent ?? 0 };
+    return {
+      aiCheck: row?.ai_check ?? false,
+      aiLinesSent: row?.ai_lines_sent ?? 0,
+      aiRecipes: row?.ai_recipes ?? false,
+      aiRecipeRequests: row?.ai_recipe_requests ?? 0,
+    };
   },
 });
 

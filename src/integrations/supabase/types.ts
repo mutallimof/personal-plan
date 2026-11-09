@@ -146,6 +146,69 @@ export type Database = {
         }
         Relationships: []
       }
+      recipes: {
+        Row: {
+          created_at: string
+          id: string
+          servings: number
+          source: string
+          steps: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          servings?: number
+          source?: string
+          steps?: string
+          title: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          servings?: number
+          source?: string
+          steps?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          id: string
+          name: string
+          pantry_item_id: string | null
+          position: number
+          quantity: number
+          recipe_id: string
+          unit: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          pantry_item_id?: string | null
+          position?: number
+          quantity?: number
+          recipe_id: string
+          unit?: string
+          user_id?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          pantry_item_id?: string | null
+          position?: number
+          quantity?: number
+          recipe_id?: string
+          unit?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_sessions: {
         Row: {
           date: string
@@ -246,6 +309,78 @@ export type Database = {
           id?: string
           name?: string
           position?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cooked_log: {
+        Row: {
+          cooked_at: string
+          id: string
+          kcal: number | null
+          kcal_missing: number
+          protein_g: number | null
+          recipe_id: string | null
+          removed: Json
+          servings: number
+          title: string
+          undone_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cooked_at?: string
+          id?: string
+          kcal?: number | null
+          kcal_missing?: number
+          protein_g?: number | null
+          recipe_id?: string | null
+          removed?: Json
+          servings: number
+          title: string
+          undone_at?: string | null
+          user_id?: string
+        }
+        Update: {
+          cooked_at?: string
+          id?: string
+          kcal?: number | null
+          kcal_missing?: number
+          protein_g?: number | null
+          recipe_id?: string | null
+          removed?: Json
+          servings?: number
+          title?: string
+          undone_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ingredient_nutrition: {
+        Row: {
+          basis: string
+          id: string
+          kcal: number
+          name: string
+          protein_g: number
+          source: string
+          user_id: string
+        }
+        Insert: {
+          basis: string
+          id?: string
+          kcal: number
+          name: string
+          protein_g: number
+          source?: string
+          user_id?: string
+        }
+        Update: {
+          basis?: string
+          id?: string
+          kcal?: number
+          name?: string
+          protein_g?: number
+          source?: string
           user_id?: string
         }
         Relationships: []
@@ -368,25 +503,34 @@ export type Database = {
         Row: {
           ai_check: boolean
           ai_lines_sent: number
+          ai_recipe_requests: number
+          ai_recipes: boolean
           aliases_seeded: boolean
           kitchen_seeded: boolean
           locations_seeded: boolean
+          nutrition_seeded: boolean
           user_id: string
         }
         Insert: {
           ai_check?: boolean
           ai_lines_sent?: number
+          ai_recipe_requests?: number
+          ai_recipes?: boolean
           aliases_seeded?: boolean
           kitchen_seeded?: boolean
           locations_seeded?: boolean
+          nutrition_seeded?: boolean
           user_id?: string
         }
         Update: {
           ai_check?: boolean
           ai_lines_sent?: number
+          ai_recipe_requests?: number
+          ai_recipes?: boolean
           aliases_seeded?: boolean
           kitchen_seeded?: boolean
           locations_seeded?: boolean
+          nutrition_seeded?: boolean
           user_id?: string
         }
         Relationships: []
@@ -492,7 +636,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cook_recipe: {
+        Args: {
+          p_changes: Json
+          p_kcal: number | null
+          p_kcal_missing: number
+          p_protein_g: number | null
+          p_recipe_id: string | null
+          p_servings: number
+          p_title: string
+        }
+        Returns: string
+      }
       seed_example_plan: { Args: never; Returns: undefined }
+      undo_cook: { Args: { p_log_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

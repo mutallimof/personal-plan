@@ -10,6 +10,7 @@ const TABS = [
   { to: "/pantry/receipt", label: "Receipt", exact: false },
   { to: "/pantry/dictionary", label: "Dictionary", exact: false },
   { to: "/pantry/kitchen", label: "Kitchen", exact: false },
+  { to: "/pantry/cook", label: "Cook", exact: false },
 ] as const;
 
 function PantryLayout() {
@@ -22,7 +23,7 @@ function PantryLayout() {
             key={t.to}
             to={t.to}
             activeOptions={{ exact: t.exact }}
-            className="flex h-11 flex-1 items-center justify-center rounded-full text-sm font-medium text-muted-foreground"
+            className="flex h-11 min-w-0 flex-1 items-center justify-center rounded-full px-1 text-xs font-medium text-muted-foreground sm:text-sm"
             activeProps={{ className: "bg-background text-foreground shadow-sm" }}
           >
             {t.label}
