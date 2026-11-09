@@ -49,7 +49,7 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - [ ] Open an exercise you created yourself: no card, no gap.
 - [ ] Network tab set to Offline, reload the page: no card and no broken-image icon.
 
-## Pantry (run migrations 0004 to 0007 first)
+## Pantry (run migrations 0004 to 0008 first)
 - [ ] **Items:** add milk (1 l) to the fridge; add it again: one row, quantity 2. Pick a date in the past: red expired marker; within 3 days: warning. Edit, move and delete work.
 - [ ] **Dictionary:** starter products are listed once. Add an alias, export JSON, delete it, import the file: it is back. A broken file is rejected with a message and changes nothing.
 - [ ] **Receipt, paste:** paste text with a few product lines; review screen lists unknown lines first. Confirm, skip and edit a line; Save adds items to the chosen place and the dictionary learns the confirmed names (import the same text again: they match).
@@ -58,7 +58,23 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - [ ] **AI check:** with `AI_API_KEY` set, turn it on; unmatched lines get suggestions you must accept. Turn off or remove the key: import still works.
 - [ ] **Kitchen:** map shows fridge, freezer, shelves with item emoji. Tap a zone: its items list. Tap the fridge: it zooms to its drawers; Back zooms out. Drag an emoji to another zone: the item moves. **Edit layout:** drag a zone, drag the green corner, type exact values, add and delete a zone. Export, change, import: layout restored.
 - [ ] Phone: the four tabs fit at 375 px; the map is usable by touch.
-- [ ] `npm test` runs 308 tests including parser, matching, review screen, kitchen geometry and map dragging.
+- [ ] `npm test` runs 471 tests including parser, matching, review screen, kitchen geometry, map dragging, the photo helper, cooking logic and the migration 0008 SQL on an in-memory Postgres.
+
+## Receipt photo helper (Pantry > Receipt > Photo of a receipt)
+- [ ] On a phone (deployed https build): **Take photo** opens the camera with a green frame and the text "Fit the whole receipt, hold the phone straight above it". Take a picture of a receipt on a table.
+- [ ] On a computer: **Choose a photo** works, and dropping an image on the dashed box works.
+- [ ] Take a dark photo (cover the light): "Too dark, try more light" with **Retake** and **Use anyway**. Same for a blurry one ("Too blurry...") and a tiny one ("Too small...").
+- [ ] A good photo goes straight to the preview: original on the left, cleaned-up on the right (cropped to the paper, text level). **Read receipt** reads the cleaned-up one; with **Use original** on it reads the original; **Black and white** changes the right-hand picture.
+- [ ] If the camera is refused, the phone's own camera app opens instead.
+- [ ] `npm run ocr:eval` on your own photos prints "original" and "helper" for each and a final comparison line.
+
+## Cook (run migration 0008 first)
+- [ ] Cook > Recipes > **New**: name, servings, ingredients (names suggest your pantry items), steps. **Save**. Search finds it by title and by ingredient. **Edit** and **Delete** work.
+- [ ] Cook > Nutrition lists starter foods (eggs, butter, rice, ...). Tap one, change kcal, save; add a food of your own; delete one.
+- [ ] Add pantry items for a recipe (Items tab). Cook > Can cook shows the recipe, with rough kcal and protein per serving and "approx., N ingredients missing" when an ingredient has no nutrition row. A recipe missing one or two ingredients shows what is missing; one missing three is not listed.
+- [ ] A recipe that uses an item expiring in the next days is listed above an otherwise equal one ("Uses food that expires soon").
+- [ ] **Cook this**: each ingredient shows the amount to remove. Change one, skip one, change servings (amounts rescale). **Cook**: the Items tab shows the lowered quantities; used-up items are gone. A message offers **Undo**; tap it: the amounts are back. The *Cooked recently* list shows the meal and today's totals, and **Undo** there disappears after 10 minutes.
+- [ ] With AI recipe ideas off, no ideas buttons appear. With `AI_API_KEY` set and the switch on, **Get ideas** shows up to three recipes; **Review and save** opens the form and nothing is saved until you press Save. The request counter goes up by one per request. With a wrong key, a short error appears and the page keeps working.
 
 ## What I was unsure about or did not finish
 - **Nothing was run against your real Supabase.** I tested every screen in a browser at 375 px and 1280 px with a fake session and a mocked API (flows: finish workout and update plan weight, tap-to-filter, add-to-session). Real inserts, row-level security and the two SQL files are untested until you run them.
@@ -75,3 +91,5 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - **Pantry, not verified in a real browser or against a real Supabase project** (it needs your login): everything above is covered by unit and jsdom tests only.
 - **Pantry, uncertain:** learned aliases are store-specific when a store is detected; no store parser exists yet (generic German only); dragging and resizing zones on a phone is coarse (the numeric fields are the fallback); pantry places can only be added through kitchen zones; the AI usage counter counts lines once the provider has answered; photo OCR downloads its engine from a CDN on first use; moving an item by drag merges equal items but changing the place in the edit dialog does not.
 - **Not started:** Phase G ("What can I cook").
+- **Photo helper, uncertain:** the quality limits (`photo-config.ts`) and the whole helper were tested on invented images only; nothing was run on real phone photos. The in-app camera (getUserMedia) could not be tried here. Crop assumes the paper is brighter than its surroundings; a white receipt on a white table is not cropped, and a curled or folded receipt is not straightened.
+- **Cook, uncertain:** the SQL functions were tested on PGlite (in-memory Postgres), not on Supabase itself. Day totals add up whole cooked servings (not what you ate). Recipe and nutrition matching is by name (case, accents and plural *s* ignored), so "Basmati rice" does not match "Rice". No recipe is preloaded, and the starter nutrition table has 42 foods only. Editing a recipe saves it in several steps (new ingredients first), not one transaction. Changing servings in *Cook this* resets amounts you edited.

@@ -2,6 +2,22 @@
 
 Changes on branch `build-v1`. Behavior changes to existing features are marked **Behavior**.
 
+## Next round (branch `build-next`)
+### Receipt photo helper
+- New: *Photo of a receipt* opens a capture screen (camera with a guide frame on phones, file picker and drag and drop on a computer), checks the photo (too dark, too bright, too blurry, too small) with *Retake* and *Use anyway*, then crops to the paper, straightens the text lines and stretches the contrast. A preview shows the original next to the cleaned-up photo, with a *Use original* switch.
+- **Behavior:** photos used to be converted to grey and contrast-stretched before reading; they now go through the helper (crop and straighten as well) unless *Use original* is on. On invented test receipts this read more lines exactly (100% against 84%); on real photos it is unmeasured (see `MANUAL_STEPS.md`).
+- **Behavior:** the *Black and white* switch moved from the Receipt page into the photo preview, and it now uses a local threshold that follows shadows instead of one global cut. It stays off by default because on the invented receipts it found fewer products than plain grey.
+- **Behavior:** `npm run ocr:eval` now reads every image twice (as taken, and through the helper) and prints both with the difference. Removed the unused `enhance` and `binarize` functions.
+- Tests: new unit tests for each step on invented images, and for the capture screen.
+
+### Cooking (Phase G)
+- New: Pantry > **Cook** with *Can cook*, *Recipes* and *Nutrition*. Recipes can be created, edited, searched and deleted without AI. Rough energy and protein per serving come from an editable nutrition table filled once from USDA FoodData Central (public domain); ingredients without data are left out and labeled ("approx., 2 ingredients missing").
+- *Can cook* ranks recipes against the pantry (complete first, then missing 1 or 2, preferring food that expires soon). Units g/kg and ml/l convert; pieces are never converted to grams.
+- *Cook this* shows every ingredient with the amount to remove (editable, skippable), updates the pantry and writes the log in one database transaction, and offers *Undo* for ten minutes. A *Cooked recently* list shows today's totals, labeled approximate.
+- Optional AI recipe ideas (off by default): only ingredient names, quantities and units are sent; the answer is validated, nutrition is computed from the table (the model's numbers are not used), and nothing is saved without you saving it. A request counter is shown.
+- New tables and functions in `migrations/0008_recipes.sql` (row-level security on all four tables). New dev dependency `@electric-sql/pglite`, used only to test the migration.
+- **Behavior:** the Pantry tab bar has a fifth tab, so the tabs are slightly narrower on phones. The shared settings query now also returns the AI recipe settings. `src/test/setup.ts` no longer assumes a browser window (so one test can run in plain Node). No gym behavior changed.
+
 ## Pantry (branch `build-pantry`, phases A to F)
 - New: Pantry replaces the "coming soon" page with four tabs. **Items** (places, units, expiry markers, equal items merge), **Receipt** (paste, PDF, HTML or photo OCR, then a review screen where unknown lines come first),
   **Dictionary** (product aliases, starter data, JSON import and export, learning from your confirmations) and **Kitchen** (SVG map of zones, drag items between zones, layout editor, JSON import and export).

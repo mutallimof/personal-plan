@@ -15,7 +15,7 @@ A personal life planner, currently focused on gym training.
 - Installable on a phone (PWA) with an offline copy of the plan
 - Week view (drag sessions onto days) and month calendar
 - AI chat panel that edits your plan through tools (add, swap, update, schedule, profile)
-- Pantry: items by place with expiry markers, a product dictionary, receipt import (paste, PDF, HTML, photo OCR) with a review screen, and a visual kitchen map
+- Pantry: items by place with expiry markers, a product dictionary, receipt import (paste, PDF, HTML, photo OCR with a photo helper) with a review screen, a visual kitchen map, and cooking: recipes, rough calories and protein, what you can cook now, and removing used food when you cook
 - "Languages" tab is a placeholder
 
 See `AUDIT.md` for open items.
@@ -40,12 +40,14 @@ Needs a `.env` with your Supabase URL and publishable key. Copy `.env.example` a
 - `src/routes/` file-based routes (`routeTree.gen.ts` is generated, do not edit)
 - `src/features/gym/` data access, AI tools, body map, exercise browser
 - `src/features/pantry/` pantry items, product dictionary, receipt parsing, OCR, review screen
+- `src/features/cook/` recipes, nutrition, what can I cook, cooking and undo
 - `scripts/ocr-eval/` measures OCR accuracy on your own receipt photos
+- `scripts/nutrition-import/` builds the starter nutrition table from USDA FoodData Central
 - `drizzle/migrations/` and `setup.sql` original schema and seed data; `migrations/` newer changes (run by hand in the Supabase SQL editor)
 
 ## Pantry
-Tabs: **Items**, **Receipt**, **Dictionary**, **Kitchen**. All tables are private to the signed-in user (row-level security, see
-`migrations/0004` to `0007`).
+Tabs: **Items**, **Receipt**, **Dictionary**, **Kitchen**, **Cook**. All tables are private to the signed-in user (row-level security, see
+`migrations/0004` to `0008`).
 
 **Items.** Items live in places (fridge, vegetable drawer, freezer, shelves, ...; a default set is created once).
 Adding an item with the same name and unit in the same place adds to the existing one. Items expiring within three
@@ -130,6 +132,48 @@ If the provider fails or is not configured, you get a message and the import car
   `x`, `y`, `width`, `height`, `parent` (another zone's key, or null) and `location` (the pantry place's name, created
   if missing). A file with any mistake is rejected as a whole, with every problem listed. New users start with a
   default template (`DEFAULT_LAYOUT` in `kitchen.ts`), created once.
+
+**Cook.** The *Cook* tab (`src/features/cook/`, `migrations/0008`) has three views.
+- *Can cook.* Your recipes ranked against the pantry: everything available first, then "missing 1" and "missing 2" with
+  what is missing named; recipes that use food expiring in the next three days come first inside each group.
+  Amounts are compared in grams, millilitres, pieces or packs: g/kg and ml/l convert into each other, but pieces are
+  never turned into grams or the other way round (such an ingredient is shown as "different unit"). Names match
+  ignoring case, accents and a plural *s*; a recipe ingredient can also be linked to one pantry item.
+- *Cook this* opens a confirmation listing every ingredient with the amount that will leave the pantry. Each amount is
+  editable (never above what you have), any ingredient can be skipped, and the servings can be changed. Taking food from
+  items that expire first, *Cook* reduces or removes the pantry quantities and writes the log in one database
+  transaction (`cook_recipe` in the migration: if any part fails, nothing changes). *Undo* (right after cooking, and in the
+  *Cooked recently* list for ten minutes) puts the amounts back (`undo_cook`). The list also shows today's energy and
+  protein of the meals cooked, labeled approximate.
+- *Recipes* and *Nutrition.* Create, edit, delete and search your own recipes (name, servings, ingredients with amount
+  and unit, steps) without any AI. The nutrition table holds energy and protein per 100 g, per 100 ml or per piece; you
+  can edit, add and delete rows. Per-serving numbers are summed from it. An ingredient with no matching row (or only a
+  row for another kind of unit) is left out and the label says so: "approx., 2 ingredients missing". Numbers are rough
+  by nature (raw weights, generic foods, no cooking losses).
+
+*Nutrition data.* The starter table (42 foods, 60 rows) is read from **USDA FoodData Central**, Foundation Foods
+(2025-12) and SR Legacy (2018-04), which are public domain (CC0 1.0); every row names its record, e.g.
+`USDA FoodData Central SR Legacy 2018-04, 171287: Egg, whole, raw, fresh; 1 large = 50 g`. Per-100-ml values are worked
+out from the dataset's own weight of one cup (236.588 ml); per-piece values from its portion weights. Nothing is
+estimated; foods the dataset does not have in a usable form (for example quark, passata, 1.5% milk, minced mixed meat)
+are left out and can be added in the UI. The table is copied into your account once (rows you delete stay deleted).
+To regenerate it, download the two CSV archives named in `scripts/nutrition-import/build.mjs`, unzip them and run
+`node scripts/nutrition-import/build.mjs <foundation folder> <sr legacy folder>`; edit the curated list in
+`scripts/nutrition-import/foods.json`, and look for foods with `node scripts/nutrition-import/search.mjs <folder> <word>`.
+
+**Optional AI recipe ideas (off by default).** The *AI recipe ideas* switch on the *Can cook* view is stored per user
+(`pantry_settings`). When on, *Get ideas* sends the provider you configured with the `AI_*` variables (server side, the key
+never reaches the browser) a list of ingredient **names, quantities and units** from your pantry, nothing else (no
+dates, places, notes or account data), and asks for three recipes as strict JSON. The answer is validated against a schema
+(anything malformed is dropped), ingredients are matched to your pantry names where they are the same food, and energy and
+protein are computed from your nutrition table: numbers from the model are never used. An idea is only a suggestion;
+*Review and save* opens the normal recipe form and nothing is stored until you save. Provider errors show a short message
+and the page keeps working; the number of requests made is shown next to the switch.
+
+*SQL tests.* `src/test/migrations.test.ts` runs migration 0008 on an in-memory Postgres (PGlite, a dev dependency) with a
+stand-in for Supabase's `auth.uid()`: it checks that the file can be run twice, that row-level security keeps users apart,
+that `cook_recipe` is all-or-nothing and that `undo_cook` restores amounts (also when the place was deleted meanwhile).
+It does not test Supabase itself.
 
 **Measuring accuracy.** `npm run ocr:eval` runs the same pipeline over your own photos, once as taken and once through the helper, and prints line-level accuracy for both;
 see `scripts/ocr-eval/README.md`. Receipt photos and text are private: never commit them (the samples folder is
