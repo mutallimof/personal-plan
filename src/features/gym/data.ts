@@ -1,12 +1,16 @@
 import { queryOptions, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import type { SetRow } from "./workout";
 
 export type Exercise = Tables<"exercises">;
 export type SessionExercise = Tables<"session_exercises"> & { exercise: Exercise };
 export type Session = Tables<"sessions"> & { items: SessionExercise[] };
 export type Scheduled = Tables<"scheduled_sessions">;
 export type Profile = Tables<"profiles">;
+export type WorkoutLog = Tables<"workout_logs">;
+export type WorkoutSet = Tables<"workout_sets">;
+export type BodyWeight = Tables<"body_weight_logs">;
 
 export const MUSCLE_GROUPS = ["chest", "back", "shoulders", "arms", "core", "legs"] as const;
 export const EQUIPMENT = ["dumbbell", "barbell", "cable", "machine", "bodyweight", "other"] as const;
@@ -60,6 +64,40 @@ export const profileQuery = queryOptions({
     const id = await uid();
     return check(await supabase.from("profiles").select("*").eq("id", id).maybeSingle());
   },
+});
+
+/** Latest finished workouts, newest first. */
+export const logsQuery = queryOptions({
+  queryKey: ["gym", "logs"],
+  queryFn: async () =>
+    check(await supabase.from("workout_logs").select("*").order("finished_at", { ascending: false }).limit(60)) ?? [],
+});
+
+/** Sets of the given exercises from the latest workouts. Empty id list -> no request. */
+export const historyQuery = (exerciseIds: string[]) =>
+  queryOptions({
+    queryKey: ["gym", "history", [...exerciseIds].sort().join(",")],
+    enabled: exerciseIds.length > 0,
+    queryFn: async (): Promise<{ logs: WorkoutLog[]; sets: WorkoutSet[] }> => {
+      const logs =
+        check(await supabase.from("workout_logs").select("*").order("finished_at", { ascending: false }).limit(60)) ?? [];
+      if (!logs.length) return { logs, sets: [] };
+      const sets =
+        check(
+          await supabase
+            .from("workout_sets")
+            .select("*")
+            .in("log_id", logs.map((l) => l.id))
+            .in("exercise_id", exerciseIds),
+        ) ?? [];
+      return { logs, sets };
+    },
+  });
+
+export const bodyWeightQuery = queryOptions({
+  queryKey: ["gym", "body-weight"],
+  queryFn: async () =>
+    check(await supabase.from("body_weight_logs").select("*").order("date", { ascending: true }).limit(260)) ?? [],
 });
 
 export function useInvalidateGym() {
@@ -118,6 +156,61 @@ export const gym = {
   },
   async unschedule(id: string) {
     check(await supabase.from("scheduled_sessions").delete().eq("id", id));
+  },
+  /** Save a finished workout. If the sets fail to save, the empty log is removed again. */
+  async saveWorkout(input: { sessionId: string; sessionName: string; startedAt: string; sets: SetRow[] }) {
+    const user_id = await uid();
+    const log = checkRow(
+      await supabase
+        .from("workout_logs")
+        .insert({
+          user_id,
+          session_id: input.sessionId,
+          session_name: input.sessionName,
+          started_at: input.startedAt,
+          finished_at: new Date().toISOString(),
+        })
+        .select()
+        .single(),
+    );
+    const { error } = await supabase
+      .from("workout_sets")
+      .insert(input.sets.map((s) => ({ ...s, user_id, log_id: log.id })));
+    if (error) {
+      await supabase.from("workout_logs").delete().eq("id", log.id);
+      throw new Error(error.message);
+    }
+    return log;
+  },
+  async duplicateSession(session: Session, position: number) {
+    const copy = await gym.createSession(`${session.name} copy`, position);
+    const user_id = await uid();
+    if (session.items.length) {
+      const { error } = await supabase.from("session_exercises").insert(
+        session.items.map((it, i) => ({
+          user_id,
+          session_id: copy.id,
+          exercise_id: it.exercise_id,
+          position: i,
+          sets: it.sets,
+          reps: it.reps,
+          weight_kg: it.weight_kg,
+          weight_note: it.weight_note,
+        })),
+      );
+      if (error) {
+        await supabase.from("sessions").delete().eq("id", copy.id);
+        throw new Error(error.message);
+      }
+    }
+    return copy;
+  },
+  async saveBodyWeight(date: string, weight_kg: number) {
+    const user_id = await uid();
+    check(await supabase.from("body_weight_logs").upsert({ user_id, date, weight_kg }, { onConflict: "user_id,date" }));
+  },
+  async deleteBodyWeight(id: string) {
+    check(await supabase.from("body_weight_logs").delete().eq("id", id));
   },
   async seedExample() {
     check(await supabase.rpc("seed_example_plan"));

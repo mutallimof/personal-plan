@@ -211,6 +211,102 @@ export type Database = {
         }
         Relationships: []
       }
+      body_weight_logs: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          user_id?: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
+      workout_logs: {
+        Row: {
+          created_at: string
+          finished_at: string
+          id: string
+          session_id: string | null
+          session_name: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string
+          id?: string
+          session_id?: string | null
+          session_name: string
+          started_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string
+          id?: string
+          session_id?: string | null
+          session_name?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workout_sets: {
+        Row: {
+          done: boolean
+          exercise_id: string
+          id: string
+          log_id: string
+          planned_reps: string | null
+          planned_weight_kg: number | null
+          position: number
+          reps: number | null
+          set_number: number
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          done?: boolean
+          exercise_id: string
+          id?: string
+          log_id: string
+          planned_reps?: string | null
+          planned_weight_kg?: number | null
+          position?: number
+          reps?: number | null
+          set_number: number
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          done?: boolean
+          exercise_id?: string
+          id?: string
+          log_id?: string
+          planned_reps?: string | null
+          planned_weight_kg?: number | null
+          position?: number
+          reps?: number | null
+          set_number?: number
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

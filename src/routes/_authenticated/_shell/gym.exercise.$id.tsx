@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BodyMap } from "@/features/gym/BodyMap";
 import { exercisesQuery, gym, planQuery, useInvalidateGym, type Exercise } from "@/features/gym/data";
+import { ProgressChart, ReadyBadge, isReady, useExerciseSessions } from "@/features/gym/progress-ui";
+import { Loading, QueryError } from "@/components/states";
 
 export const Route = createFileRoute("/_authenticated/_shell/gym/exercise/$id")({
   validateSearch: (s: Record<string, unknown>): { item?: string | undefined } => ({
@@ -112,11 +114,12 @@ function ExercisePage() {
   const { item: itemId } = Route.useSearch();
   const navigate = useNavigate();
   const invalidate = useInvalidateGym();
-  const { data: all, isLoading } = useQuery(exercisesQuery);
+  const { data: all, isLoading, isError, refetch } = useQuery(exercisesQuery);
   const { data: sessions = [] } = useQuery(planQuery);
   const [adding, setAdding] = useState(false);
 
   const exercise = all?.find((e) => e.id === id);
+  const history = useExerciseSessions(exercise ? [exercise.id] : []).byExercise.get(id);
   const fromSession = useMemo(() => {
     if (!itemId) return null;
     for (const s of sessions) {
@@ -134,7 +137,8 @@ function ExercisePage() {
     );
   }, [all, exercise]);
 
-  if (isLoading) return <div className="h-64 animate-pulse rounded-2xl bg-card" />;
+  if (isLoading) return <Loading rows={2} className="h-64" />;
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (!exercise) return <p className="text-muted-foreground">Exercise not found.</p>;
 
   const canSwap = !!fromSession && fromSession.item.exercise_id !== exercise.id;
@@ -151,7 +155,7 @@ function ExercisePage() {
     }
   }
 
-  const backClass = "inline-flex items-center gap-1 text-sm text-muted-foreground";
+  const backClass = "inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground";
 
   return (
     <div className="space-y-6">
@@ -173,7 +177,10 @@ function ExercisePage() {
         <div className="space-y-6 md:order-1">
           <header className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
-            <p className="text-sm capitalize text-muted-foreground">{exercise.equipment}</p>
+            <p className="flex items-center gap-2 text-sm capitalize text-muted-foreground">
+              {exercise.equipment}
+              {isReady(history) && <ReadyBadge />}
+            </p>
           </header>
 
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -196,6 +203,15 @@ function ExercisePage() {
           )}
         </div>
       </div>
+
+      {history && history.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-semibold">Progress</h2>
+          <div className="rounded-2xl bg-card p-4">
+            <ProgressChart sessions={history} />
+          </div>
+        </section>
+      )}
 
       {variations.length > 0 && (
         <section className="space-y-3">

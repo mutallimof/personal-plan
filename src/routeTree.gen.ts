@@ -23,6 +23,7 @@ import { Route as AuthenticatedShellGymMonthRouteImport } from './routes/_authen
 import { Route as AuthenticatedShellGymWeekRouteImport } from './routes/_authenticated/_shell/gym.week'
 import { Route as AuthenticatedShellGymExerciseIdRouteImport } from './routes/_authenticated/_shell/gym.exercise.$id'
 import { Route as AuthenticatedShellGymSessionIdRouteImport } from './routes/_authenticated/_shell/gym.session.$id'
+import { Route as AuthenticatedShellGymWorkoutIdRouteImport } from './routes/_authenticated/_shell/gym.workout.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -100,6 +101,12 @@ const AuthenticatedShellGymSessionIdRoute =
     path: '/session/$id',
     getParentRoute: () => AuthenticatedShellGymRoute,
   } as any)
+const AuthenticatedShellGymWorkoutIdRoute =
+  AuthenticatedShellGymWorkoutIdRouteImport.update({
+    id: '/workout/$id',
+    path: '/workout/$id',
+    getParentRoute: () => AuthenticatedShellGymRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/gym/': typeof AuthenticatedShellGymIndexRoute
   '/gym/exercise/$id': typeof AuthenticatedShellGymExerciseIdRoute
   '/gym/session/$id': typeof AuthenticatedShellGymSessionIdRoute
+  '/gym/workout/$id': typeof AuthenticatedShellGymWorkoutIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -127,6 +135,7 @@ export interface FileRoutesByTo {
   '/gym': typeof AuthenticatedShellGymIndexRoute
   '/gym/exercise/$id': typeof AuthenticatedShellGymExerciseIdRoute
   '/gym/session/$id': typeof AuthenticatedShellGymSessionIdRoute
+  '/gym/workout/$id': typeof AuthenticatedShellGymWorkoutIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -144,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/_shell/gym/': typeof AuthenticatedShellGymIndexRoute
   '/_authenticated/_shell/gym/exercise/$id': typeof AuthenticatedShellGymExerciseIdRoute
   '/_authenticated/_shell/gym/session/$id': typeof AuthenticatedShellGymSessionIdRoute
+  '/_authenticated/_shell/gym/workout/$id': typeof AuthenticatedShellGymWorkoutIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/gym/'
     | '/gym/exercise/$id'
     | '/gym/session/$id'
+    | '/gym/workout/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/gym'
     | '/gym/exercise/$id'
     | '/gym/session/$id'
+    | '/gym/workout/$id'
   id:
     | '__root__'
     | '/'
@@ -189,6 +201,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_shell/gym/'
     | '/_authenticated/_shell/gym/exercise/$id'
     | '/_authenticated/_shell/gym/session/$id'
+    | '/_authenticated/_shell/gym/workout/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShellGymSessionIdRouteImport
       parentRoute: typeof AuthenticatedShellGymRoute
     }
+    '/_authenticated/_shell/gym/workout/$id': {
+      id: '/_authenticated/_shell/gym/workout/$id'
+      path: '/workout/$id'
+      fullPath: '/gym/workout/$id'
+      preLoaderRoute: typeof AuthenticatedShellGymWorkoutIdRouteImport
+      parentRoute: typeof AuthenticatedShellGymRoute
+    }
   }
 }
 
@@ -307,6 +327,7 @@ interface AuthenticatedShellGymRouteChildren {
   AuthenticatedShellGymIndexRoute: typeof AuthenticatedShellGymIndexRoute
   AuthenticatedShellGymExerciseIdRoute: typeof AuthenticatedShellGymExerciseIdRoute
   AuthenticatedShellGymSessionIdRoute: typeof AuthenticatedShellGymSessionIdRoute
+  AuthenticatedShellGymWorkoutIdRoute: typeof AuthenticatedShellGymWorkoutIdRoute
 }
 
 const AuthenticatedShellGymRouteChildren: AuthenticatedShellGymRouteChildren = {
@@ -316,6 +337,7 @@ const AuthenticatedShellGymRouteChildren: AuthenticatedShellGymRouteChildren = {
   AuthenticatedShellGymIndexRoute: AuthenticatedShellGymIndexRoute,
   AuthenticatedShellGymExerciseIdRoute: AuthenticatedShellGymExerciseIdRoute,
   AuthenticatedShellGymSessionIdRoute: AuthenticatedShellGymSessionIdRoute,
+  AuthenticatedShellGymWorkoutIdRoute: AuthenticatedShellGymWorkoutIdRoute,
 }
 
 const AuthenticatedShellGymRouteWithChildren =
