@@ -33,3 +33,28 @@ export function loc(p: Partial<PantryLocation> = {}): PantryLocation {
     ...p,
   };
 }
+
+// Invented receipts. Never put real ones in the repo.
+export const SYNTHETIC_RECEIPT = `REWE Markt GmbH
+Beispielstrasse 12
+12345 Musterstadt
+Tel: 01234 567890
+Datum: 12.03.2026   Zeit: 17:45
+
+H-MILCH 1,5% 1L            0,99 B
+BIO EIER M 10ER            2,49 B
+BANANEN                    1,89 B
+  0,946 kg x 1,99 EUR/kg
+JOGHURT NATUR              1,47 B
+  3 x 0,49
+SPAGHETTI 500G             1,29 B
+TOMATEN 3 x 1,29           3,87 B
+PFAND 0,25                 0,25 A
+RABATT                    -0,50 B
+--------------------------------
+SUMME                      9,81
+BAR                       10,00
+RUECKGELD                  0,19
+MWST A 19%    B 7%
+GURKE                      0,79 B
+`;
