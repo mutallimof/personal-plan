@@ -8,6 +8,11 @@ A personal life planner, currently focused on gym training.
 - Session page: rename, delete, edit sets / reps / weight, swap, add and remove exercises
 - Exercise library: virtualized list, search, muscle and equipment filters, common exercises shown first.
   38 exercises are seeded; an optional import adds about 850 more (see below)
+- Workout logging ("Start workout"), per-exercise progress charts and a "Go up" marker, next suggested session
+- Body diagram on exercise pages and as a tap-to-filter in the library; exercise pages with steps and variations
+- Session page: drag to reorder, duplicate, estimated duration
+- Profile page with a weekly body-weight log
+- Installable on a phone (PWA) with an offline copy of the plan
 - Week view (drag sessions onto days) and month calendar
 - AI chat panel that edits your plan through tools (add, swap, update, schedule, profile)
 - "Languages" and "Pantry" tabs are placeholders
@@ -26,6 +31,9 @@ npm run build   # production build
 npm test        # vitest
 ```
 Needs a `.env` with your Supabase URL and publishable key. Copy `.env.example` and fill it in.
+
+## Docs
+- `MANUAL_STEPS.md` things only you can do (SQL files to paste, Supabase settings), `TESTING.md` what to click, `DEPLOY.md` hosting, `CHANGELOG.md` what changed.
 
 ## Layout
 - `src/routes/` file-based routes (`routeTree.gen.ts` is generated, do not edit)

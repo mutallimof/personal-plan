@@ -65,7 +65,7 @@ function PlanPage() {
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <h2 className="truncate text-lg font-semibold">{s.name}</h2>
-                  <span className="shrink-0 text-xs text-muted-foreground">{s.items.length} exercises</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{s.items.length} {s.items.length === 1 ? "exercise" : "exercises"}</span>
                 </div>
                 <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
                   {s.items.slice(0, 4).map((it) => (

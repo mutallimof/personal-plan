@@ -71,7 +71,7 @@ function ItemRow({
             {...attributes}
             {...listeners}
             aria-label={`Reorder ${item.exercise.name}`}
-            className="-ml-2 flex h-11 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="-ml-2 flex h-11 w-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <GripVertical className="h-5 w-5" />
           </button>
@@ -79,7 +79,7 @@ function ItemRow({
             to="/gym/exercise/$id"
             params={{ id: item.exercise_id }}
             search={{ item: item.id }}
-            className="truncate font-medium hover:underline"
+            className="flex min-h-11 min-w-0 items-center truncate font-medium hover:underline"
           >
             {item.exercise.name}
           </Link>
@@ -220,12 +220,13 @@ function SessionPage() {
             }
           }}
         />
-        <Button variant="outline" size="icon" aria-label="Duplicate session" onClick={duplicate}>
+        <Button variant="outline" size="icon" className="shrink-0" aria-label="Duplicate session" onClick={duplicate}>
           <Copy className="h-4 w-4" />
         </Button>
         <Button
           variant="outline"
           size="icon"
+          className="shrink-0"
           aria-label="Delete session"
           onClick={async () => {
             if (!confirm(`Delete "${session.name}"?`)) return;

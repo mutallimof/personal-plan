@@ -184,11 +184,11 @@ function ExercisePage() {
           </header>
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button className="h-12 flex-1" onClick={() => setAdding(true)}>
+            <Button className="h-12 sm:flex-1" onClick={() => setAdding(true)}>
               <Plus className="mr-1 h-4 w-4" /> Add to a session
             </Button>
             {canSwap && (
-              <Button variant="outline" className="h-12 flex-1" onClick={swap}>
+              <Button variant="outline" className="h-12 sm:flex-1" onClick={swap}>
                 <Repeat className="mr-1 h-4 w-4" /> Swap to this variation
               </Button>
             )}

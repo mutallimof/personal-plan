@@ -159,7 +159,7 @@ function WorkoutPage() {
               <span />
               <span>Reps</span>
               <span>kg</span>
-              <span className="sr-only">Done</span>
+              <span aria-hidden />
               {ex.sets.map((s, si) => (
                 <SetRow
                   key={si}

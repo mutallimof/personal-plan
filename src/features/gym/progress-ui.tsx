@@ -1,7 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { ArrowUp } from "lucide-react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { historyQuery } from "./data";
 import { chartPoints, readyToGoUp, sessionsFor, type ExerciseSession } from "./progress";
 
@@ -20,7 +29,7 @@ export function useExerciseSessions(exerciseIds: string[]) {
 /** Small marker shown when the last two sessions hit the top of the rep range. */
 export function ReadyBadge() {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+    <span className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
       <ArrowUp className="h-3 w-3" aria-hidden /> Go up
     </span>
   );
@@ -30,7 +39,8 @@ export function isReady(sessions: ExerciseSession[] | undefined) {
   return !!sessions && readyToGoUp(sessions);
 }
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 export function ProgressChart({ sessions }: { sessions: ExerciseSession[] }) {
   const data = chartPoints(sessions.slice(0, 20)).map((p) => ({ ...p, label: fmtDate(p.date) }));
@@ -40,14 +50,49 @@ export function ProgressChart({ sessions }: { sessions: ExerciseSession[] }) {
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
           <CartesianGrid stroke="#E5E7EB" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#6B7280" }} tickLine={false} axisLine={false} />
-          {hasWeight && <YAxis yAxisId="w" tick={{ fontSize: 11, fill: "#6B7280" }} tickLine={false} axisLine={false} width={44} />}
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11, fill: "#6B7280" }}
+            tickLine={false}
+            axisLine={false}
+          />
+          {hasWeight && (
+            <YAxis
+              yAxisId="w"
+              allowDecimals={false}
+              domain={[(m: number) => Math.floor(m - 2), (m: number) => Math.ceil(m + 2)]}
+              tick={{ fontSize: 11, fill: "#6B7280" }}
+              tickLine={false}
+              axisLine={false}
+              width={44}
+            />
+          )}
           <YAxis yAxisId="r" orientation="right" hide />
           <Tooltip />
+          <Legend iconType="plainline" wrapperStyle={{ fontSize: 12 }} />
           {hasWeight && (
-            <Line yAxisId="w" type="monotone" dataKey="weight" name="kg" stroke="#22C55E" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+            <Line
+              yAxisId="w"
+              type="monotone"
+              dataKey="weight"
+              name="kg"
+              stroke="#22C55E"
+              strokeWidth={2.5}
+              dot={{ r: 3 }}
+              connectNulls
+            />
           )}
-          <Line yAxisId="r" type="monotone" dataKey="reps" name="reps" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3 }} connectNulls />
+          <Line
+            yAxisId="r"
+            type="monotone"
+            dataKey="reps"
+            name="reps"
+            stroke="#9CA3AF"
+            strokeWidth={2}
+            strokeDasharray="4 3"
+            dot={{ r: 3 }}
+            connectNulls
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>

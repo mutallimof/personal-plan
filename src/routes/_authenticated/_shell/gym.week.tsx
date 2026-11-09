@@ -198,7 +198,7 @@ function WeekPage() {
   const sameMonth = start.getMonth() === end.getMonth();
   const title = `${fmt(start, { month: "short", day: "numeric" })} – ${
     sameMonth
-      ? fmt(end, { day: "numeric", year: "numeric" })
+      ? `${end.getDate()}, ${end.getFullYear()}`
       : fmt(end, { month: "short", day: "numeric", year: "numeric" })
   }`;
 

@@ -170,7 +170,7 @@ function BodyWeight() {
                 <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
                   <CartesianGrid stroke="#E5E7EB" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#6B7280" }} tickLine={false} axisLine={false} />
-                  <YAxis domain={["auto", "auto"]} tick={{ fontSize: 11, fill: "#6B7280" }} tickLine={false} axisLine={false} width={44} />
+                  <YAxis domain={[(m: number) => Math.floor(m - 1), (m: number) => Math.ceil(m + 1)]} allowDecimals={false} tick={{ fontSize: 11, fill: "#6B7280" }} tickLine={false} axisLine={false} width={44} />
                   <Tooltip />
                   <Line type="monotone" dataKey="kg" stroke="#22C55E" strokeWidth={2.5} dot={{ r: 3 }} />
                 </LineChart>
