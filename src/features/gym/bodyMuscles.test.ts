@@ -33,3 +33,20 @@ describe("highlightData", () => {
     }
   });
 });
+
+import { PACKAGE_TO_MUSCLES, matchesRegion } from "./bodyMuscles";
+
+describe("region filter", () => {
+  it("matches exercises whose primary muscles belong to the tapped region", () => {
+    expect(matchesRegion(["lats"], "upper-back")).toBe(true);
+    expect(matchesRegion(["shoulders-side"], "front-deltoids")).toBe(true);
+    expect(matchesRegion(["shoulders-side"], "back-deltoids")).toBe(true);
+    expect(matchesRegion(["quads"], "hamstring")).toBe(false);
+  });
+  it("ignores regions with no exercise data", () => {
+    expect(matchesRegion(["chest"], "neck")).toBe(false);
+  });
+  it("only points at muscle ids that the forward mapping knows", () => {
+    for (const ids of Object.values(PACKAGE_TO_MUSCLES)) for (const id of ids!) expect(MUSCLE_TO_PACKAGE[id]).toBeDefined();
+  });
+});

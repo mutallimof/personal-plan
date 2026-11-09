@@ -46,3 +46,33 @@ export function highlightData(primary: string[], secondary: string[]): IExercise
   if (s.size) data.push({ name: "secondary", muscles: [...s], frequency: 1 });
   return data;
 }
+
+/**
+ * Package muscle (what you tap on the diagram) -> our muscle ids (what exercises are tagged with).
+ * Regions with no exercise data (head, neck, knees, soleus) map to nothing.
+ */
+export const PACKAGE_TO_MUSCLES: Partial<Record<Muscle, string[]>> = {
+  chest: ["chest"],
+  "front-deltoids": ["shoulders-front", "shoulders-side"],
+  "back-deltoids": ["shoulders-rear", "shoulders-side"],
+  biceps: ["biceps"],
+  triceps: ["triceps"],
+  forearm: ["forearms"],
+  abs: ["abs"],
+  obliques: ["obliques"],
+  "upper-back": ["upper-back", "lats"],
+  trapezius: ["traps"],
+  "lower-back": ["lower-back"],
+  gluteal: ["glutes"],
+  abductors: ["glutes"],
+  adductor: ["quads"],
+  quadriceps: ["quads"],
+  hamstring: ["hamstrings"],
+  calves: ["calves"],
+};
+
+/** Does an exercise train the tapped region as a primary muscle? */
+export function matchesRegion(primaryMuscles: string[], region: Muscle): boolean {
+  const ours = PACKAGE_TO_MUSCLES[region];
+  return !!ours && primaryMuscles.some((m) => ours.includes(m));
+}

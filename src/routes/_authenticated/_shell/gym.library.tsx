@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/_shell/gym/library")({
   component: () => (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">Library</h1>
-      <ExerciseBrowser />
+      <ExerciseBrowser bodyFilter />
     </div>
   ),
 });
