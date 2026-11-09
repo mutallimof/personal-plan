@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Minus, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { addQty } from "./items";
@@ -72,5 +73,31 @@ export function Stepper({
         <Plus className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+/** Quantity with -/+ buttons. Typing works freely; only valid numbers are passed on. */
+export function QuantityField({ value, unit, onChange }: { value: number; unit: Unit; onChange: (next: number) => void }) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => {
+    setText((t) => (Number(t) === value ? t : String(value)));
+  }, [value]);
+  return (
+    <Stepper value={value} unit={unit} onChange={(n) => onChange(Math.max(0, n))}>
+      <Input
+        aria-label="Quantity"
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        className="h-11 min-w-0 text-center text-base sm:text-sm"
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          const n = Number(e.target.value);
+          if (e.target.value !== "" && Number.isFinite(n) && n >= 0) onChange(n);
+        }}
+      />
+    </Stepper>
   );
 }

@@ -1,3 +1,4 @@
+import type { Alias } from "./aliases";
 import type { PantryItem, PantryLocation } from "./model";
 
 // Builders for tests. Not used by the app.
@@ -29,6 +30,23 @@ export function loc(p: Partial<PantryLocation> = {}): PantryLocation {
     kind: "fridge",
     parent_id: null,
     position: 0,
+    created_at: "2026-01-01T00:00:00Z",
+    ...p,
+  };
+}
+
+export function alias(raw_text: string, product_name: string, p: Partial<Alias> = {}): Alias {
+  n++;
+  return {
+    id: `a${n}`,
+    user_id: "u1",
+    raw_text,
+    store: null,
+    product_name,
+    category: "dairy",
+    default_location_kind: null,
+    default_unit: "pieces",
+    default_quantity: null,
     created_at: "2026-01-01T00:00:00Z",
     ...p,
   };

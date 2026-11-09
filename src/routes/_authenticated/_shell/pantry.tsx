@@ -7,6 +7,7 @@ export const Route = createFileRoute("/_authenticated/_shell/pantry")({
 
 const TABS = [
   { to: "/pantry", label: "Items", exact: true },
+  { to: "/pantry/receipt", label: "Receipt", exact: false },
   { to: "/pantry/dictionary", label: "Dictionary", exact: false },
 ] as const;
 

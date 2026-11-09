@@ -1,0 +1,57 @@
+import { useState } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { ReviewScreen } from "./ReviewScreen";
+import { buildReview, type ReviewLine } from "./review";
+import { alias, loc } from "./fixtures";
+import type { ParsedLine } from "./receipt";
+
+const places = [loc({ id: "shelf", name: "Shelf", kind: "shelf" })];
+const dict = [alias("SPAGHETTI", "Spaghetti", { category: "dry goods", default_location_kind: "shelf" })];
+const parsed = (raw_text: string, lineNo: number): ParsedLine => ({ lineNo, raw_text, quantity: 1, unit: null, unit_price: null, total_price: null });
+
+function Harness({ onSave }: { onSave: () => void }) {
+  const [lines, setLines] = useState<ReviewLine[]>(() => buildReview([parsed("SPAGHETTI", 1), parsed("ZZZ ONE", 2)], dict, null, places));
+  return (
+    <ReviewScreen lines={lines} locations={places} store="" onStore={() => {}} onChange={setLines} onSave={onSave} onBack={() => {}} saving={false} />
+  );
+}
+
+describe("ReviewScreen", () => {
+  it("lists lines that need a look first and blocks saving until they are resolved", () => {
+    render(<Harness onSave={() => {}} />);
+    const rows = screen.getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("ZZZ ONE");
+    expect(rows[1]).toHaveTextContent("SPAGHETTI");
+    expect(screen.getByRole("button", { name: "1 to check" })).toBeDisabled();
+  });
+
+  it("enables saving once the line is confirmed", () => {
+    const onSave = vi.fn();
+    render(<Harness onSave={onSave} />);
+    fireEvent.click(screen.getByRole("button", { name: /looks right/i }));
+    const save = screen.getByRole("button", { name: "Save 2 items" });
+    expect(save).toBeEnabled();
+    fireEvent.click(save);
+    expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it("counts a line as resolved when it is skipped", () => {
+    render(<Harness onSave={() => {}} />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Skip" })[0] as HTMLElement);
+    expect(screen.getByRole("button", { name: "Save 1 item" })).toBeEnabled();
+  });
+
+  it("editing the name counts as confirming", () => {
+    render(<Harness onSave={() => {}} />);
+    fireEvent.change(screen.getAllByLabelText("Name")[0] as HTMLElement, { target: { value: "Zzz" } });
+    expect(screen.getByRole("button", { name: "Save 2 items" })).toBeEnabled();
+  });
+
+  it("blocks saving a line with an empty name", () => {
+    render(<Harness onSave={() => {}} />);
+    fireEvent.change(screen.getAllByLabelText("Name")[0] as HTMLElement, { target: { value: " " } });
+    expect(screen.getByText("Name is empty")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save 2 items" })).toBeDisabled();
+  });
+});

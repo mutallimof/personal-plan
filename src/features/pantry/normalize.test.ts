@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeReceiptText as n } from "./normalize";
+import { displayName, normalizeReceiptText as n } from "./normalize";
 
 describe("normalizeReceiptText", () => {
   it("uppercases and collapses spaces", () => {
@@ -60,5 +60,18 @@ describe("normalizeReceiptText", () => {
     for (const s of ["Bio Vollmilch 3,5% 1L 1,15 B", "4008400 GOUDA 400G 3,99 A", "Käse Süß", "H-MILCH 1,5%"]) {
       expect(n(n(s))).toBe(n(s));
     }
+  });
+});
+
+describe("displayName", () => {
+  it("makes receipt text readable", () => {
+    expect(displayName("BIO EIER M 10ER 2,49 B")).toBe("Bio Eier M");
+    expect(displayName("KÄSE GOUDA 400G 3,99 A")).toBe("Käse Gouda");
+    expect(displayName("VOLLMILCH 3,5% 1L")).toBe("Vollmilch 3.5%");
+    expect(displayName("H-MILCH")).toBe("H-Milch");
+  });
+
+  it("returns an empty string when nothing is left", () => {
+    expect(displayName("1,99 B")).toBe("");
   });
 });

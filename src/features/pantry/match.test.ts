@@ -1,20 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { levenshtein, matchAlias, similarity } from "./match";
-import type { Alias } from "./aliases";
+import { alias as makeAlias } from "./fixtures";
 
-let n = 0;
-const alias = (raw_text: string, product_name: string, store: string | null = null): Alias => ({
-  id: `a${++n}`,
-  user_id: "u1",
-  raw_text,
-  store,
-  product_name,
-  category: "dairy",
-  default_location_kind: null,
-  default_unit: "pieces",
-  default_quantity: null,
-  created_at: "2026-01-01T00:00:00Z",
-});
+const alias = (raw_text: string, product_name: string, store: string | null = null) => makeAlias(raw_text, product_name, { store });
 
 describe("levenshtein / similarity", () => {
   it("counts edits", () => {
