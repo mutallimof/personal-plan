@@ -9,6 +9,7 @@ const TABS = [
   { to: "/pantry", label: "Items", exact: true },
   { to: "/pantry/receipt", label: "Receipt", exact: false },
   { to: "/pantry/dictionary", label: "Dictionary", exact: false },
+  { to: "/pantry/kitchen", label: "Kitchen", exact: false },
 ] as const;
 
 function PantryLayout() {

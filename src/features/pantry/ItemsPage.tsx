@@ -5,29 +5,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Empty, Loading, QueryError } from "@/components/states";
-import { cn } from "@/lib/utils";
 import { itemsQuery, locationsQuery, pantry, useInvalidatePantry } from "./data";
 import { ItemDialog } from "./ItemDialog";
-import { expiryLabel, expiryState, filterItems, groupByLocation, NO_FILTER, roundQty, type ItemFilter } from "./items";
+import { filterItems, groupByLocation, NO_FILTER, roundQty, type ItemFilter } from "./items";
 import { CATEGORIES, CATEGORY_EMOJI, isCategory, isUnit, type PantryItem } from "./model";
-import { asOptions, Choice, locationOptions, Stepper } from "./ui";
+import { asOptions, Choice, ExpiryBadge, locationOptions, Stepper } from "./ui";
 
 type Dialog = { item?: PantryItem } | null;
-
-function ExpiryBadge({ expiresOn, today }: { expiresOn: string | null; today: Date }) {
-  const state = expiryState(expiresOn, today);
-  if (state !== "soon" && state !== "expired") return null;
-  return (
-    <span
-      className={cn(
-        "rounded-full px-2 py-0.5 text-xs font-medium",
-        state === "expired" ? "bg-destructive/10 text-destructive" : "bg-amber-100 text-amber-900",
-      )}
-    >
-      {expiryLabel(expiresOn, today)}
-    </span>
-  );
-}
 
 function ItemRow({ item, today, onEdit }: { item: PantryItem; today: Date; onEdit: () => void }) {
   const invalidate = useInvalidatePantry();

@@ -17,7 +17,7 @@ function check<T>(res: { data: T; error: { message: string } | null }): T {
 }
 
 /** Creates the default places the first time, never again (so places you delete stay deleted). */
-async function ensureDefaultLocations(): Promise<void> {
+export async function ensureDefaultLocations(): Promise<void> {
   const user_id = await uid();
   const settings = check(await supabase.from("pantry_settings").select("*").eq("user_id", user_id).maybeSingle());
   if (settings?.locations_seeded) return;
@@ -93,6 +93,18 @@ export const pantry = {
     }
     check(await supabase.from("pantry_items").insert({ ...item, user_id }));
     return null;
+  },
+  /** Moves an item to another place. If an equal item is already there, the two become one. */
+  async moveItem(item: PantryItem, locationId: string | null): Promise<void> {
+    const base = supabase.from("pantry_items").select("*").eq("unit", item.unit);
+    const sameSpot = check(await (locationId ? base.eq("location_id", locationId) : base.is("location_id", null))) ?? [];
+    const same = findDuplicate(sameSpot, { name: item.name, unit: item.unit, location_id: locationId }, item.id);
+    if (!same) {
+      check(await supabase.from("pantry_items").update({ location_id: locationId }).eq("id", item.id));
+      return;
+    }
+    check(await supabase.from("pantry_items").update(mergePatch(same, item)).eq("id", same.id));
+    check(await supabase.from("pantry_items").delete().eq("id", item.id));
   },
   async updateItem(id: string, patch: TablesUpdate<"pantry_items">): Promise<void> {
     check(await supabase.from("pantry_items").update(patch).eq("id", id));

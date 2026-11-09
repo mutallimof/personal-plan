@@ -15,7 +15,7 @@ A personal life planner, currently focused on gym training.
 - Installable on a phone (PWA) with an offline copy of the plan
 - Week view (drag sessions onto days) and month calendar
 - AI chat panel that edits your plan through tools (add, swap, update, schedule, profile)
-- Pantry: items by place with expiry markers, a product dictionary, and receipt import (paste, PDF, HTML, photo OCR) with a review screen
+- Pantry: items by place with expiry markers, a product dictionary, receipt import (paste, PDF, HTML, photo OCR) with a review screen, and a visual kitchen map
 - "Languages" tab is a placeholder
 
 See `AUDIT.md` for open items.
@@ -44,8 +44,8 @@ Needs a `.env` with your Supabase URL and publishable key. Copy `.env.example` a
 - `drizzle/migrations/` and `setup.sql` original schema and seed data; `migrations/` newer changes (run by hand in the Supabase SQL editor)
 
 ## Pantry
-Tabs: **Items**, **Receipt**, **Dictionary**. All tables are private to the signed-in user (row-level security, see
-`migrations/0004` to `0006`).
+Tabs: **Items**, **Receipt**, **Dictionary**, **Kitchen**. All tables are private to the signed-in user (row-level security, see
+`migrations/0004` to `0007`).
 
 **Items.** Items live in places (fridge, vegetable drawer, freezer, shelves, ...; a default set is created once).
 Adding an item with the same name and unit in the same place adds to the existing one. Items expiring within three
@@ -90,6 +90,20 @@ What is sent is only the normalized text of those lines (no prices or weights), 
 anything from your pantry. The answer (name, category, usual place) appears as a suggestion on the line; it is applied
 only when you tap *Use*, and the line still has to be confirmed. A counter shows how many lines have been sent so far.
 If the provider fails or is not configured, you get a message and the import carries on.
+
+**Visual kitchen.** The *Kitchen* tab draws your kitchen as rounded rectangles ("zones") on a fixed 100 x 70 canvas
+(`migrations/0007`). Each zone points at a pantry place, and shows that place's items as small category emoji.
+- *Look.* Tap a zone to see its items below (or beside) the map. A zone with compartments, like the fridge with its
+  drawers, opens up to fill the map; use *Back* to zoom out. Drag an emoji onto another zone to move that item
+  there; if an equal item is already in the new place the two are merged. Dropping on a zone that is not linked to a
+  place does nothing.
+- *Edit.* *Edit layout* lets you drag zones (what is inside moves along), drag the green corner to resize, or type
+  exact values; add, rename, re-link, nest and delete zones. Deleting a zone keeps its pantry place and items.
+- *Your own layout.* *Export* writes `kitchen-layout.json`; *Import* replaces the layout with one from a file after
+  asking. The file is a list of zones: `key`, `name`, `kind` (fridge, freezer, shelf, drawer, cupboard, other),
+  `x`, `y`, `width`, `height`, `parent` (another zone's key, or null) and `location` (the pantry place's name, created
+  if missing). A file with any mistake is rejected as a whole, with every problem listed. New users start with a
+  default template (`DEFAULT_LAYOUT` in `kitchen.ts`), created once.
 
 **Measuring accuracy.** `npm run ocr:eval` runs the same pipeline over your own photos and prints line-level accuracy;
 see `scripts/ocr-eval/README.md`. Receipt photos and text are private: never commit them (the samples folder is

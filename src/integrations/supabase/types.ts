@@ -250,6 +250,51 @@ export type Database = {
         }
         Relationships: []
       }
+      kitchen_zones: {
+        Row: {
+          created_at: string
+          height: number
+          id: string
+          kind: string
+          location_id: string | null
+          name: string
+          parent_id: string | null
+          position: number
+          user_id: string
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          height: number
+          id?: string
+          kind?: string
+          location_id?: string | null
+          name: string
+          parent_id?: string | null
+          position?: number
+          user_id?: string
+          width: number
+          x: number
+          y: number
+        }
+        Update: {
+          created_at?: string
+          height?: number
+          id?: string
+          kind?: string
+          location_id?: string | null
+          name?: string
+          parent_id?: string | null
+          position?: number
+          user_id?: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           added_at: string
@@ -324,6 +369,7 @@ export type Database = {
           ai_check: boolean
           ai_lines_sent: number
           aliases_seeded: boolean
+          kitchen_seeded: boolean
           locations_seeded: boolean
           user_id: string
         }
@@ -331,6 +377,7 @@ export type Database = {
           ai_check?: boolean
           ai_lines_sent?: number
           aliases_seeded?: boolean
+          kitchen_seeded?: boolean
           locations_seeded?: boolean
           user_id?: string
         }
@@ -338,6 +385,7 @@ export type Database = {
           ai_check?: boolean
           ai_lines_sent?: number
           aliases_seeded?: boolean
+          kitchen_seeded?: boolean
           locations_seeded?: boolean
           user_id?: string
         }

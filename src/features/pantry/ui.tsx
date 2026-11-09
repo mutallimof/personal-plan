@@ -3,7 +3,7 @@ import { Minus, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { addQty } from "./items";
+import { addQty, expiryLabel, expiryState } from "./items";
 import { stepFor, type PantryLocation, type Unit } from "./model";
 import { locationPath, sortLocations } from "./locations";
 
@@ -99,5 +99,21 @@ export function QuantityField({ value, unit, onChange }: { value: number; unit: 
         }}
       />
     </Stepper>
+  );
+}
+
+/** Red "Expired" or amber "Tomorrow" marker; nothing for items that are fine. */
+export function ExpiryBadge({ expiresOn, today }: { expiresOn: string | null; today: Date }) {
+  const state = expiryState(expiresOn, today);
+  if (state !== "soon" && state !== "expired") return null;
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-xs font-medium",
+        state === "expired" ? "bg-destructive/10 text-destructive" : "bg-amber-100 text-amber-900",
+      )}
+    >
+      {expiryLabel(expiresOn, today)}
+    </span>
   );
 }
