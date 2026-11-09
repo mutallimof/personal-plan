@@ -49,6 +49,17 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - [ ] Open an exercise you created yourself: no card, no gap.
 - [ ] Network tab set to Offline, reload the page: no card and no broken-image icon.
 
+## Pantry (run migrations 0004 to 0007 first)
+- [ ] **Items:** add milk (1 l) to the fridge; add it again: one row, quantity 2. Pick a date in the past: red expired marker; within 3 days: warning. Edit, move and delete work.
+- [ ] **Dictionary:** starter products are listed once. Add an alias, export JSON, delete it, import the file: it is back. A broken file is rejected with a message and changes nothing.
+- [ ] **Receipt, paste:** paste text with a few product lines; review screen lists unknown lines first. Confirm, skip and edit a line; Save adds items to the chosen place and the dictionary learns the confirmed names (import the same text again: they match).
+- [ ] **Receipt, PDF and HTML:** pick a digital receipt file; text appears and parses like pasted text.
+- [ ] **Receipt, photo:** pick a clear photo of a receipt (first use needs internet). Progress shows; low-confidence lines are marked. Nothing is uploaded: the Network tab shows only the engine download.
+- [ ] **AI check:** with `AI_API_KEY` set, turn it on; unmatched lines get suggestions you must accept. Turn off or remove the key: import still works.
+- [ ] **Kitchen:** map shows fridge, freezer, shelves with item emoji. Tap a zone: its items list. Tap the fridge: it zooms to its drawers; Back zooms out. Drag an emoji to another zone: the item moves. **Edit layout:** drag a zone, drag the green corner, type exact values, add and delete a zone. Export, change, import: layout restored.
+- [ ] Phone: the four tabs fit at 375 px; the map is usable by touch.
+- [ ] `npm test` runs 308 tests including parser, matching, review screen, kitchen geometry and map dragging.
+
 ## What I was unsure about or did not finish
 - **Nothing was run against your real Supabase.** I tested every screen in a browser at 375 px and 1280 px with a fake session and a mocked API (flows: finish workout and update plan weight, tap-to-filter, add-to-session). Real inserts, row-level security and the two SQL files are untested until you run them.
 - **Google sign-in, the AI chat and onboarding "Generate my plan"** were not touched or tested.
@@ -61,3 +72,6 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - **Muscle diagram:** the package has no lat or side-delt region, so lats use "upper back" and side delts light both deltoids; tapping "upper back" matches lat exercises too.
 - **Not done / out of scope:** Phase 3 (Languages, Pantry). Week/month views were only given error states and larger tap targets. The `drizzle/` folder and `setup.sql` were left as they were; new SQL lives in `migrations/`.
 - `PLAN.md` is still untracked (it was never committed); I left it that way.
+- **Pantry, not verified in a real browser or against a real Supabase project** (it needs your login): everything above is covered by unit and jsdom tests only.
+- **Pantry, uncertain:** learned aliases are store-specific when a store is detected; no store parser exists yet (generic German only); dragging and resizing zones on a phone is coarse (the numeric fields are the fallback); pantry places can only be added through kitchen zones; the AI usage counter counts lines once the provider has answered; photo OCR downloads its engine from a CDN on first use; moving an item by drag merges equal items but changing the place in the edit dialog does not.
+- **Not started:** Phase G ("What can I cook").

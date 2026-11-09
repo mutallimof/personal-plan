@@ -2,6 +2,14 @@
 
 Changes on branch `build-v1`. Behavior changes to existing features are marked **Behavior**.
 
+## Pantry (branch `build-pantry`, phases A to F)
+- New: Pantry replaces the "coming soon" page with four tabs. **Items** (places, units, expiry markers, equal items merge), **Receipt** (paste, PDF, HTML or photo OCR, then a review screen where unknown lines come first),
+  **Dictionary** (product aliases, starter data, JSON import and export, learning from your confirmations) and **Kitchen** (SVG map of zones, drag items between zones, layout editor, JSON import and export).
+- Optional AI check for unmatched receipt lines: off by default, text only, suggestions are never saved without your confirmation.
+- New tables (migrations `0004` to `0007`, RLS on all): `pantry_locations`, `pantry_items`, `pantry_settings`, `product_aliases`, `kitchen_zones`.
+- New packages: `pdfjs-dist`, `tesseract.js`; dev `tsx`, `jpeg-js`, `pngjs`. New script `npm run ocr:eval`.
+- Existing behavior: the Pantry nav entry now opens real pages instead of the placeholder. The gym section is unchanged.
+
 ## Exercise movement images
 - The exercise page shows a start/end picture card above the steps. The two pictures fade into each other every second; a pause/play button stops it. With reduced motion on, both pictures show side by side and nothing animates.
 - Pictures are not copied into the repo. They load from the public free-exercise-db repo (Unlicense, no separate image terms) through jsDelivr, pinned to a commit. Lazy-loaded, 3:2 box reserved up front.
