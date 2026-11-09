@@ -1,7 +1,6 @@
 # Lifeplan
 
-A personal life planner, currently focused on gym training. Built with
-[Lovable](https://lovable.dev).
+A personal life planner, currently focused on gym training.
 
 ## What works today
 - Email/password and Google sign-in (Supabase auth), onboarding profile form
@@ -13,7 +12,7 @@ A personal life planner, currently focused on gym training. Built with
 - AI chat panel that edits your plan through tools (add, swap, update, schedule, profile)
 - "Languages" and "Pantry" tabs are placeholders
 
-See `AUDIT.md` for what is still missing (week view, month view, exercise detail page).
+See `AUDIT.md` for open items.
 
 ## Stack
 TanStack Start (React 19) + Vite, Tailwind v4 + shadcn/Radix, Supabase (auth, Postgres with RLS),
@@ -26,12 +25,12 @@ npm run dev     # dev server
 npm run build   # production build
 npm test        # vitest
 ```
-Needs `.env` with the Supabase URL and publishable key (already in the repo for the Lovable project).
+Needs a `.env` with your Supabase URL and publishable key. Copy `.env.example` and fill it in.
 
 ## Layout
 - `src/routes/` file-based routes (`routeTree.gen.ts` is generated, do not edit)
 - `src/features/gym/` data access, AI tools, body map, exercise browser
-- `drizzle/migrations/` database schema and seed data (managed by Lovable)
+- `drizzle/migrations/` and `setup.sql` original schema and seed data; `migrations/` newer changes (run by hand in the Supabase SQL editor)
 
 ## Exercise import (optional)
 `scripts/exercise-import/` turns [free-exercise-db](https://github.com/yuhonas/free-exercise-db)
