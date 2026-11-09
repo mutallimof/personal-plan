@@ -91,3 +91,12 @@ export function groupByLocation(items: readonly PantryItem[], locations: readonl
 }
 
 const sortItems = (list: PantryItem[]) => [...list].sort((a, b) => a.name.localeCompare(b.name));
+
+/** What changes on an existing item when an equal one is added: quantities add up, the sooner expiry wins. */
+export function mergePatch(
+  existing: Pick<PantryItem, "quantity" | "expires_on">,
+  incoming: { quantity?: number; expires_on?: string | null },
+): { quantity: number; expires_on: string | null } {
+  const dates = [existing.expires_on, incoming.expires_on ?? null].filter((d): d is string => !!d).sort();
+  return { quantity: addQty(existing.quantity, incoming.quantity ?? 1), expires_on: dates[0] ?? null };
+}

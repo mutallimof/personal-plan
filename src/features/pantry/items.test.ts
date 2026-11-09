@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addQty, expiryLabel, expiryState, filterItems, findDuplicate, groupByLocation, NO_FILTER } from "./items";
+import { addQty, expiryLabel, mergePatch, expiryState, filterItems, findDuplicate, groupByLocation, NO_FILTER } from "./items";
 import { item, loc } from "./fixtures";
 import { stepFor } from "./model";
 
@@ -121,5 +121,24 @@ describe("groupByLocation", () => {
     );
     expect(groups.map((g) => g.label)).toEqual(["Fridge", "No place"]);
     expect(groups[1]?.items).toHaveLength(2);
+  });
+});
+
+describe("mergePatch", () => {
+  it("adds the quantities", () => {
+    expect(mergePatch({ quantity: 2, expires_on: null }, { quantity: 3 }).quantity).toBe(5);
+    expect(mergePatch({ quantity: 0.1, expires_on: null }, { quantity: 0.2 }).quantity).toBe(0.3);
+  });
+
+  it("counts a missing incoming quantity as one", () => {
+    expect(mergePatch({ quantity: 2, expires_on: null }, {}).quantity).toBe(3);
+  });
+
+  it("keeps the sooner expiry date", () => {
+    expect(mergePatch({ quantity: 1, expires_on: "2026-07-01" }, { expires_on: "2026-06-20" }).expires_on).toBe("2026-06-20");
+    expect(mergePatch({ quantity: 1, expires_on: "2026-06-20" }, { expires_on: "2026-07-01" }).expires_on).toBe("2026-06-20");
+    expect(mergePatch({ quantity: 1, expires_on: null }, { expires_on: "2026-07-01" }).expires_on).toBe("2026-07-01");
+    expect(mergePatch({ quantity: 1, expires_on: "2026-07-01" }, {}).expires_on).toBe("2026-07-01");
+    expect(mergePatch({ quantity: 1, expires_on: null }, {}).expires_on).toBeNull();
   });
 });

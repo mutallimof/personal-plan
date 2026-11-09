@@ -1,0 +1,184 @@
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Empty, Loading, QueryError } from "@/components/states";
+import { cn } from "@/lib/utils";
+import { itemsQuery, locationsQuery, pantry, useInvalidatePantry } from "./data";
+import { ItemDialog } from "./ItemDialog";
+import { expiryLabel, expiryState, filterItems, groupByLocation, NO_FILTER, roundQty, type ItemFilter } from "./items";
+import { CATEGORIES, CATEGORY_EMOJI, isCategory, isUnit, type PantryItem } from "./model";
+import { asOptions, Choice, locationOptions, Stepper } from "./ui";
+
+type Dialog = { item?: PantryItem } | null;
+
+function ExpiryBadge({ expiresOn, today }: { expiresOn: string | null; today: Date }) {
+  const state = expiryState(expiresOn, today);
+  if (state !== "soon" && state !== "expired") return null;
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-xs font-medium",
+        state === "expired" ? "bg-destructive/10 text-destructive" : "bg-amber-100 text-amber-900",
+      )}
+    >
+      {expiryLabel(expiresOn, today)}
+    </span>
+  );
+}
+
+function ItemRow({ item, today, onEdit }: { item: PantryItem; today: Date; onEdit: () => void }) {
+  const invalidate = useInvalidatePantry();
+  const unit = isUnit(item.unit) ? item.unit : "pieces";
+
+  async function change(next: number) {
+    try {
+      if (next > 0) {
+        await pantry.updateItem(item.id, { quantity: roundQty(next) });
+      } else {
+        await pantry.removeItem(item.id);
+        toast(`Removed ${item.name}`, {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              const { id: _id, user_id: _user, added_at: _added, ...rest } = item;
+              pantry.addItem(rest).then(invalidate, () => toast.error("Could not undo"));
+            },
+          },
+        });
+      }
+      await invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save");
+    }
+  }
+
+  return (
+    <li className="flex items-center gap-2 px-3 py-2">
+      <button type="button" onClick={onEdit} className="min-h-11 min-w-0 flex-1 text-left" aria-label={`Edit ${item.name}`}>
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="truncate font-medium">{item.name}</span>
+          <ExpiryBadge expiresOn={item.expires_on} today={today} />
+        </span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {isCategory(item.category) ? CATEGORY_EMOJI[item.category] : ""} {item.category}
+          {item.note ? ` · ${item.note}` : ""}
+        </span>
+      </button>
+      <Stepper value={item.quantity} unit={unit} onChange={change}>
+        <span className="min-w-14 text-center text-sm tabular-nums">
+          {item.quantity} {item.unit}
+        </span>
+      </Stepper>
+    </li>
+  );
+}
+
+export function ItemsPage() {
+  const items = useQuery(itemsQuery);
+  const locations = useQuery(locationsQuery);
+  const [filter, setFilter] = useState<ItemFilter>(NO_FILTER);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const today = useMemo(() => new Date(), []);
+
+  const groups = useMemo(
+    () => groupByLocation(filterItems(items.data ?? [], locations.data ?? [], filter), locations.data ?? []),
+    [items.data, locations.data, filter],
+  );
+
+  if (items.isLoading || locations.isLoading) return <Loading rows={3} className="h-28" />;
+  if (items.isError || locations.isError) {
+    return (
+      <QueryError
+        onRetry={() => {
+          void items.refetch();
+          void locations.refetch();
+        }}
+      />
+    );
+  }
+
+  const places = locations.data ?? [];
+  const filtering = filter.query || filter.category || filter.locationId;
+
+  return (
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label="Search"
+              placeholder="Search"
+              className="h-11 rounded-xl pl-9 text-base sm:text-sm"
+              value={filter.query}
+              onChange={(e) => setFilter({ ...filter, query: e.target.value })}
+            />
+          </div>
+          <Button className="h-11" onClick={() => setDialog({})}>
+            <Plus className="mr-1 h-4 w-4" /> Add
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Choice
+            label="Category"
+            value={filter.category}
+            onChange={(category) => setFilter({ ...filter, category })}
+            options={asOptions(CATEGORIES)}
+            empty="All categories"
+          />
+          <Choice
+            label="Place"
+            value={filter.locationId}
+            onChange={(locationId) => setFilter({ ...filter, locationId })}
+            options={locationOptions(places)}
+            empty="All places"
+          />
+        </div>
+      </div>
+
+      {groups.length === 0 ? (
+        <Empty
+          action={
+            filtering ? (
+              <Button variant="outline" className="h-11" onClick={() => setFilter(NO_FILTER)}>
+                Clear filters
+              </Button>
+            ) : (
+              <Button className="h-11" onClick={() => setDialog({})}>
+                Add your first item
+              </Button>
+            )
+          }
+        >
+          {filtering ? "Nothing matches." : "Your pantry is empty."}
+        </Empty>
+      ) : (
+        groups.map((g) => (
+          <section key={g.id ?? "none"} className="space-y-1.5">
+            <h2 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {g.label} · {g.items.length}
+            </h2>
+            <ul className="divide-y rounded-2xl bg-card">
+              {g.items.map((i) => (
+                <ItemRow key={i.id} item={i} today={today} onEdit={() => setDialog({ item: i })} />
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
+
+      {dialog && (
+        <ItemDialog
+          key={dialog.item?.id ?? "new"}
+          item={dialog.item}
+          locations={places}
+          defaultLocationId={filter.locationId}
+          onClose={() => setDialog(null)}
+        />
+      )}
+    </div>
+  );
+}

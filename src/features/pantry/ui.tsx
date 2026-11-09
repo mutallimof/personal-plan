@@ -1,0 +1,76 @@
+import type { ReactNode } from "react";
+import { Minus, Plus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { addQty } from "./items";
+import { stepFor, type PantryLocation, type Unit } from "./model";
+import { locationPath, sortLocations } from "./locations";
+
+/** Select that takes plain string options and an optional "empty" choice (Radix forbids an empty value). */
+export function Choice({
+  value,
+  onChange,
+  options,
+  empty,
+  label,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: readonly { value: string; label: string }[];
+  /** Label for the "nothing chosen" option; omit when a value is required. */
+  empty?: string;
+  label: string;
+  className?: string;
+}) {
+  const NONE = "__none__";
+  return (
+    <Select value={value || NONE} onValueChange={(v) => onChange(v === NONE ? "" : v)}>
+      <SelectTrigger aria-label={label} className={cn("h-11 rounded-xl bg-background text-base sm:text-sm", className)}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {empty !== undefined && <SelectItem value={NONE}>{empty}</SelectItem>}
+        {options.map((o) => (
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export const asOptions = (values: readonly string[]) => values.map((v) => ({ value: v, label: v }));
+
+export function locationOptions(locations: readonly PantryLocation[]) {
+  return sortLocations(locations).map((l) => ({ value: l.id, label: locationPath(locations, l.id) }));
+}
+
+/** Round +/- buttons around a quantity. */
+export function Stepper({
+  value,
+  unit,
+  onChange,
+  children,
+}: {
+  value: number;
+  unit: Unit;
+  onChange: (next: number) => void;
+  children?: ReactNode;
+}) {
+  const step = stepFor(unit);
+  const btn =
+    "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  return (
+    <div className="flex items-center gap-1">
+      <button type="button" aria-label="Less" className={btn} onClick={() => onChange(addQty(value, -step))}>
+        <Minus className="h-4 w-4" />
+      </button>
+      {children}
+      <button type="button" aria-label="More" className={btn} onClick={() => onChange(addQty(value, step))}>
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}

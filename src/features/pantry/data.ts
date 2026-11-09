@@ -1,6 +1,7 @@
 import { queryOptions, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { findDuplicate, mergePatch } from "./items";
 import { DEFAULT_LOCATIONS } from "./locations";
 import type { PantryItem, PantryLocation } from "./model";
 
@@ -60,9 +61,23 @@ export function useInvalidatePantry() {
 export type NewItem = Omit<TablesInsert<"pantry_items">, "id" | "user_id" | "added_at">;
 
 export const pantry = {
-  async addItem(item: NewItem): Promise<void> {
+  /**
+   * Adds an item. If the same name and unit already sit in the same place, adds to that item instead
+   * and returns it; returns null when a new row was created.
+   */
+  async addItem(item: NewItem): Promise<PantryItem | null> {
     const user_id = await uid();
+    const unit = item.unit ?? "pieces";
+    const locationId = item.location_id ?? null;
+    const base = supabase.from("pantry_items").select("*").eq("unit", unit);
+    const sameSpot = check(await (locationId ? base.eq("location_id", locationId) : base.is("location_id", null))) ?? [];
+    const same = findDuplicate(sameSpot, { name: item.name, unit, location_id: locationId });
+    if (same) {
+      check(await supabase.from("pantry_items").update(mergePatch(same, item)).eq("id", same.id));
+      return same;
+    }
     check(await supabase.from("pantry_items").insert({ ...item, user_id }));
+    return null;
   },
   async updateItem(id: string, patch: TablesUpdate<"pantry_items">): Promise<void> {
     check(await supabase.from("pantry_items").update(patch).eq("id", id));
