@@ -1,26 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { generateResponse, GatewayError, type ResponsesInputItem } from "@lovable.dev/ai-gateway";
+import { AiError, complete, extractJson, type ChatMessage } from "./ai-provider.server";
 import { TOOL_DEFS, runTool } from "./ai-tools.server";
 
-const MODEL = "openai/gpt-6-astra" as const;
-
-function outputText(output: unknown[]): string {
-  let text = "";
-  for (const item of output as Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>) {
-    if (item.type === "message") for (const c of item.content ?? []) if (c.type === "output_text") text += c.text ?? "";
-  }
-  return text.trim();
-}
-
 function friendly(e: unknown) {
-  if (e instanceof GatewayError) {
-    console.error("AI gateway error", e.code, e.ids);
-    if (e.code === "rate_limited") return "I'm a bit busy right now — try again in a moment.";
-    if (e.httpStatus === 402) return "AI credits are used up for this workspace.";
-  } else console.error(e);
+  if (e instanceof AiError) return e.message;
+  console.error(e);
   return "Something went wrong — please try again.";
 }
+
+/** Parses a tool call's arguments. Returns null when the model sent something that isn't a JSON object. */
+function parseArgs(raw: string | undefined): Record<string, unknown> | null {
+  if (!raw || !raw.trim()) return {};
+  try {
+    const v: unknown = JSON.parse(raw);
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+const MAX_BAD_CALLS = 3;
 
 export const sendChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -51,43 +51,46 @@ Rules:
 - If a request is ambiguous (e.g. exercise appears in several sessions and it matters), ask one short question instead of guessing. Same weight change across all sessions is fine without asking.
 - After changes, reply with ONE short sentence confirming what changed. No tips, no extra text.`;
 
-    const input: ResponsesInputItem[] = (history ?? [])
-      .reverse()
-      .map((m) =>
-        m.role === "assistant"
-          ? ({ role: "assistant", content: [{ type: "output_text", text: m.content }] } as ResponsesInputItem)
-          : ({ role: "user", content: m.content } as ResponsesInputItem),
-      );
+    const messages: ChatMessage[] = [
+      { role: "system", content: instructions },
+      ...(history ?? []).reverse().map((m): ChatMessage =>
+        m.role === "assistant" ? { role: "assistant", content: m.content } : { role: "user", content: m.content },
+      ),
+    ];
 
     let reply = "";
     let changed = false;
+    let badCalls = 0;
     try {
       for (let step = 0; step < 12; step++) {
-        const res = await generateResponse({
-          model: MODEL,
-          instructions,
-          input,
-          tools: TOOL_DEFS,
-          include: ["reasoning.encrypted_content"],
-        });
-        const output = (res.output ?? []) as unknown[];
-        const calls = (output as Array<{ type?: string; name?: string; arguments?: string; call_id?: string }>).filter(
-          (o) => o.type === "function_call",
-        );
-        if (!calls.length) {
-          reply = outputText(output);
+        const res = await complete(messages, TOOL_DEFS);
+        if (!res.toolCalls.length) {
+          reply = res.text;
           break;
         }
-        input.push(...(output as ResponsesInputItem[]));
-        for (const c of calls) {
+        messages.push(res.message);
+        for (const c of res.toolCalls) {
           let result: unknown;
-          try {
-            result = await runTool(supabase, userId, c.name ?? "", JSON.parse(c.arguments || "{}"));
-            if (c.name !== "get_plan" && c.name !== "search_exercises") changed = true;
-          } catch (e) {
-            result = { error: e instanceof Error ? e.message : String(e) };
+          const args = parseArgs(c.function.arguments);
+          if (args === null) {
+            // Malformed tool call: tell the model so it can retry, but don't loop forever.
+            badCalls++;
+            result = { error: "Arguments were not a valid JSON object. Call the tool again with valid JSON." };
+          } else {
+            try {
+              result = await runTool(supabase, userId, c.function.name, args);
+              if (c.function.name !== "get_plan" && c.function.name !== "search_exercises") changed = true;
+            } catch (e) {
+              result = { error: e instanceof Error ? e.message : String(e) };
+            }
           }
-          input.push({ type: "function_call_output", call_id: c.call_id ?? "", output: JSON.stringify(result) } as ResponsesInputItem);
+          messages.push({ role: "tool", tool_call_id: c.id, content: JSON.stringify(result) });
+        }
+        if (badCalls >= MAX_BAD_CALLS) {
+          reply = changed
+            ? "I made some changes but got confused part-way — please check your plan."
+            : "I couldn't understand the AI's response — please try again.";
+          break;
         }
       }
     } catch (e) {
@@ -111,50 +114,41 @@ export const generatePlan = createServerFn({ method: "POST" })
     if (!profile || !exercises) throw new Error("Missing profile");
     const n = Math.max(1, Math.min(7, profile.sessions_per_week ?? 3));
 
-    const schema = {
-      type: "object",
-      additionalProperties: false,
-      required: ["sessions"],
-      properties: {
-        sessions: {
-          type: "array",
-          items: {
-            type: "object",
-            additionalProperties: false,
-            required: ["name", "exercises"],
-            properties: {
-              name: { type: "string" },
-              exercises: {
-                type: "array",
-                items: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["slug", "sets", "reps"],
-                  properties: { slug: { type: "string", enum: exercises.map((e) => e.slug) }, sets: { type: "integer" }, reps: { type: "string" } },
-                },
-              },
-            },
-          },
-        },
+    const reply = await complete([
+      {
+        role: "system",
+        content:
+          'You design gym plans. Use only the given exercise slugs. Session names are short (e.g. Upper A, Lower, Push). 5-7 exercises per session. Reply with ONLY a JSON object, no prose, shaped like {"sessions":[{"name":"Upper A","exercises":[{"slug":"...","sets":3,"reps":"8-10"}]}]}.',
       },
-    };
-
-    const res = await generateResponse({
-      model: MODEL,
-      instructions: "You design gym plans. Use only the given exercise slugs. Session names are short (e.g. Upper A, Lower, Push). 5-7 exercises per session.",
-      input: [
-        {
-          role: "user",
-          content: `Create exactly ${n} sessions. Height ${profile.height_cm} cm, weight ${profile.weight_kg} kg, goal: ${profile.goal}, experience: ${profile.experience}.
+      {
+        role: "user",
+        content: `Create exactly ${n} sessions. Height ${profile.height_cm} cm, weight ${profile.weight_kg} kg, goal: ${profile.goal}, experience: ${profile.experience}.
 Library: ${exercises.map((e) => `${e.slug} (${e.equipment}, ${e.primary_muscles.join("/")})`).join("; ")}. Return JSON.`,
-        },
-      ],
-      text: { format: { type: "json_schema", name: "plan", strict: true, schema } },
+      },
+    ]).catch((e: unknown) => {
+      throw new Error(friendly(e));
     });
-    const parsed = JSON.parse(outputText((res.output ?? []) as unknown[])) as {
-      sessions: { name: string; exercises: { slug: string; sets: number; reps: string }[] }[];
+    const raw = extractJson(reply.text) as { sessions?: unknown };
+    const parsed = {
+      sessions: (Array.isArray(raw.sessions) ? raw.sessions : [])
+        .map((s: { name?: unknown; exercises?: unknown }) => ({
+          name: typeof s?.name === "string" && s.name.trim() ? s.name.trim().slice(0, 60) : "Session",
+          exercises: (Array.isArray(s?.exercises) ? s.exercises : [])
+            .map((e: { slug?: unknown; sets?: unknown; reps?: unknown }) => ({
+              slug: String(e?.slug ?? ""),
+              sets: Number.isInteger(e?.sets) ? Math.max(1, Math.min(10, e.sets as number)) : 3,
+              reps: typeof e?.reps === "string" || typeof e?.reps === "number" ? String(e.reps) : "8-12",
+            })),
+        }))
+        .slice(0, n),
     };
+    if (!parsed.sessions.length) throw new AiError("The AI didn't return any sessions — please try again.");
     const bySlug = new Map(exercises.map((e) => [e.slug, e.id]));
+
+    const bySlugIds = bySlug;
+    if (!parsed.sessions.some((s) => s.exercises.some((e) => bySlugIds.has(e.slug)))) {
+      throw new AiError("The AI picked exercises that aren't in the library — please try again.");
+    }
 
     await supabase.from("sessions").delete().eq("user_id", userId);
     for (const [i, s] of parsed.sessions.entries()) {

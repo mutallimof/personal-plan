@@ -17,7 +17,7 @@ See `AUDIT.md` for what is still missing (week view, month view, exercise detail
 
 ## Stack
 TanStack Start (React 19) + Vite, Tailwind v4 + shadcn/Radix, Supabase (auth, Postgres with RLS),
-TanStack Query, Lovable AI Gateway.
+TanStack Query, and a configurable AI provider (Gemini by default, see `.env.example`).
 
 ## Run
 ```sh
