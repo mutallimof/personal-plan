@@ -211,6 +211,90 @@ export type Database = {
         }
         Relationships: []
       }
+      pantry_items: {
+        Row: {
+          added_at: string
+          category: string
+          expires_on: string | null
+          id: string
+          location_id: string | null
+          name: string
+          note: string | null
+          quantity: number
+          unit: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          category?: string
+          expires_on?: string | null
+          id?: string
+          location_id?: string | null
+          name: string
+          note?: string | null
+          quantity?: number
+          unit?: string
+          user_id?: string
+        }
+        Update: {
+          added_at?: string
+          category?: string
+          expires_on?: string | null
+          id?: string
+          location_id?: string | null
+          name?: string
+          note?: string | null
+          quantity?: number
+          unit?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pantry_locations: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          parent_id: string | null
+          position: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          parent_id?: string | null
+          position?: number
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          parent_id?: string | null
+          position?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pantry_settings: {
+        Row: {
+          locations_seeded: boolean
+          user_id: string
+        }
+        Insert: {
+          locations_seeded?: boolean
+          user_id?: string
+        }
+        Update: {
+          locations_seeded?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       body_weight_logs: {
         Row: {
           created_at: string
