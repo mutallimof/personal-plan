@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Dumbbell, Languages, LogOut, ShoppingBasket } from "lucide-react";
+import { Dumbbell, Languages, LogOut, ShoppingBasket, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { profileQuery } from "@/features/gym/data";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -14,6 +14,7 @@ const NAV = [
   { to: "/gym", label: "Gym", icon: Dumbbell },
   { to: "/languages", label: "Languages", icon: Languages },
   { to: "/pantry", label: "Pantry", icon: ShoppingBasket },
+  { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
 function Shell() {
@@ -70,9 +71,6 @@ function Shell() {
             <Icon className="h-5 w-5" /> {label}
           </Link>
         ))}
-        <button onClick={signOut} className="flex h-16 flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
-          <LogOut className="h-5 w-5" /> Sign out
-        </button>
       </nav>
 
       <ChatPanel />

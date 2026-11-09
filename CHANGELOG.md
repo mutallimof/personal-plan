@@ -13,3 +13,18 @@ Changes on branch `build-v1`. Behavior changes to existing features are marked *
 - Favicon is a green dumbbell SVG (`public/favicon.svg`); the old `favicon.ico` was removed. `twitter:card` changed to `summary` (there is no share image).
 - `AGENTS.md` rewritten for this project; README, AUDIT, error messages and `supabase/config.toml` project id updated.
 - Package renamed `tanstack_start_ts` to `lifeplan`; `drizzle.config.ts` reads `DATABASE_URL`.
+
+## Phase 1: gym features
+- **Workout logging.** "Start workout" on every session card and session page opens `/gym/workout/:id`. Tick sets, edit reps and weight per set,
+  finish to save. An unfinished workout is kept in the browser and resumes on reload. After finishing, if every set was done and you lifted
+  heavier than planned, "Update plan weight?" offers to change the plan. New tables `workout_logs`, `workout_sets` (`migrations/0002_workout_logs.sql`).
+- **Progress.** Exercise pages show a weight/reps line chart from your logs. A "Go up" marker appears (exercise page and session page) when the last two
+  logged sessions both hit the top of the rep range on all sets at the same weight.
+- **Library muscle filter.** Tap a muscle on the body diagram to filter the library by primary muscle (side panel on desktop, "Body" chip on phones).
+- **Session page.** Drag handle to reorder, duplicate button, estimated duration (40 s work + 90 s rest per set, 1 min per exercise).
+  **Behavior:** the exercise name in a session row is now a link to the exercise page (added earlier on this branch's parent).
+- **Plan home.** A "Next" card suggests the session after the one you logged last (plan order, wraps around, no weekdays). Each session card has a Start button.
+  **Behavior:** the plan cards are now a container with a link plus a button instead of one big link.
+- **Profile page** (`/profile`, new nav item): edit height, weight, goal, sessions per week; weekly body-weight log with chart (`migrations/0003_body_weight_logs.sql`).
+  **Behavior:** on phones "Sign out" moved from the bottom bar to the Profile page (the bar now has Gym, Languages, Pantry, Profile). Desktop sidebar is unchanged.
+- New dependencies: `@dnd-kit/sortable`, `@dnd-kit/utilities`.

@@ -17,6 +17,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedShellGymRouteImport } from './routes/_authenticated/_shell/gym'
 import { Route as AuthenticatedShellLanguagesRouteImport } from './routes/_authenticated/_shell/languages'
 import { Route as AuthenticatedShellPantryRouteImport } from './routes/_authenticated/_shell/pantry'
+import { Route as AuthenticatedShellProfileRouteImport } from './routes/_authenticated/_shell/profile'
 import { Route as AuthenticatedShellGymIndexRouteImport } from './routes/_authenticated/_shell/gym.index'
 import { Route as AuthenticatedShellGymLibraryRouteImport } from './routes/_authenticated/_shell/gym.library'
 import { Route as AuthenticatedShellGymMonthRouteImport } from './routes/_authenticated/_shell/gym.month'
@@ -63,6 +64,12 @@ const AuthenticatedShellPantryRoute =
   AuthenticatedShellPantryRouteImport.update({
     id: '/pantry',
     path: '/pantry',
+    getParentRoute: () => AuthenticatedShellRoute,
+  } as any)
+const AuthenticatedShellProfileRoute =
+  AuthenticatedShellProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
     getParentRoute: () => AuthenticatedShellRoute,
   } as any)
 const AuthenticatedShellGymIndexRoute =
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/gym': typeof AuthenticatedShellGymRouteWithChildren
   '/languages': typeof AuthenticatedShellLanguagesRoute
   '/pantry': typeof AuthenticatedShellPantryRoute
+  '/profile': typeof AuthenticatedShellProfileRoute
   '/gym/library': typeof AuthenticatedShellGymLibraryRoute
   '/gym/month': typeof AuthenticatedShellGymMonthRoute
   '/gym/week': typeof AuthenticatedShellGymWeekRoute
@@ -129,6 +137,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/languages': typeof AuthenticatedShellLanguagesRoute
   '/pantry': typeof AuthenticatedShellPantryRoute
+  '/profile': typeof AuthenticatedShellProfileRoute
   '/gym/library': typeof AuthenticatedShellGymLibraryRoute
   '/gym/month': typeof AuthenticatedShellGymMonthRoute
   '/gym/week': typeof AuthenticatedShellGymWeekRoute
@@ -147,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated/_shell/gym': typeof AuthenticatedShellGymRouteWithChildren
   '/_authenticated/_shell/languages': typeof AuthenticatedShellLanguagesRoute
   '/_authenticated/_shell/pantry': typeof AuthenticatedShellPantryRoute
+  '/_authenticated/_shell/profile': typeof AuthenticatedShellProfileRoute
   '/_authenticated/_shell/gym/library': typeof AuthenticatedShellGymLibraryRoute
   '/_authenticated/_shell/gym/month': typeof AuthenticatedShellGymMonthRoute
   '/_authenticated/_shell/gym/week': typeof AuthenticatedShellGymWeekRoute
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/gym'
     | '/languages'
     | '/pantry'
+    | '/profile'
     | '/gym/library'
     | '/gym/month'
     | '/gym/week'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/languages'
     | '/pantry'
+    | '/profile'
     | '/gym/library'
     | '/gym/month'
     | '/gym/week'
@@ -195,6 +207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_shell/gym'
     | '/_authenticated/_shell/languages'
     | '/_authenticated/_shell/pantry'
+    | '/_authenticated/_shell/profile'
     | '/_authenticated/_shell/gym/library'
     | '/_authenticated/_shell/gym/month'
     | '/_authenticated/_shell/gym/week'
@@ -266,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/pantry'
       fullPath: '/pantry'
       preLoaderRoute: typeof AuthenticatedShellPantryRouteImport
+      parentRoute: typeof AuthenticatedShellRoute
+    }
+    '/_authenticated/_shell/profile': {
+      id: '/_authenticated/_shell/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedShellProfileRouteImport
       parentRoute: typeof AuthenticatedShellRoute
     }
     '/_authenticated/_shell/gym/': {
@@ -349,12 +369,14 @@ interface AuthenticatedShellRouteChildren {
   AuthenticatedShellGymRoute: typeof AuthenticatedShellGymRouteWithChildren
   AuthenticatedShellLanguagesRoute: typeof AuthenticatedShellLanguagesRoute
   AuthenticatedShellPantryRoute: typeof AuthenticatedShellPantryRoute
+  AuthenticatedShellProfileRoute: typeof AuthenticatedShellProfileRoute
 }
 
 const AuthenticatedShellRouteChildren: AuthenticatedShellRouteChildren = {
   AuthenticatedShellGymRoute: AuthenticatedShellGymRouteWithChildren,
   AuthenticatedShellLanguagesRoute: AuthenticatedShellLanguagesRoute,
   AuthenticatedShellPantryRoute: AuthenticatedShellPantryRoute,
+  AuthenticatedShellProfileRoute: AuthenticatedShellProfileRoute,
 }
 
 const AuthenticatedShellRouteWithChildren =
