@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, isCategory, isUnit, UNITS, type PantryLocation } from "./model";
-import { canSave, confirmLine, editLine, lineProblem, toggleSkip, unresolvedCount, type ReviewLine } from "./review";
+import { canSave, confirmLine, editLine, isLowConfidence, lineProblem, toggleSkip, unresolvedCount, type ReviewLine } from "./review";
 import { asOptions, Choice, locationOptions, QuantityField } from "./ui";
 
 const STATUS: Record<ReviewLine["status"], string> = { matched: "Known", uncertain: "Check", unknown: "Unknown" };
@@ -24,13 +24,18 @@ function Row({
     <li className={cn("space-y-3 rounded-2xl border p-3", needs ? "border-amber-400 bg-amber-50" : "bg-card", line.skip && "opacity-50")}>
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">{line.rawText}</span>
+        {line.confidence !== null && (
+          <span className={cn("text-xs tabular-nums", isLowConfidence(line) ? "font-medium text-amber-900" : "text-muted-foreground")}>
+            {Math.round(line.confidence)}%
+          </span>
+        )}
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-xs font-medium",
             needs ? "bg-amber-200 text-amber-950" : "bg-secondary text-secondary-foreground",
           )}
         >
-          {STATUS[line.status]}
+          {line.status === "matched" && isLowConfidence(line) ? "Unsure" : STATUS[line.status]}
         </span>
         <Button variant="ghost" className="h-11 px-3" onClick={() => onChange(toggleSkip(line))}>
           {line.skip ? "Undo" : "Skip"}

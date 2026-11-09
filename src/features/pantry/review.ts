@@ -7,6 +7,7 @@ import { CATEGORY_KIND, isCategory, isLocationKind, isUnit, type Category, type 
 import { displayName } from "./normalize";
 import type { ParsedLine } from "./receipt";
 import { roundQty } from "./items";
+import { LOW_CONFIDENCE } from "./ocr";
 
 export type ReviewStatus = "matched" | "uncertain" | "unknown";
 
@@ -19,7 +20,9 @@ export type ReviewLine = {
   /** The receipt gave a weight. */
   weighed: boolean;
   status: ReviewStatus;
-  /** Matched lines start confirmed. The others stay highlighted until confirmed, edited or skipped. */
+  /** OCR confidence of the source line (0-100), or null for text that was not read from a photo. */
+  confidence: number | null;
+  /** Matched lines start confirmed, unless OCR was unsure of them. The others stay highlighted until confirmed, edited or skipped. */
   confirmed: boolean;
   skip: boolean;
   /** Changed by hand (or confirmed as a correction), so it is written back to the dictionary. */
@@ -53,32 +56,41 @@ function fieldsFor(line: ParsedLine, alias: Alias | null, locations: readonly Pa
   };
 }
 
-/** Review lines for a parsed receipt: lines that need a look first, then matched ones, each in receipt order. */
+/** The OCR was unsure about this line, so its text (and with it the match) may be wrong. */
+export const isLowConfidence = (l: Pick<ReviewLine, "confidence">) => l.confidence !== null && l.confidence < LOW_CONFIDENCE;
+
+/**
+ * Review lines for a parsed receipt: unknown lines first, then uncertain, then low-confidence ones, then the
+ * rest, each group in receipt order. `confidence` maps source line numbers to OCR confidence.
+ */
 export function buildReview(
   parsed: readonly ParsedLine[],
   aliases: readonly Alias[],
   store: string | null,
   locations: readonly PantryLocation[],
+  confidence: ReadonlyMap<number, number> = new Map(),
 ): ReviewLine[] {
   const lines = parsed.map((p): ReviewLine => {
     const m = matchAlias(aliases, p.raw_text, store);
     const alias = m.kind === "none" ? null : m.alias;
+    const conf = confidence.get(p.lineNo) ?? null;
     return {
       id: String(p.lineNo),
       rawText: p.raw_text,
       count: p.quantity,
       weighed: p.unit !== null,
       status: m.kind === "exact" ? "matched" : m.kind === "uncertain" ? "uncertain" : "unknown",
-      confirmed: m.kind === "exact",
+      confidence: conf,
+      confirmed: m.kind === "exact" && !isLowConfidence({ confidence: conf }),
       skip: false,
       edited: false,
       ...fieldsFor(p, alias, locations),
     };
   });
-  const rank = { unknown: 0, uncertain: 1, matched: 2 } as const;
+  const rank = (l: ReviewLine) => (l.status === "unknown" ? 0 : l.status === "uncertain" ? 1 : l.confirmed ? 3 : 2);
   return lines
     .map((l, i) => ({ l, i }))
-    .sort((a, b) => rank[a.l.status] - rank[b.l.status] || a.i - b.i)
+    .sort((a, b) => rank(a.l) - rank(b.l) || a.i - b.i)
     .map(({ l }) => l);
 }
 

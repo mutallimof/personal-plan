@@ -54,4 +54,14 @@ describe("ReviewScreen", () => {
     expect(screen.getByText("Name is empty")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save 2 items" })).toBeDisabled();
   });
+
+  it("shows OCR confidence and flags unsure reads", () => {
+    const lines = buildReview([parsed("SPAGHETTI", 1)], dict, null, places, new Map([[1, 58]]));
+    render(
+      <ReviewScreen lines={lines} locations={places} store="" onStore={() => {}} onChange={() => {}} onSave={() => {}} onBack={() => {}} saving={false} />,
+    );
+    expect(screen.getByText("58%")).toBeInTheDocument();
+    expect(screen.getByText("Unsure")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1 to check" })).toBeDisabled();
+  });
 });

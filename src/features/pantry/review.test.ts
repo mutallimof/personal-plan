@@ -5,6 +5,7 @@ import {
   canSave,
   confirmLine,
   editLine,
+  isLowConfidence,
   itemsToSave,
   lineProblem,
   toggleSkip,
@@ -12,6 +13,7 @@ import {
   type ReviewLine,
 } from "./review";
 import { alias, loc, SYNTHETIC_RECEIPT } from "./fixtures";
+import { LOW_CONFIDENCE } from "./ocr";
 import { parseGenericReceipt, type ParsedLine } from "./receipt";
 
 const places = [
@@ -109,6 +111,45 @@ describe("buildReview", () => {
     ]);
     expect(lines[0]).toMatchObject({ quantity: 0.946, unit: "kg", weighed: true });
     expect(lines[1]).toMatchObject({ quantity: 3, unit: "pieces" });
+  });
+});
+
+describe("OCR confidence", () => {
+  it("has no confidence for plain text", () => {
+    const [l] = buildReview([parsed({ raw_text: "SPAGHETTI" })], dict, null, places);
+    expect(l?.confidence).toBeNull();
+  });
+
+  it("keeps a confident exact match confirmed", () => {
+    const [l] = buildReview([parsed({ raw_text: "SPAGHETTI" }, 4)], dict, null, places, new Map([[4, 96]]));
+    expect(l).toMatchObject({ status: "matched", confirmed: true, confidence: 96 });
+  });
+
+  it("asks for a second look at a matched line the OCR was unsure of", () => {
+    const [l] = buildReview([parsed({ raw_text: "SPAGHETTI" }, 4)], dict, null, places, new Map([[4, 61]]));
+    expect(l).toMatchObject({ status: "matched", confirmed: false, confidence: 61 });
+    expect(unresolvedCount([l as ReviewLine])).toBe(1);
+  });
+
+  it("sorts low-confidence matches after unknown and uncertain, before confident ones", () => {
+    const lines = buildReview(
+      [parsed({ raw_text: "SPAGHETTI" }, 1), parsed({ raw_text: "H MILCH 1,5%" }, 2), parsed({ raw_text: "ZZZ" }, 3)],
+      dict,
+      null,
+      places,
+      new Map([
+        [1, 95],
+        [2, 50],
+        [3, 99],
+      ]),
+    );
+    expect(lines.map((l) => l.id)).toEqual(["3", "2", "1"]);
+  });
+
+  it("treats the threshold as low only below it", () => {
+    expect(isLowConfidence({ confidence: LOW_CONFIDENCE })).toBe(false);
+    expect(isLowConfidence({ confidence: LOW_CONFIDENCE - 1 })).toBe(true);
+    expect(isLowConfidence({ confidence: null })).toBe(false);
   });
 });
 
