@@ -26,7 +26,14 @@ function ItemRow({ item, onSwap, onChanged }: { item: SessionExercise; onSwap: (
   return (
     <li className="space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium">{item.exercise.name}</span>
+        <Link
+          to="/gym/exercise/$id"
+          params={{ id: item.exercise_id }}
+          search={{ item: item.id }}
+          className="font-medium hover:underline"
+        >
+          {item.exercise.name}
+        </Link>
         <div className="flex gap-1">
           <Button size="icon" variant="ghost" aria-label="Swap exercise" onClick={onSwap}><Repeat className="h-4 w-4" /></Button>
           <Button

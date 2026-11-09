@@ -75,12 +75,23 @@ export const gym = {
   async removeItem(id: string) {
     check(await supabase.from("session_exercises").delete().eq("id", id));
   },
-  async addItem(sessionId: string, exerciseId: string, position: number) {
+  async addItem(
+    sessionId: string,
+    exerciseId: string,
+    position: number,
+    opts: { sets?: number; reps?: string; weight_kg?: number | null } = {},
+  ) {
     const user_id = await uid();
     check(
-      await supabase
-        .from("session_exercises")
-        .insert({ user_id, session_id: sessionId, exercise_id: exerciseId, position, sets: 3, reps: "8-12" }),
+      await supabase.from("session_exercises").insert({
+        user_id,
+        session_id: sessionId,
+        exercise_id: exerciseId,
+        position,
+        sets: opts.sets ?? 3,
+        reps: opts.reps ?? "8-12",
+        weight_kg: opts.weight_kg ?? null,
+      }),
     );
   },
   async reorder(items: { id: string }[]) {
