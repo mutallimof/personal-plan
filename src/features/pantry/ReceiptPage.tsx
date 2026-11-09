@@ -5,7 +5,6 @@ import { Camera, FileText, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Loading, QueryError } from "@/components/states";
 import { suggestProducts } from "./ai.functions";
@@ -76,15 +75,6 @@ export function ReceiptPage() {
       toast.error("The AI check failed.");
     } finally {
       setChecking(0);
-    }
-  }
-
-  async function onAiToggle(on: boolean) {
-    try {
-      await pantry.setAiCheck(on);
-      await invalidate();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save");
     }
   }
 
@@ -206,15 +196,6 @@ export function ReceiptPage() {
         <Button variant="outline" className="h-12" disabled={busy} onClick={() => fileRef.current?.click()}>
           <Upload className="mr-1 h-4 w-4" /> Text or HTML
         </Button>
-      </div>
-      <div className="rounded-2xl bg-card px-4 py-2 text-sm">
-        <label className="flex min-h-11 items-center justify-between">
-          AI check for unknown lines
-          <Switch checked={settings.data?.aiCheck ?? false} onCheckedChange={onAiToggle} disabled={!settings.data} aria-label="AI check for unknown lines" />
-        </label>
-        {(settings.data?.aiCheck || (settings.data?.aiLinesSent ?? 0) > 0) && (
-          <p className="pb-2 text-xs text-muted-foreground">{settings.data?.aiLinesSent ?? 0} lines sent so far</p>
-        )}
       </div>
       <input
         ref={pdfRef}

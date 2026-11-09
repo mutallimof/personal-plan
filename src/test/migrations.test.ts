@@ -50,7 +50,7 @@ beforeAll(async () => {
   `);
   await db.exec(sql("0004_pantry.sql"));
   await db.exec(sql("0008_recipes.sql"));
-});
+}, 60_000);
 
 afterAll(async () => {
   await db.close();

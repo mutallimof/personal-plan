@@ -60,10 +60,10 @@ function ItemRow({ item, today, onEdit }: { item: PantryItem; today: Date; onEdi
   );
 }
 
-export function ItemsPage() {
+export function ItemsPage({ initialQuery = "" }: { initialQuery?: string }) {
   const items = useQuery(itemsQuery);
   const locations = useQuery(locationsQuery);
-  const [filter, setFilter] = useState<ItemFilter>(NO_FILTER);
+  const [filter, setFilter] = useState<ItemFilter>({ ...NO_FILTER, query: initialQuery });
   const [dialog, setDialog] = useState<Dialog>(null);
   const today = useMemo(() => new Date(), []);
 
