@@ -69,19 +69,45 @@ days, or already expired, are marked.
 **Dictionary.** View, search, edit, add and delete entries, or import and export them as JSON to write them by
 hand. A small starter set of German supermarket texts is added once.
 
-**Photo OCR.** The photo is converted to grey, its contrast stretched, resized, and optionally reduced to black and
-white (`image-prep.ts`), then read by [tesseract.js](https://github.com/naptha/tesseract.js) with the German language
-data. It runs in a web worker in the browser and is loaded only when you use it. The photo is never uploaded. The
-first use downloads Tesseract and the language data (about 10 MB; the browser keeps it afterwards), so it needs a
-connection once. Each line gets a confidence from Tesseract; lines below 80% are highlighted.
+**Photo OCR.** A photo goes through the photo helper (below) and is then read by
+[tesseract.js](https://github.com/naptha/tesseract.js) with the German language data. It runs in a web worker in the
+browser and is loaded only when you use it. The photo is never uploaded. The first use downloads Tesseract and the
+language data (about 10 MB; the browser keeps it afterwards), so it needs a connection once. Each line gets a
+confidence from Tesseract; lines below 80% are highlighted.
 
-*Limits.* Thermal paper is the hard case: faded or grey print, curled paper and shiny glare cost accuracy, and
-prices are misread more often than names. Expect to correct some lines. Tips for a good photo:
+**Taking a good receipt photo.** On a phone, *Photo of a receipt* then *Take photo* opens the camera with a frame to
+line the receipt up in (if the camera cannot be opened, the phone's own camera app is used instead). On a computer,
+choose a file or drop it on the box. All of this runs in the browser; nothing is uploaded.
+
+Before reading, the helper checks the photo and cleans it up (`photo-quality.ts`, `receipt-prep.ts`,
+`image-geometry.ts`, `image-prep.ts`: plain functions over pixels, no image library):
+
+| Step | What it does |
+| --- | --- |
+| Too small | Rejects photos under 600 x 900 px. Small print needs pixels. |
+| Too dark / too bright | Looks at the mean grey level of the paper (not the table around it). Below 85 or above 238 of 255 is flagged. |
+| Too blurry | Variance of the Laplacian (how strong the edges are) at a fixed working size. Below 60 is flagged. |
+| Crop | Finds the largest bright region (the paper) and cuts to it with a small margin. Skipped when the paper already fills the photo. |
+| Straighten | Estimates the tilt of the text lines (where dark pixels pile up into the fullest rows, up to 12 degrees) and turns the image level. Tilts under 0.4 degrees are left alone. |
+| Contrast | Stretches the grey range. *Black and white* additionally applies a local threshold (follows shadows). |
+
+The limits are in `photo-config.ts`. They were set on invented test images, not on a collection of real phone photos, so
+adjust them if good photos are rejected. A failed check shows one short message with *Retake* and *Use anyway*. The next
+screen shows the original and the cleaned-up photo side by side; *Use original* reads the untouched photo instead.
+
+Tips:
 - Flatten the receipt on a dark, matte surface, or hold it flat against a wall.
 - Daylight from the side or from above; no flash and no shadow of the phone.
-- Fill the frame with the receipt and keep it upright; photograph a long receipt in two parts.
-- Hold still, tap to focus on the text, and check that the photo is sharp before using it.
-- If faint print is lost, try the *Black and white* switch.
+- Fill the frame with the receipt and hold the phone straight above it, not at an angle.
+- Photograph a long receipt in two parts. Hold still and tap to focus on the text.
+
+*Limits.* Thermal paper is the hard case: faded or grey print, curled paper and shiny glare cost accuracy, and prices
+are misread more often than names. The straightening only fixes a flat tilt, not a curled or folded receipt, and the
+crop assumes the paper is brighter than what is under it (a white receipt on a white table is not cropped). On
+invented test receipts (rendered text on a dark table, tilted up to 5 degrees, with shadow or dim light) the helper
+read 100% of the lines exactly against 84% for the untouched photo, and *Black and white* was worse than plain grey
+(it found 36 of 40 products, plain grey found 40). That is a synthetic result; run `npm run ocr:eval` on your own photos, which
+reads each one both ways and prints the comparison. *Black and white* is therefore off by default.
 
 **Optional AI check (off by default).** The *AI check for unknown lines* switch on the Receipt tab is stored per user
 (`pantry_settings`, `migrations/0006`). When it is on, the text of lines the dictionary could not match goes to the AI
@@ -105,7 +131,7 @@ If the provider fails or is not configured, you get a message and the import car
   if missing). A file with any mistake is rejected as a whole, with every problem listed. New users start with a
   default template (`DEFAULT_LAYOUT` in `kitchen.ts`), created once.
 
-**Measuring accuracy.** `npm run ocr:eval` runs the same pipeline over your own photos and prints line-level accuracy;
+**Measuring accuracy.** `npm run ocr:eval` runs the same pipeline over your own photos, once as taken and once through the helper, and prints line-level accuracy for both;
 see `scripts/ocr-eval/README.md`. Receipt photos and text are private: never commit them (the samples folder is
 ignored by git).
 
