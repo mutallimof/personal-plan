@@ -2,6 +2,12 @@
 
 Changes on branch `build-v1`. Behavior changes to existing features are marked **Behavior**.
 
+## Exercise movement images
+- The exercise page shows a start/end picture card above the steps. The two pictures fade into each other every second; a pause/play button stops it. With reduced motion on, both pictures show side by side and nothing animates.
+- Pictures are not copied into the repo. They load from the public free-exercise-db repo (Unlicense, no separate image terms) through jsDelivr, pinned to a commit. Lazy-loaded, 3:2 box reserved up front.
+- No schema change and no migration. `src/features/gym/exercise-images.ts` is a generated slug -> source id map (`node scripts/exercise-import/convert.mjs` rewrites it). Exercises you created yourself, or that fail to load, show no card.
+- No existing behavior changed.
+
 ## Phase 0: Lovable removed
 - Removed `src/integrations/lovable/`, `.lovable/`, `@lovable.dev/cloud-auth-js`, `@lovable.dev/vite-tanstack-config`,
   the Lovable error reporter, the preview-auth storage broker, and the unused `cron-auth.ts` and `client.server.ts`

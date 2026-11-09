@@ -51,4 +51,7 @@ Then run `scripts/exercise-import/sql/exercises-import.sql` (or the smaller file
 Supabase SQL editor. Running it again adds nothing. Muscle, equipment and family mappings are in
 `scripts/exercise-import/mappings.mjs`. The "popular first" list is `src/features/gym/popular.ts`.
 
-Exercise data: free-exercise-db by yuhonas and contributors, released under the Unlicense.
+The same script writes `src/features/gym/exercise-images.ts` (exercise slug -> free-exercise-db id). The exercise page builds its
+movement-picture URLs from it and loads them from the public repo via jsDelivr; nothing is copied.
+
+Exercise data and pictures: free-exercise-db by yuhonas and contributors, released under the Unlicense.

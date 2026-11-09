@@ -42,6 +42,13 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - [ ] At 375 px wide, no page scrolls sideways; the bottom bar has Gym, Languages, Pantry, Profile.
 - [ ] Keyboard: Tab through the Plan page; every control shows a dark green focus ring.
 
+## Exercise pictures
+- [ ] Open Gym > Library > any imported exercise (e.g. Incline dumbbell press): a card with the movement shows above the steps and flips start/end every second.
+- [ ] Tap the pause button: it stops and the icon becomes play. Tap again: it resumes.
+- [ ] OS setting "reduce motion" on, reload: both pictures sit side by side, no button, no fading.
+- [ ] Open an exercise you created yourself: no card, no gap.
+- [ ] Network tab set to Offline, reload the page: no card and no broken-image icon.
+
 ## What I was unsure about or did not finish
 - **Nothing was run against your real Supabase.** I tested every screen in a browser at 375 px and 1280 px with a fake session and a mocked API (flows: finish workout and update plan weight, tap-to-filter, add-to-session). Real inserts, row-level security and the two SQL files are untested until you run them.
 - **Google sign-in, the AI chat and onboarding "Generate my plan"** were not touched or tested.
