@@ -41,13 +41,33 @@ Needs a `.env` with your Supabase URL and publishable key. Copy `.env.example` a
 - `src/features/gym/` data access, AI tools, body map, exercise browser
 - `src/features/pantry/` pantry items, product dictionary, receipt parsing, OCR, review screen
 - `src/features/cook/` recipes, nutrition, what can I cook, cooking and undo
+- `src/features/kitchen/` the illustrated kitchen: layout file, open/zoom view, interiors; `docs/kitchen-layout.md` describes the layout file
+- `scripts/icons/` downloads the product icons; `scripts/kitchen-shots/` takes screenshots of the kitchen scene
 - `scripts/ocr-eval/` measures OCR accuracy on your own receipt photos
 - `scripts/nutrition-import/` builds the starter nutrition table from USDA FoodData Central
 - `drizzle/migrations/` and `setup.sql` original schema and seed data; `migrations/` newer changes (run by hand in the Supabase SQL editor)
 
 ## Pantry
-Tabs: **Items**, **Receipt**, **Dictionary**, **Kitchen**, **Cook**. All tables are private to the signed-in user (row-level security, see
-`migrations/0004` to `0008`).
+The Pantry opens on one illustrated **kitchen**: wall shelf, glass cabinet, spice shelf, drawers, base cabinets and a
+tall fridge-freezer. Tap a cabinet: the door opens, the view zooms in and the products stand on shelves as pictures
+(quantity badge, amber or red dot when they expire soon, a small stack for several). Tap a product for its sheet
+(quantity, unit, expiry, place, icon, remove), drag it to another shelf or compartment, or drop it outside the cabinet to
+choose another place. The back button, Escape, a tap on the wall and the browser back button all close it; with reduced
+motion there is a short fade instead of the animation. The search box finds an item and opens the cabinet it is in.
+**Add receipt**, **Add item**, **Cook** and **All items** open as sheets; **Settings** (gear) holds the dictionary,
+nutrition table, AI check and the layout editor with import and export. The scene is drawn by code
+(`src/features/kitchen/`), its colours are in `scene-theme.css`, and every cabinet comes from a layout file, see
+`docs/kitchen-layout.md`. All tables are private to the signed-in user (row-level security, see `migrations/0004` to
+`0009`). Older text below that says "tab" now refers to these sheets and settings pages.
+
+**Product pictures** come from Twemoji (graphics copyright Twitter, Inc and other contributors, licensed CC-BY 4.0,
+https://github.com/jdecked/twemoji). About 100 SVGs are copied into `public/icons/food` (nothing is loaded from a CDN);
+`node scripts/icons/fetch.mjs` re-downloads them from the list in `src/features/pantry/icons/icons.json`. The app shows
+the credit under the kitchen. A product gets its picture from the icon chosen for the item, then the one chosen in the
+dictionary, then a keyword match on the name (English and German), then its category.
+
+**Screenshots.** `node scripts/kitchen-shots/shoot.mjs <folder>` draws the scene with invented data in Edge (headless,
+uses `puppeteer-core`) at 375 and 1280 px, light and dark.
 
 **Items.** Items live in places (fridge, vegetable drawer, freezer, shelves, ...; a default set is created once).
 Adding an item with the same name and unit in the same place adds to the existing one. Items expiring within three

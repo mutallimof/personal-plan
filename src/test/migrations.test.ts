@@ -49,7 +49,9 @@ beforeAll(async () => {
     grant usage on schema auth to authenticated, service_role;
   `);
   await db.exec(sql("0004_pantry.sql"));
+  await db.exec(sql("0005_product_aliases.sql"));
   await db.exec(sql("0008_recipes.sql"));
+  await db.exec(sql("0009_kitchen_scene.sql"));
 }, 60_000);
 
 afterAll(async () => {
@@ -216,5 +218,38 @@ describe("undo_cook", () => {
     const logId = await cookRecipe([{ id: "dddddddd-0000-0000-0000-000000000007", after: 90 }]);
     await as(BOB);
     await expect(db.query("select undo_cook($1)", [logId])).rejects.toThrow(/not in the log/);
+  });
+});
+
+describe("0009_kitchen_scene.sql", () => {
+  it("can be run again without error", async () => {
+    await db.exec("RESET ROLE");
+    await db.exec(sql("0009_kitchen_scene.sql"));
+  });
+
+  it("keeps each layout private to its owner", async () => {
+    await as(ALICE);
+    await db.query("insert into kitchen_layouts (layout) values ($1::jsonb)", ['{"version":2}']);
+    await as(BOB);
+    expect((await db.query("select * from kitchen_layouts")).rows).toHaveLength(0);
+    await expect(db.query("insert into kitchen_layouts (user_id, layout) values ($1, '{}'::jsonb)", [ALICE])).rejects.toThrow();
+    await as(ALICE);
+    await expect(db.query("insert into kitchen_layouts (layout) values ('{}'::jsonb)")).rejects.toThrow(); // one per user
+  });
+
+  it("stores an icon and a shelf on items, and rejects nonsense", async () => {
+    await as(ALICE);
+    await db.query("insert into pantry_items (id, name, icon, shelf) values ('ffffffff-0000-0000-0000-000000000001', 'Milk', 'milk', 2)");
+    await expect(db.query("insert into pantry_items (name, shelf) values ('Bad', 99)")).rejects.toThrow();
+    await expect(db.query("insert into pantry_items (name, icon) values ('Bad', '')")).rejects.toThrow();
+  });
+
+  it("brings an undone item back with its icon and shelf", async () => {
+    await as(ALICE);
+    await db.query("insert into pantry_items (id, name, quantity, unit, icon, shelf) values ('ffffffff-0000-0000-0000-000000000002', 'Jam', 1, 'pieces', 'jar', 1)");
+    const logId = await cookRecipe([{ id: "ffffffff-0000-0000-0000-000000000002", after: 0 }]);
+    await db.query("select undo_cook($1)", [logId]);
+    const row = (await db.query<{ icon: string; shelf: number }>("select icon, shelf from pantry_items where id = 'ffffffff-0000-0000-0000-000000000002'")).rows[0];
+    expect(row).toEqual({ icon: "jar", shelf: 1 });
   });
 });

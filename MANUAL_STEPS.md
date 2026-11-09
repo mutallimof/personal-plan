@@ -21,8 +21,9 @@ in order, once each. Every file is safe to run again.
 | `0006_pantry_ai_check.sql` | AI check columns on `pantry_settings` | Optional AI check on receipt import |
 | `0007_kitchen_zones.sql` | `kitchen_zones` | Pantry > Kitchen |
 | `0008_recipes.sql` | `recipes`, `recipe_ingredients`, `ingredient_nutrition`, `cooked_log`, AI recipe columns on `pantry_settings`, and the functions `cook_recipe` and `undo_cook` | Pantry > Cook |
+| `0009_kitchen_scene.sql` | `kitchen_layouts`; `icon` and `shelf` on `pantry_items`; `icon` on `product_aliases`; `undo_cook` now restores icon and shelf | The kitchen screen |
 
-Run 0004 to 0008 the same way, in that order (0005 to 0008 add to tables made by 0004). After 0008, **Table Editor** should list the four new tables with the RLS badge, and **Database > Functions** should list `cook_recipe` and `undo_cook`. Until 0008 is run, the Cook tab shows "Could not load this"; cooking itself needs the two functions.
+Run 0004 to 0009 the same way, in that order (0005 to 0009 add to tables made by 0004). Run 0009 before opening the Pantry: the kitchen screen needs `kitchen_layouts` and the new columns (until then it shows "Could not load this"). The first time it opens, your old kitchen map (0007) is converted into the new layout; the old table stays untouched. After 0008, **Table Editor** should list the four new tables with the RLS badge, and **Database > Functions** should list `cook_recipe` and `undo_cook`. Until 0008 is run, the Cook tab shows "Could not load this"; cooking itself needs the two functions.
 
 Until they are run, those screens show "Could not load this" or "Could not save the workout"; the rest of the app is unaffected.
 
@@ -43,13 +44,13 @@ Without it the app works; chat and "Generate my plan" will say they are unavaila
 Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lovable packages removed; the lockfile is now `package-lock.json`).
 
 ## 6. Pantry
-1. **Migrations:** run `0004` to `0008` (step 1). Each Pantry tab shows "Could not load this" until its file is run.
+1. **Migrations:** run `0004` to `0009` (step 1). Each Pantry tab shows "Could not load this" until its file is run.
 2. **Optional AI check on receipts:** needs `AI_API_KEY` set (step 4). Then turn it on in Pantry > Receipt. It is off by default and sends only the text of lines the dictionary could not match.
 3. **Photo receipts:** the first photo needs internet; the browser downloads the OCR engine and German data from a CDN once. The photo itself never leaves your device.
 4. **Store-specific parsers:** only a generic German parser exists. To add one for your store, send 3 or more real receipts (PDF, pasted text or photo text; blank out anything private) and the store name.
 5. **Measure OCR on your own photos:** put photos and expected text in `scripts/ocr-eval/samples/` (git-ignored) and run `npm run ocr:eval`. See `scripts/ocr-eval/README.md`.
 6. **Your real kitchen layout:** the Kitchen tab starts with a default template. Edit it there, or send a photo and a description so a layout file can be written for you. Layouts are never read from a photo automatically.
-7. After pulling: `npm install` (new: `pdfjs-dist`, `tesseract.js`; dev: `tsx`, `jpeg-js`, `pngjs`, `@electric-sql/pglite`).
+7. After pulling: `npm install` (new: `pdfjs-dist`, `tesseract.js`; dev: `tsx`, `jpeg-js`, `pngjs`, `@electric-sql/pglite`, `puppeteer-core`).
 
 ## 7. Receipt photo helper
 1. **Camera:** the in-app camera with the guide frame needs `https` (your deployed address) or `localhost`. Over plain `http` on your home network the browser refuses, and the app falls back to the phone's own camera app.
@@ -61,3 +62,9 @@ Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lova
 2. **Optional AI recipe ideas:** needs `AI_API_KEY` set (step 4). Turn the switch on in Pantry > Cook > Can cook. It is off by default and sends only ingredient names, quantities and units from your pantry.
 3. **Nutrition data:** the table is filled once from USDA FoodData Central the first time you open the Cook tab. Foods it does not cover (for example quark, passata, 1.5% milk) are not in it; add them in Cook > Nutrition from the package label, or tell me which ones you use most.
 4. **Your recipes:** nothing is preloaded. Add your own in Cook > Recipes, or send me a few and I can load them.
+
+## 9. Illustrated kitchen
+1. **Migration:** `0009_kitchen_scene.sql` (step 1). Open Pantry afterwards; the default places it needs (for example "Meat and fish", "Base cabinet") are created automatically. Existing places and items are not touched.
+2. **Your own kitchen:** when you have photos of your kitchen, send them, or write a layout file by hand (`docs/kitchen-layout.md`) and import it in Pantry > Settings > Kitchen layout.
+3. **Icons:** already in `public/icons/food`. To download them again: `node scripts/icons/fetch.mjs`.
+4. **Screenshots:** `npm install`, then `node scripts/kitchen-shots/shoot.mjs screenshots/kitchen` (needs Microsoft Edge; set `EDGE_PATH` otherwise).

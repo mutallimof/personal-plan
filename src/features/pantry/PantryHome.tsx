@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChefHat, Plus, Receipt, Search, Settings } from "lucide-react";
@@ -8,7 +8,7 @@ import { CookPage } from "@/features/cook/CookPage";
 import { locationsQuery } from "./data";
 import { ItemDialog } from "./ItemDialog";
 import { ItemsPage } from "./ItemsPage";
-import { KitchenPage } from "./KitchenPage";
+import { KitchenScreen } from "@/features/kitchen/KitchenScreen";
 import { PantrySheet } from "./PantrySheet";
 import { ReceiptPage } from "./ReceiptPage";
 import { SettingsSheet } from "./SettingsSheet";
@@ -20,6 +20,17 @@ export function PantryHome({ search }: { search: PantrySearch }) {
   const places = useQuery(locationsQuery);
   const [adding, setAdding] = useState(false);
 
+  const pushed = useRef(false);
+  const onOpen = (key: string, item?: string) => {
+    pushed.current = true;
+    void navigate({ search: { ...search, open: key, item, q: undefined } });
+  };
+  const onClose = () => {
+    if (pushed.current) {
+      pushed.current = false;
+      window.history.back();
+    } else void navigate({ search: { ...search, open: undefined, item: undefined }, replace: true });
+  };
   const go = (next: PantrySearch) => navigate({ search: next });
   const openSheet = (sheet: Sheet) => go({ ...search, sheet });
   const closeSheet = () => go({ ...search, sheet: undefined, section: undefined });
@@ -57,7 +68,14 @@ export function PantryHome({ search }: { search: PantrySearch }) {
         </Button>
       </div>
 
-      <KitchenPage />
+      <KitchenScreen
+        query={search.q ?? ""}
+        openKey={search.open ?? null}
+        highlightItemId={search.item ?? null}
+        onOpen={onOpen}
+        onClose={onClose}
+        onShowList={() => void openSheet("items")}
+      />
 
       {search.sheet === "receipt" && (
         <PantrySheet title="Add receipt" onClose={() => void closeSheet()}>

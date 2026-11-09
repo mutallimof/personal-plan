@@ -1,0 +1,5 @@
+These icons are from Twemoji (https://github.com/jdecked/twemoji), tag v15.1.0.
+Graphics copyright Twitter, Inc and other contributors, licensed under CC-BY 4.0:
+https://creativecommons.org/licenses/by/4.0/
+Files are unchanged except that they are renamed after the product they show.
+Fetched with scripts/icons/fetch.mjs from the list in src/features/pantry/icons/icons.json.

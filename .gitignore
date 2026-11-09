@@ -41,3 +41,6 @@ dist-ssr
 # Your own receipt photos for scripts/ocr-eval (private)
 scripts/ocr-eval/samples/
 scripts/ocr-eval/.cache/
+
+# Screenshots of the kitchen scene (generated)
+screenshots/

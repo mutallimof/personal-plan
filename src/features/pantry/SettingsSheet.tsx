@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { BookText, ChevronRight, LayoutGrid, Salad, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LayoutEditor } from "@/features/kitchen/LayoutEditor";
 import { NutritionTab } from "@/features/cook/NutritionTab";
 import { AiCheckSetting } from "./AiCheckSetting";
 import { DictionaryPage } from "./DictionaryPage";
-import { KitchenPage } from "./KitchenPage";
 import { PantrySheet } from "./PantrySheet";
 import type { SettingsSection } from "./sheets";
 
@@ -30,7 +30,7 @@ export function SettingsSheet({ section, onSection, onClose }: Props) {
           {section === "dictionary" && <DictionaryPage />}
           {section === "nutrition" && <NutritionTab />}
           {section === "ai" && <AiCheckSetting />}
-          {section === "layout" && <KitchenPage />}
+          {section === "layout" && <LayoutEditor />}
         </>
       ) : (
         <ul className="divide-y rounded-2xl bg-card">

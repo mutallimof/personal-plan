@@ -2,6 +2,13 @@
 
 Changes on branch `build-v1`. Behavior changes to existing features are marked **Behavior**.
 
+## Kitchen round (branch `build-kitchen`)
+- **Behavior:** the Pantry tab bar (Items / Receipt / Dictionary / Kitchen / Cook) is gone. `/pantry` opens on the illustrated kitchen. Add receipt, Cook and All items open as full-screen sheets; Dictionary, Nutrition table, AI check and the layout editor are under Settings (gear). The AI check switch moved from the receipt page to Settings. Old addresses (`/pantry/receipt`, `/pantry/cook`, `/pantry/dictionary`, `/pantry/kitchen`) redirect.
+- **Behavior:** the flat zone map is replaced by the illustrated kitchen. The layout is one JSON document per user (`kitchen_layouts`, migration 0009), importable and exportable; your earlier map is converted the first time. The old `kitchen_zones` table is no longer used (not deleted).
+- New: open a cabinet (door animation, zoom, interior with products as pictures), drag products between shelves and compartments, search that zooms to the item, product icons (Twemoji, CC-BY 4.0) chosen automatically or by you per item and per dictionary entry; receipts keep the dictionary icon. Respects reduced motion.
+- New: layout editor and file format (`docs/kitchen-layout.md`); headless screenshot script.
+- `undo_cook` now also restores the icon and shelf of an item that cooking used up. Test timeouts were raised for slow machines.
+
 ## Next round (branch `build-next`)
 ### Receipt photo helper
 - New: *Photo of a receipt* opens a capture screen (camera with a guide frame on phones, file picker and drag and drop on a computer), checks the photo (too dark, too bright, too blurry, too small) with *Retake* and *Use anyway*, then crops to the paper, straightens the text lines and stretches the contrast. A preview shows the original next to the cleaned-up photo, with a *Use original* switch.

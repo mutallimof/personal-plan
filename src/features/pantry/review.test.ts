@@ -250,7 +250,7 @@ describe("saving rules", () => {
 
   it("saves every line that is not skipped", () => {
     const items = itemsToSave([editLine(unknown, { name: " Zzz ", quantity: 3 }), toggleSkip(matched)]);
-    expect(items).toEqual([{ name: "Zzz", quantity: 3, unit: "pieces", category: "other", location_id: "shelf" }]);
+    expect(items).toEqual([{ name: "Zzz", quantity: 3, unit: "pieces", category: "other", location_id: "shelf", icon: null }]);
   });
 });
 

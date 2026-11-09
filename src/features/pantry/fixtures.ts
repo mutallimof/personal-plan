@@ -17,6 +17,8 @@ export function item(p: Partial<PantryItem> = {}): PantryItem {
     added_at: "2026-01-01T00:00:00Z",
     expires_on: null,
     note: null,
+    icon: null,
+    shelf: null,
     ...p,
   };
 }
@@ -47,6 +49,7 @@ export function alias(raw_text: string, product_name: string, p: Partial<Alias> 
     default_location_kind: null,
     default_unit: "pieces",
     default_quantity: null,
+    icon: null,
     created_at: "2026-01-01T00:00:00Z",
     ...p,
   };

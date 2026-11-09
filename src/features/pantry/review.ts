@@ -1,4 +1,5 @@
 import type { Alias, AliasDraft } from "./aliases";
+import { isIconKey } from "./icons/registry";
 import type { NewItem } from "./data";
 import { firstOfKind } from "./locations";
 import { draftFromCorrection } from "./learn";
@@ -35,9 +36,11 @@ export type ReviewLine = {
   unit: Unit;
   category: Category;
   locationId: string | null;
+  /** Picture from the matched dictionary entry; the saved item keeps it. */
+  icon: string | null;
 };
 
-type Fields = Pick<ReviewLine, "name" | "quantity" | "unit" | "category" | "locationId">;
+type Fields = Pick<ReviewLine, "name" | "quantity" | "unit" | "category" | "locationId" | "icon">;
 
 /** First place of the wanted kind, else the usual kind for the category, else none. */
 function placeFor(locations: readonly PantryLocation[], wanted: string | null | undefined, category: Category): string | null {
@@ -56,6 +59,7 @@ function fieldsFor(line: ParsedLine, alias: Alias | null, locations: readonly Pa
     quantity: weighed ? line.quantity : roundQty((alias?.default_quantity ?? 1) * line.quantity),
     category,
     locationId: placeFor(locations, alias?.default_location_kind, category),
+    icon: alias && isIconKey(alias.icon) ? alias.icon : null,
   };
 }
 
@@ -100,7 +104,9 @@ export function buildReview(
 
 /** Changes fields by hand. Editing counts as confirming. */
 export function editLine(l: ReviewLine, patch: Partial<Fields>): ReviewLine {
-  return { ...l, ...patch, edited: true, confirmed: true };
+  // A different name is a different product, so the matched entry's picture no longer fits.
+  const renamed = patch.name !== undefined && patch.name !== l.name;
+  return { ...l, ...(renamed ? { icon: null } : {}), ...patch, edited: true, confirmed: true };
 }
 
 /** Attaches AI suggestions to the unknown lines they answer. Nothing else about the lines changes. */
@@ -148,6 +154,7 @@ export function itemsToSave(lines: readonly ReviewLine[]): NewItem[] {
       unit: l.unit,
       category: l.category,
       location_id: l.locationId,
+      icon: l.icon,
     }));
 }
 

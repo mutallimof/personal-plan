@@ -1,5 +1,6 @@
 import type { Tables } from "@/integrations/supabase/types";
 import { normalizeReceiptText } from "./normalize";
+import { isIconKey } from "./icons/registry";
 import { isCategory, isLocationKind, isUnit, type Category, type LocationKind, type Unit } from "./model";
 
 export type Alias = Tables<"product_aliases">;
@@ -13,6 +14,8 @@ export type AliasDraft = {
   default_location_kind: LocationKind | null;
   default_unit: Unit;
   default_quantity: number | null;
+  /** Picture for the product (see pantry/icons). Left out when the entry says nothing about it. */
+  icon?: string | null;
 };
 
 /** Identity of an alias: normalized text plus store (a missing store is its own value). */
@@ -41,6 +44,9 @@ export function toDraft(input: unknown): AliasDraft | string {
   const qty = o["default_quantity"] ?? null;
   if (qty !== null && !(typeof qty === "number" && Number.isFinite(qty) && qty > 0)) return "default_quantity must be a number above 0";
 
+  const icon = o["icon"];
+  if (icon !== undefined && icon !== null && !isIconKey(icon)) return `unknown icon "${String(icon)}"`;
+
   return {
     raw_text,
     store: cleanStore(o["store"]),
@@ -49,6 +55,7 @@ export function toDraft(input: unknown): AliasDraft | string {
     default_location_kind: kind,
     default_unit: unit,
     default_quantity: qty,
+    ...(icon === undefined ? {} : { icon }),
   };
 }
 
@@ -84,6 +91,7 @@ export function exportAliases(aliases: readonly Alias[]): string {
       default_location_kind: a.default_location_kind,
       default_unit: a.default_unit,
       default_quantity: a.default_quantity,
+      ...(a.icon ? { icon: a.icon } : {}),
     }));
   return JSON.stringify({ version: 1, aliases: rows }, null, 2) + "\n";
 }

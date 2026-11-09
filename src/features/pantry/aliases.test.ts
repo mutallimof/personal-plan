@@ -13,6 +13,7 @@ const row = (p: Partial<Alias> = {}): Alias => ({
   default_location_kind: "shelf",
   default_unit: "l",
   default_quantity: 1,
+  icon: null,
   created_at: "2026-01-01T00:00:00Z",
   ...p,
 });

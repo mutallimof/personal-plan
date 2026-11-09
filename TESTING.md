@@ -76,6 +76,18 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - [ ] **Cook this**: each ingredient shows the amount to remove. Change one, skip one, change servings (amounts rescale). **Cook**: the Items tab shows the lowered quantities; used-up items are gone. A message offers **Undo**; tap it: the amounts are back. The *Cooked recently* list shows the meal and today's totals, and **Undo** there disappears after 10 minutes.
 - [ ] With AI recipe ideas off, no ideas buttons appear. With `AI_API_KEY` set and the switch on, **Get ideas** shows up to three recipes; **Review and save** opens the form and nothing is saved until you press Save. The request counter goes up by one per request. With a wrong key, a short error appears and the page keeps working.
 
+## Kitchen (run migration 0009 first)
+- [ ] Pantry opens on the kitchen picture with Search, Add receipt, Add item, Cook, All items and a gear icon. No tab bar.
+- [ ] Tap the fridge: the door swings open, the view zooms in, labelled compartments show products as pictures with quantity badges. The arrow, Escape, a tap on the wall and the browser back button each close it.
+- [ ] Tap a product: the item sheet opens. Change quantity, expiry, place; change the icon through *Change icon* (search "milk", "kase"); **Automatic** goes back.
+- [ ] Drag a product to another shelf or compartment: it moves. Drop it outside the cabinet: a place chooser appears.
+- [ ] An empty shelf shows "Empty" and a + that opens Add item with that place.
+- [ ] Search for an item: results list its place; choosing one zooms to the cabinet and the item pulses. An item in a place that is not on the map says "not on the map".
+- [ ] On a phone, drag the scene sideways; it snaps to Shelves / Cooker / Fridge. Tap targets are comfortable.
+- [ ] Turn on "reduce motion" in your system: opening is a short fade.
+- [ ] Settings > Kitchen layout: change a door type, add a spot, **Save**; Export, then Import the file again. A broken file shows a short error and changes nothing.
+- [ ] Old links `/pantry/receipt` and `/pantry/dictionary` land on the sheets.
+
 ## What I was unsure about or did not finish
 - **Nothing was run against your real Supabase.** I tested every screen in a browser at 375 px and 1280 px with a fake session and a mocked API (flows: finish workout and update plan weight, tap-to-filter, add-to-session). Real inserts, row-level security and the two SQL files are untested until you run them.
 - **Google sign-in, the AI chat and onboarding "Generate my plan"** were not touched or tested.
@@ -93,3 +105,4 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - **Not started:** Phase G ("What can I cook").
 - **Photo helper, uncertain:** the quality limits (`photo-config.ts`) and the whole helper were tested on invented images only; nothing was run on real phone photos. The in-app camera (getUserMedia) could not be tried here. Crop assumes the paper is brighter than its surroundings; a white receipt on a white table is not cropped, and a curled or folded receipt is not straightened.
 - **Cook, uncertain:** the SQL functions were tested on PGlite (in-memory Postgres), not on Supabase itself. Day totals add up whole cooked servings (not what you ate). Recipe and nutrition matching is by name (case, accents and plural *s* ignored), so "Basmati rice" does not match "Rice". No recipe is preloaded, and the starter nutrition table has 42 foods only. Editing a recipe saves it in several steps (new ingredients first), not one transaction. Changing servings in *Cook this* resets amounts you edited.
+- **Kitchen, uncertain:** the artwork was checked in headless Edge screenshots with invented data only, not on a real phone and not with your items. Drag and drop uses pointer events and was tested with hand-written events, not on a touch screen. The conversion of the old map and the default places were tested on invented data, not on your database. Receipts still choose the first place of a kind (for example the whole fridge, which shows as the "Other" row), not a compartment. The screenshot script is not part of `npm test`.

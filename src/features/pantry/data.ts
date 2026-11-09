@@ -99,13 +99,16 @@ export const pantry = {
     check(await supabase.from("pantry_items").insert({ ...item, user_id }));
     return null;
   },
-  /** Moves an item to another place. If an equal item is already there, the two become one. */
-  async moveItem(item: PantryItem, locationId: string | null): Promise<void> {
+  /**
+   * Moves an item to another place, and to a shelf of it if given. If an equal item is already there, the two
+   * become one.
+   */
+  async moveItem(item: PantryItem, locationId: string | null, shelf: number | null = null): Promise<void> {
     const base = supabase.from("pantry_items").select("*").eq("unit", item.unit);
     const sameSpot = check(await (locationId ? base.eq("location_id", locationId) : base.is("location_id", null))) ?? [];
     const same = findDuplicate(sameSpot, { name: item.name, unit: item.unit, location_id: locationId }, item.id);
     if (!same) {
-      check(await supabase.from("pantry_items").update({ location_id: locationId }).eq("id", item.id));
+      check(await supabase.from("pantry_items").update({ location_id: locationId, shelf }).eq("id", item.id));
       return;
     }
     check(await supabase.from("pantry_items").update(mergePatch(same, item)).eq("id", same.id));

@@ -81,6 +81,7 @@ export type Database = {
           default_location_kind: string | null
           default_quantity: number | null
           default_unit: string
+          icon: string | null
           id: string
           product_name: string
           raw_text: string
@@ -93,6 +94,7 @@ export type Database = {
           default_location_kind?: string | null
           default_quantity?: number | null
           default_unit?: string
+          icon?: string | null
           id?: string
           product_name: string
           raw_text: string
@@ -105,6 +107,7 @@ export type Database = {
           default_location_kind?: string | null
           default_quantity?: number | null
           default_unit?: string
+          icon?: string | null
           id?: string
           product_name?: string
           raw_text?: string
@@ -385,6 +388,24 @@ export type Database = {
         }
         Relationships: []
       }
+      kitchen_layouts: {
+        Row: {
+          layout: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          layout: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          layout?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kitchen_zones: {
         Row: {
           created_at: string
@@ -435,11 +456,13 @@ export type Database = {
           added_at: string
           category: string
           expires_on: string | null
+          icon: string | null
           id: string
           location_id: string | null
           name: string
           note: string | null
           quantity: number
+          shelf: number | null
           unit: string
           user_id: string
         }
@@ -447,11 +470,13 @@ export type Database = {
           added_at?: string
           category?: string
           expires_on?: string | null
+          icon?: string | null
           id?: string
           location_id?: string | null
           name: string
           note?: string | null
           quantity?: number
+          shelf?: number | null
           unit?: string
           user_id?: string
         }
@@ -459,11 +484,13 @@ export type Database = {
           added_at?: string
           category?: string
           expires_on?: string | null
+          icon?: string | null
           id?: string
           location_id?: string | null
           name?: string
           note?: string | null
           quantity?: number
+          shelf?: number | null
           unit?: string
           user_id?: string
         }
