@@ -5,7 +5,10 @@ export const Route = createFileRoute("/_authenticated/_shell/pantry")({
   component: PantryLayout,
 });
 
-const TABS = [{ to: "/pantry", label: "Items", exact: true }] as const;
+const TABS = [
+  { to: "/pantry", label: "Items", exact: true },
+  { to: "/pantry/dictionary", label: "Dictionary", exact: false },
+] as const;
 
 function PantryLayout() {
   return (
