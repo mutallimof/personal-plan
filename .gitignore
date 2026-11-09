@@ -37,3 +37,7 @@ dist-ssr
 !.env.example
 
 .vercel
+
+# Your own receipt photos for scripts/ocr-eval (private)
+scripts/ocr-eval/samples/
+scripts/ocr-eval/.cache/
