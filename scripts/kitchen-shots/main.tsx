@@ -6,6 +6,14 @@ import { KitchenScene } from "@/features/kitchen/KitchenScene";
 import { DEFAULT_LAYOUT } from "@/features/kitchen/legacy";
 import { item, loc } from "@/features/pantry/fixtures";
 import { ItemDialog } from "@/features/pantry/ItemDialog";
+import { alias } from "@/features/pantry/fixtures";
+import { SYNTHETIC_KAUFLAND } from "@/features/pantry/fixtures";
+import { parseReceipt } from "@/features/pantry/receipt";
+import { buildReview, type ReviewLine } from "@/features/pantry/review";
+import { ReviewScreen } from "@/features/pantry/ReviewScreen";
+import { STORE_ALIASES } from "@/features/pantry/starter-aliases";
+import { categoryOptions } from "@/features/pantry/category-labels";
+import { DEFAULT_ACCEPTS } from "@/features/pantry/categories";
 
 const params = new URLSearchParams(location.search);
 document.documentElement.classList.toggle("dark", params.get("dark") === "1");
@@ -18,8 +26,8 @@ const places = [
   "Fruit drawer",
   "Drinks and sauces",
   "Freezer",
-  "Freezer top drawer",
-  "Freezer middle drawer",
+  "Frozen vegetables and fruit",
+  "Frozen meat and fish",
   "Dry-goods shelf",
   "Spice shelf",
   "Glass cabinet",
@@ -52,8 +60,8 @@ const items = [
   at("Fruit drawer", "Lemon", 2, "pieces"),
   at("Drinks and sauces", "Ketchup", 1, "pack"),
   at("Drinks and sauces", "Orange juice", 1, "l"),
-  at("Freezer top drawer", "Pizza", 2, "pieces"),
-  at("Freezer middle drawer", "Peas", 450, "g"),
+  at("Frozen vegetables and fruit", "Pizza", 2, "pieces"),
+  at("Frozen meat and fish", "Peas", 450, "g"),
   at("Dry-goods shelf", "Basmati rice", 1, "kg"),
   at("Dry-goods shelf", "Spaghetti", 500, "g"),
   at("Dry-goods shelf", "Black beans", 2, "pack"),
@@ -94,10 +102,36 @@ function Preview() {
   );
 }
 
+/** The receipt review screen with an invented receipt, for screenshots. */
+function ReviewPreview() {
+  const accepting = places.map((p) => ({ ...p, accepts: [...(DEFAULT_ACCEPTS[p.name] ?? [])] }));
+  const dictionary = STORE_ALIASES.map((a) => alias(a.raw_text, a.product_name, { ...a }));
+  const parsed = parseReceipt(SYNTHETIC_KAUFLAND);
+  const [lines, setLines] = useState<ReviewLine[]>(() => buildReview(parsed.lines, dictionary, "kaufland", accepting));
+  const [ignored, setIgnored] = useState(parsed.ignored);
+  return (
+    <div className="mx-auto max-w-3xl p-4">
+      <ReviewScreen
+        lines={lines}
+        locations={accepting}
+        store="kaufland"
+        onStore={() => {}}
+        onChange={setLines}
+        onSave={() => {}}
+        onBack={() => {}}
+        saving={false}
+        categories={categoryOptions([])}
+        ignored={ignored}
+        onRestore={(g) => setIgnored(ignored.filter((x) => x !== g))}
+      />
+    </div>
+  );
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={new QueryClient()}>
-      <Preview />
+      {params.get("view") === "review" ? <ReviewPreview /> : <Preview />}
     </QueryClientProvider>
   </StrictMode>,
 );

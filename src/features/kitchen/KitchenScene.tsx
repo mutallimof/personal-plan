@@ -268,7 +268,7 @@ export function KitchenScene(p: SceneProps) {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <span className="rounded-full bg-background/90 px-3 py-1.5 text-sm font-medium shadow">
+          <span data-overlay-text className="rounded-full bg-background/90 px-3 py-1.5 text-sm font-medium shadow">
             {zoomedSpot.name}
           </span>
         </div>

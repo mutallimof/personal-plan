@@ -11,8 +11,13 @@ function swing(side: "left" | "right", { open, reduced, ms }: Motion): CSSProper
     transformBox: "fill-box",
     transformOrigin: `${side} center`,
     transform: open && !reduced ? "scaleX(0.08)" : "none",
-    opacity: open && reduced ? 0 : 1,
-    transition: reduced ? `opacity ${ms}ms linear` : `transform ${ms}ms ease-in-out`,
+    // Once swung open the door is gone: it must not leave a sliver over the inside.
+    opacity: open ? 0 : 1,
+    transition: reduced
+      ? `opacity ${ms}ms linear`
+      : open
+        ? `transform ${ms}ms ease-in-out, opacity ${Math.round(ms * 0.35)}ms linear ${Math.round(ms * 0.65)}ms`
+        : `transform ${ms}ms ease-in-out, opacity 60ms linear`,
     pointerEvents: open ? "none" : undefined,
   };
 }

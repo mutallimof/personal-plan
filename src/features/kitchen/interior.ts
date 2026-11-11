@@ -1,3 +1,4 @@
+import { formatAmount } from "@/features/pantry/amounts";
 import { expiryState } from "@/features/pantry/items";
 import { isUnit, type PantryItem } from "@/features/pantry/model";
 import type { Compartment, CompartmentKind, Hotspot, Rect } from "./layout";
@@ -24,8 +25,8 @@ export type Row = {
 
 export const LOOSE_ID = "loose";
 
-const WEIGHT: Record<CompartmentKind, number> = { shelf: 1, drawer: 1.3, door: 0.9 };
-const LOOSE_WEIGHT = 0.8;
+const WEIGHT: Record<CompartmentKind, number> = { shelf: 1, drawer: 1, door: 1 };
+const LOOSE_WEIGHT = 1;
 const GAP = 0.8;
 
 /** The inside of a cabinet: the area between its frame. */
@@ -140,8 +141,45 @@ export function assignShelves(
 
 export type Sprite = { item: PantryItem; x: number; y: number; size: number; stack: number };
 
-/** Height of a product picture on a row, in room units. */
-export const spriteSize = (row: Rect) => Math.min(9, Math.max(3.4, row.height * 0.62));
+/** Space between the edge of a row and what is drawn in it. */
+export const PAD = 1;
+/** Space between the top of the product area and the tallest product. */
+const TOP_GAP = 0.6;
+const MIN_SPRITE = 2.2;
+const MAX_SPRITE = 7.5;
+
+export type RowParts = {
+  /** Strip above the products that holds the label; none for plain shelves. */
+  header: Rect | null;
+  /** The area below the header: products stand on its bottom board. */
+  stand: Rect;
+  /** Font size of the label (0 when there is none). */
+  labelSize: number;
+};
+
+/** One label size for every row of a cabinet, so the labels look alike: it follows the shortest row, within limits. */
+export function labelSizeFor(rows: readonly Pick<Row, "rect">[]): number {
+  const shortest = rows.length ? Math.min(...rows.map((r) => r.rect.height)) : 10;
+  return Math.min(1.5, Math.max(1.2, shortest * 0.18));
+}
+
+/**
+ * Splits a row into a header strip for its label and the area where products stand. The label never shares
+ * space with the products or the board, so nothing drawn in one part can touch another.
+ */
+export function rowParts(row: Rect, labelSize: number): RowParts {
+  if (labelSize <= 0) return { header: null, stand: row, labelSize: 0 };
+  const height = labelSize * 1.5;
+  return {
+    header: { x: row.x + PAD, y: row.y, width: row.width - 2 * PAD, height },
+    stand: { x: row.x, y: row.y + height, width: row.width, height: row.height - height },
+    labelSize,
+  };
+}
+
+/** Height of a product picture on the standing area of a row, in room units: it always fits above the board. */
+export const spriteSize = (stand: Rect) =>
+  Math.min(MAX_SPRITE, stand.width * 0.28, Math.max(MIN_SPRITE, stand.height - BOARD - TOP_GAP));
 
 /** How many copies are drawn for a quantity: 3 yogurts show as a small stack of 3. */
 export function stackCount(item: Pick<PantryItem, "quantity" | "unit">): number {
@@ -151,9 +189,9 @@ export function stackCount(item: Pick<PantryItem, "quantity" | "unit">): number 
 
 /** Short quantity for the badge: "3", "500 g", "1.5 kg". */
 export function badgeText(item: Pick<PantryItem, "quantity" | "unit">): string {
-  const n = Math.round(item.quantity * 100) / 100;
-  if (!isUnit(item.unit) || item.unit === "pieces") return String(n);
-  return item.unit === "pack" ? `${n} pk` : `${n} ${item.unit}`;
+  if (!isUnit(item.unit) || item.unit === "pieces") return String(Math.round(item.quantity * 100) / 100);
+  if (item.unit === "pack") return `${Math.round(item.quantity * 100) / 100} pk`;
+  return formatAmount(item.quantity, item.unit);
 }
 
 export type ExpiryDot = "soon" | "expired" | null;
@@ -173,7 +211,7 @@ export function layOutRow(
 ): { sprites: Sprite[]; overflow: number; more: Rect | null } {
   const size = spriteSize(row);
   const y = row.y + row.height - BOARD - size;
-  const pad = 1;
+  const pad = PAD;
   const sprites: Sprite[] = [];
   let x = row.x + pad;
   const right = row.x + row.width - pad;

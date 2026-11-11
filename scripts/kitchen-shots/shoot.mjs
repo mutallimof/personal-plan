@@ -29,6 +29,7 @@ const SHOTS = [
   { name: "fridge-open", query: "open=fridge" },
   { name: "freezer-open", query: "open=freezer" },
   { name: "item-sheet", query: "open=fridge&item=1" },
+  { name: "receipt-review", query: "view=review", full: true },
 ];
 const SIZES = [
   { label: "375", width: 375, height: 800, mobile: true },
@@ -53,6 +54,7 @@ try {
         await new Promise((r) => setTimeout(r, 1200));
         await page.screenshot({
           path: `${out}/${shot.name}-${size.label}-${dark ? "dark" : "light"}.png`,
+          fullPage: shot.full === true,
         });
         await page.close();
       }

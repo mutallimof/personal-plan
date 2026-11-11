@@ -1,7 +1,7 @@
 import type { KeyboardEvent, PointerEvent } from "react";
 import type { PantryItem } from "@/features/pantry/model";
 import { iconUrl } from "@/features/pantry/icons/registry";
-import { badgeText, BOARD, cavity, expiryDot, layOutRow, type Row, type Sprite } from "./interior";
+import { badgeText, BOARD, cavity, expiryDot, labelSizeFor, layOutRow, PAD, rowParts, type Row, type Sprite } from "./interior";
 import type { Hotspot } from "./layout";
 
 const OUTLINE = { stroke: "var(--k-line)", strokeWidth: 0.25, strokeLinejoin: "round" } as const;
@@ -29,7 +29,7 @@ export function ProductSprite({ sprite, icon, today, highlight, dimmed, handlers
   const width = size + (stack - 1) * step;
   const dot = expiryDot(item, today);
   const text = badgeText(item);
-  const fs = size * 0.27;
+  const fs = Math.max(size * 0.27, 1.1);
   const bw = Math.max(size * 0.36, text.length * fs * 0.62 + size * 0.14);
   const bh = size * 0.34;
   return (
@@ -95,9 +95,10 @@ export function ProductSprite({ sprite, icon, today, highlight, dimmed, handlers
           strokeWidth={0.25}
         />
       )}
-      <g transform={`translate(${width - bw + size * 0.08} ${size - bh + size * 0.04})`}>
+      <g data-badge transform={`translate(${width - bw + size * 0.08} ${size - bh - 0.3})`}>
         <rect width={bw} height={bh} rx={bh / 2} fill="var(--k-badge)" {...OUTLINE} />
         <text
+          data-badge-text
           x={bw / 2}
           y={bh / 2}
           fontSize={fs}
@@ -129,6 +130,8 @@ type InteriorProps = {
 };
 
 const IDLE_LIMIT = 4;
+/** Rows lower than this have no room for the "Empty" text and the add button. */
+const MIN_EMPTY_ZONE = 3.2;
 
 /** The inside of a cabinet: back wall, boards, drawers and the products standing on them. */
 export function Interior({
@@ -144,14 +147,13 @@ export function Interior({
   onAdd,
 }: InteriorProps) {
   const inner = cavity(h);
+  const labelSizeAll = labelSizeFor(rows);
   const back =
     h.kind === "fridge"
       ? "var(--k-fridge-in)"
       : h.kind === "freezer"
         ? "var(--k-freezer-in)"
         : "var(--k-inside)";
-  const shortest = rows.length ? Math.min(...rows.map((r) => r.rect.height)) : inner.height;
-  const labelSize = Math.min(2.3, Math.max(1.3, shortest * 0.32));
   return (
     <g>
       <rect
@@ -174,19 +176,23 @@ export function Interior({
       />
       {rows.map((r) => {
         const items = contents.get(r.id) ?? [];
-        const showLabel = r.label !== null && (full || h.compartments.length > 0);
-        // products stand below the label
-        const below = showLabel ? labelSize * 0.9 : 0;
-        const stand = { ...r.rect, y: r.rect.y + below, height: r.rect.height - below };
+        const labeled = r.label !== null && (full || h.compartments.length > 0);
+        const { header, stand, labelSize } = rowParts(r.rect, labeled ? labelSizeAll : 0);
         const { sprites, overflow, more } = layOutRow(items, stand, full ? Infinity : IDLE_LIMIT);
+        const boardY = r.rect.y + r.rect.height - BOARD;
+        // the height between the header and the board, where products stand
+        const zone = stand.height - BOARD;
+        const fs = Math.min(2.4, Math.max(1.3, zone * 0.34));
+        const button = Math.min(3, Math.max(1.3, zone / 2 - 0.5));
+        const midY = stand.y + zone / 2;
         return (
           <g key={r.id} data-row={r.id}>
             {r.kind === "drawer" ? (
               <rect
-                x={r.rect.x}
-                y={r.rect.y + r.rect.height * 0.12}
-                width={r.rect.width}
-                height={r.rect.height * 0.88}
+                x={r.rect.x + 0.4}
+                y={stand.y}
+                width={r.rect.width - 0.8}
+                height={zone}
                 rx={0.8}
                 fill="var(--k-glass)"
                 fillOpacity={0.3}
@@ -194,29 +200,30 @@ export function Interior({
               />
             ) : r.kind === "door" ? (
               <rect
-                x={r.rect.x}
-                y={r.rect.y}
-                width={r.rect.width}
-                height={r.rect.height}
+                x={r.rect.x + 0.4}
+                y={stand.y}
+                width={r.rect.width - 0.8}
+                height={zone}
                 rx={0.6}
                 fill="var(--k-inside-dark)"
                 fillOpacity={0.4}
                 {...OUTLINE}
               />
             ) : null}
-            {sprites.map((s) => (
+            {sprites.map((sp) => (
               <ProductSprite
-                key={s.item.id}
-                sprite={s}
-                icon={iconOf(s.item)}
+                key={sp.item.id}
+                sprite={sp}
+                icon={iconOf(sp.item)}
                 today={today}
-                highlight={highlightId === s.item.id}
-                dimmed={draggingId === s.item.id}
+                highlight={highlightId === sp.item.id}
+                dimmed={draggingId === sp.item.id}
                 {...(full && handlers ? { handlers } : {})}
               />
             ))}
             {more && (
               <text
+                data-more
                 x={more.x + more.width / 2}
                 y={more.y + more.height / 2}
                 fontSize={more.height * 0.4}
@@ -229,19 +236,22 @@ export function Interior({
               </text>
             )}
             <rect
+              data-board
               x={r.rect.x}
-              y={r.rect.y + r.rect.height - BOARD}
+              y={boardY}
               width={r.rect.width}
               height={BOARD}
               rx={0.3}
               fill="var(--k-wood)"
               {...OUTLINE}
             />
-            {showLabel && (
+            {header && (
               <text
-                x={r.rect.x + 1}
-                y={r.rect.y + labelSize}
+                data-label
+                x={header.x}
+                y={header.y + header.height / 2}
                 fontSize={labelSize}
+                dominantBaseline="central"
                 fill="var(--k-label)"
                 fontWeight={600}
                 style={{ pointerEvents: "none" }}
@@ -249,13 +259,13 @@ export function Interior({
                 {r.label}
               </text>
             )}
-            {full && items.length === 0 && (
+            {full && items.length === 0 && zone >= MIN_EMPTY_ZONE && (
               <g>
                 <text
-                  x={r.rect.x + r.rect.width - 7}
-                  y={r.rect.y + r.rect.height / 2}
-                  fontSize={labelSize}
-                  textAnchor="end"
+                  data-empty
+                  x={r.rect.x + PAD + 0.6}
+                  y={midY}
+                  fontSize={fs}
                   dominantBaseline="central"
                   fill="var(--k-label)"
                   fillOpacity={0.7}
@@ -263,6 +273,7 @@ export function Interior({
                   Empty
                 </text>
                 <g
+                  data-button
                   role="button"
                   tabIndex={0}
                   aria-label={`Add item to ${r.label ?? h.name}`}
@@ -271,16 +282,22 @@ export function Interior({
                   onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onAdd(r)}
                 >
                   <circle
-                    cx={r.rect.x + r.rect.width - 3}
-                    cy={r.rect.y + r.rect.height / 2}
-                    r={Math.max(2, Math.min(3.2, r.rect.height / 2.6))}
+                    cx={r.rect.x + r.rect.width - PAD - button}
+                    cy={midY}
+                    r={Math.min(button + 1.2, zone / 2 - 0.1)}
+                    fill="transparent"
+                  />
+                  <circle
+                    cx={r.rect.x + r.rect.width - PAD - button}
+                    cy={midY}
+                    r={button}
                     fill="var(--k-badge)"
                     {...OUTLINE}
                   />
                   <text
-                    x={r.rect.x + r.rect.width - 3}
-                    y={r.rect.y + r.rect.height / 2}
-                    fontSize={3}
+                    x={r.rect.x + r.rect.width - PAD - button}
+                    y={midY}
+                    fontSize={button * 1.3}
                     textAnchor="middle"
                     dominantBaseline="central"
                     fill="var(--k-badge-text)"

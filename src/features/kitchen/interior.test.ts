@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import { item } from "@/features/pantry/fixtures";
 import {
   assignShelves,
+  BOARD,
   badgeText,
   cavity,
   expiryDot,
   interiorRows,
+  labelSizeFor,
   LOOSE_ID,
   layOutRow,
   rowAt,
+  rowParts,
   spriteSize,
   stackCount,
 } from "./interior";
@@ -123,7 +126,8 @@ describe("sprites", () => {
     expect(badgeText({ quantity: 500, unit: "g" })).toBe("500 g");
     expect(badgeText({ quantity: 1.5, unit: "kg" })).toBe("1.5 kg");
     expect(badgeText({ quantity: 2, unit: "pack" })).toBe("2 pk");
-    expect(badgeText({ quantity: 0.1 + 0.2, unit: "l" })).toBe("0.3 l");
+    expect(badgeText({ quantity: 0.1 + 0.2, unit: "l" })).toBe("300 ml");
+    expect(badgeText({ quantity: 1500, unit: "g" })).toBe("1.5 kg");
   });
 
   it("marks only food that expires soon or has expired", () => {
@@ -156,8 +160,39 @@ describe("sprites", () => {
   });
 
   it("sizes pictures by the height of the shelf, within limits", () => {
-    expect(spriteSize({ x: 0, y: 0, width: 10, height: 2 })).toBe(3.4);
-    expect(spriteSize({ x: 0, y: 0, width: 10, height: 100 })).toBe(9);
+    expect(spriteSize({ x: 0, y: 0, width: 100, height: 2 })).toBe(2.2);
+    expect(spriteSize({ x: 0, y: 0, width: 100, height: 100 })).toBe(7.5);
+    expect(spriteSize({ x: 0, y: 0, width: 10, height: 100 })).toBeCloseTo(2.8); // never wider than the row allows
+  });
+
+  it("always fits above the board, so it never touches the label or the board", () => {
+    for (const height of [4, 6, 8, 10, 14, 30]) {
+      const stand = { x: 0, y: 0, width: 40, height };
+      const size = spriteSize(stand);
+      if (size > 2.2) expect(size + BOARD).toBeLessThanOrEqual(height);
+    }
+  });
+
+  it("splits a row into a header for the label and a standing area below it", () => {
+    const row = { x: 5, y: 10, width: 30, height: 9 };
+    const none = rowParts(row, 0);
+    expect(none.header).toBeNull();
+    expect(none.stand).toEqual(row);
+    const { header, stand, labelSize } = rowParts(row, 1.5);
+    expect(labelSize).toBe(1.5);
+    expect(header!.y).toBe(row.y);
+    expect(header!.y + header!.height).toBeLessThanOrEqual(stand.y + 1e-9);
+    expect(stand.y + stand.height).toBeCloseTo(row.y + row.height);
+    // the biggest product plus the board fits under the header
+    const { sprites } = layOutRow([item({ name: "A" })], stand);
+    expect(sprites[0]!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
+    expect(sprites[0]!.y + sprites[0]!.size).toBeCloseTo(row.y + row.height - BOARD);
+  });
+
+  it("uses one label size for a cabinet, following its shortest row", () => {
+    const rows = [{ rect: { x: 0, y: 0, width: 10, height: 20 } }, { rect: { x: 0, y: 0, width: 10, height: 5 } }];
+    expect(labelSizeFor(rows)).toBe(1.2);
+    expect(labelSizeFor([{ rect: { x: 0, y: 0, width: 10, height: 30 } }])).toBe(1.5);
   });
 });
 
