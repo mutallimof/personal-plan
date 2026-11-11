@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { CanCookTab } from "./CanCookTab";
+import { ChatTab } from "./ChatTab";
 import { NutritionTab } from "./NutritionTab";
 import { RecipesTab } from "./RecipesTab";
+import { ShoppingTab } from "./ShoppingTab";
 
 const VIEWS = [
   { id: "cook", label: "Can cook" },
   { id: "recipes", label: "Recipes" },
+  { id: "chat", label: "Ask AI" },
+  { id: "shopping", label: "Shopping" },
   { id: "nutrition", label: "Nutrition" },
 ] as const;
 
@@ -24,7 +28,7 @@ export function CookPage() {
             role="tab"
             aria-selected={view === v.id}
             className={cn(
-              "flex h-11 flex-1 items-center justify-center rounded-full text-sm font-medium text-muted-foreground",
+              "flex h-11 min-w-0 flex-1 items-center justify-center rounded-full px-1 text-[13px] font-medium text-muted-foreground sm:text-sm",
               view === v.id && "bg-background text-foreground shadow-sm",
             )}
             onClick={() => setView(v.id)}
@@ -35,6 +39,8 @@ export function CookPage() {
       </div>
       {view === "cook" && <CanCookTab />}
       {view === "recipes" && <RecipesTab />}
+      {view === "chat" && <ChatTab />}
+      {view === "shopping" && <ShoppingTab />}
       {view === "nutrition" && <NutritionTab />}
     </div>
   );

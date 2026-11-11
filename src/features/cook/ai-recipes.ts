@@ -34,9 +34,10 @@ export const SYSTEM_PROMPT =
 
 export const userPrompt = (lines: readonly PantryLine[]) => `Ingredients I have:\n${JSON.stringify(lines)}`;
 
-const recipeSchema = z.object({
+export const recipeSchema = z.object({
   title: z.string().trim().min(1).max(120),
   servings: z.number().positive().max(50),
+  minutes: z.number().int().positive().max(1440).optional(),
   ingredients: z
     .array(
       z.object({

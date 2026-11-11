@@ -318,3 +318,32 @@ describe("0010_categories_places.sql", () => {
     await expect(db.query("insert into pantry_categories (key, label) values ('baby food', 'Again')")).rejects.toThrow();
   });
 });
+
+describe("0011_ai_chat_shopping.sql", () => {
+  it("can be run again without error", async () => {
+    await db.exec("RESET ROLE");
+    await db.exec(sql("0011_ai_chat_shopping.sql"));
+    await db.exec(sql("0011_ai_chat_shopping.sql"));
+  });
+
+  it("adds the chat switch (off) and counter (0) to the settings", async () => {
+    await db.exec("RESET ROLE");
+    await db.exec(`insert into pantry_settings (user_id) values ('${ALICE}') on conflict do nothing`);
+    const row = (await db.query<{ ai_chat: boolean; ai_chat_requests: number }>(`select ai_chat, ai_chat_requests from pantry_settings where user_id = '${ALICE}'`)).rows[0];
+    expect(row).toEqual({ ai_chat: false, ai_chat_requests: 0 });
+    await expect(db.query(`update pantry_settings set ai_chat_requests = -1 where user_id = '${ALICE}'`)).rejects.toThrow();
+  });
+
+  it("keeps the shopping list private to its owner and checks the values", async () => {
+    await as(ALICE);
+    await db.query("insert into shopping_list (name, quantity, unit) values ('Milk', 1, 'l'), ('Salt', null, null)");
+    await as(BOB);
+    expect((await db.query("select * from shopping_list")).rows).toHaveLength(0);
+    await expect(db.query("insert into shopping_list (user_id, name) values ($1, 'x')", [ALICE])).rejects.toThrow();
+    await as(ALICE);
+    expect((await db.query("select * from shopping_list")).rows).toHaveLength(2);
+    await expect(db.query("insert into shopping_list (name, quantity, unit) values ('Bad', 0, 'g')")).rejects.toThrow();
+    await expect(db.query("insert into shopping_list (name, quantity, unit) values ('Bad', 1, 'cups')")).rejects.toThrow();
+    await expect(db.query("insert into shopping_list (name) values ('')")).rejects.toThrow();
+  });
+});

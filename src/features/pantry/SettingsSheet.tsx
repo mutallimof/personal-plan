@@ -3,6 +3,7 @@ import { BookText, ChevronRight, LayoutGrid, Salad, Sparkles, Tags } from "lucid
 import { Button } from "@/components/ui/button";
 import { LayoutEditor } from "@/features/kitchen/LayoutEditor";
 import { NutritionTab } from "@/features/cook/NutritionTab";
+import { AiChatSetting } from "@/features/cook/AiChatSetting";
 import { AiCheckSetting } from "./AiCheckSetting";
 import { CategoriesSetting } from "./CategoriesSetting";
 import { DictionaryPage } from "./DictionaryPage";
@@ -13,7 +14,7 @@ const SECTIONS: readonly { id: SettingsSection; label: string; icon: ReactNode }
   { id: "dictionary", label: "Dictionary", icon: <BookText className="h-5 w-5" /> },
   { id: "categories", label: "Categories", icon: <Tags className="h-5 w-5" /> },
   { id: "nutrition", label: "Nutrition table", icon: <Salad className="h-5 w-5" /> },
-  { id: "ai", label: "AI check", icon: <Sparkles className="h-5 w-5" /> },
+  { id: "ai", label: "AI", icon: <Sparkles className="h-5 w-5" /> },
   { id: "layout", label: "Kitchen layout", icon: <LayoutGrid className="h-5 w-5" /> },
 ];
 
@@ -32,7 +33,12 @@ export function SettingsSheet({ section, onSection, onClose }: Props) {
           {section === "dictionary" && <DictionaryPage />}
           {section === "categories" && <CategoriesSetting />}
           {section === "nutrition" && <NutritionTab />}
-          {section === "ai" && <AiCheckSetting />}
+          {section === "ai" && (
+            <div className="space-y-3">
+              <AiChatSetting />
+              <AiCheckSetting />
+            </div>
+          )}
           {section === "layout" && <LayoutEditor />}
         </>
       ) : (

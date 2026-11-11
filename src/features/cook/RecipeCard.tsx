@@ -19,10 +19,11 @@ type Props = {
   missing?: readonly LineStatus[];
   expiring?: boolean;
   actions?: ReactNode;
+  children?: ReactNode;
   className?: string;
 };
 
-export function RecipeCard({ title, servings, facts, missing = [], expiring = false, actions, className }: Props) {
+export function RecipeCard({ title, servings, facts, missing = [], expiring = false, actions, children, className }: Props) {
   return (
     <article className={cn("space-y-2 rounded-2xl bg-card p-4", className)}>
       <div className="flex items-start justify-between gap-3">
@@ -39,6 +40,7 @@ export function RecipeCard({ title, servings, facts, missing = [], expiring = fa
           {missing.map(missingText).join(", ")}
         </p>
       )}
+      {children}
       {actions && <div className="flex flex-wrap gap-2 pt-1">{actions}</div>}
     </article>
   );

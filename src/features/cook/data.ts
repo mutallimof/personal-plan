@@ -117,9 +117,9 @@ export const cook = {
     check(await supabase.from("ingredient_nutrition").delete().eq("id", id));
   },
 
-  async setAiRecipes(on: boolean): Promise<void> {
+  async setAiChat(on: boolean): Promise<void> {
     const user_id = await uid();
-    check(await supabase.from("pantry_settings").upsert({ user_id, ai_recipes: on }));
+    check(await supabase.from("pantry_settings").upsert({ user_id, ai_chat: on }));
   },
 
   /** Takes the confirmed amounts out of the pantry and writes the log in one database transaction. Returns the log id. */
@@ -148,5 +148,29 @@ export const cook = {
 
   async undoCook(logId: string): Promise<void> {
     check(await supabase.rpc("undo_cook", { p_log_id: logId }));
+  },
+};
+
+export type ShoppingItem = Tables<"shopping_list">;
+
+export const shoppingQuery = queryOptions({
+  queryKey: ["cook", "shopping"],
+  queryFn: async (): Promise<ShoppingItem[]> => check(await supabase.from("shopping_list").select("*").order("created_at")) ?? [],
+});
+
+export const shopping = {
+  async add(items: readonly { name: string; quantity?: number | null; unit?: string | null }[]): Promise<void> {
+    const user_id = await uid();
+    const rows = items.filter((i) => i.name.trim()).map((i) => ({ user_id, name: i.name.trim(), quantity: i.quantity ?? null, unit: i.unit ?? null }));
+    if (rows.length) check(await supabase.from("shopping_list").insert(rows));
+  },
+  async setDone(id: string, done: boolean): Promise<void> {
+    check(await supabase.from("shopping_list").update({ done }).eq("id", id));
+  },
+  async remove(id: string): Promise<void> {
+    check(await supabase.from("shopping_list").delete().eq("id", id));
+  },
+  async clearDone(): Promise<void> {
+    check(await supabase.from("shopping_list").delete().eq("done", true));
   },
 };

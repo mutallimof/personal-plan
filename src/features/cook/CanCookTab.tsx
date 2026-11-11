@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Empty, Loading, QueryError } from "@/components/states";
 import { itemsQuery, settingsQuery } from "@/features/pantry/data";
-import { AiIdeas } from "./AiIdeas";
 import { rankRecipes, type Need } from "./can-cook";
 import { CookScreen } from "./CookScreen";
 import { activeMeals, canUndo, todayTotals } from "./cooked";
@@ -12,7 +11,9 @@ import { cook, cookedQuery, nutritionQuery, recipesQuery, useInvalidateCook } fr
 import { approxLabel, formatKcal, formatProtein, recipeNutrition, toNutritionRows } from "./nutrition";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeForm } from "./RecipeForm";
-import { groupByRecipe, toDrafts, type RecipeDraft } from "./recipes";
+import { RecipesEmpty } from "./RecipesEmpty";
+import { useOpenAiSettings } from "./open-settings";
+import { emptyDraft, groupByRecipe, toDrafts, type RecipeDraft } from "./recipes";
 
 type Screen = { name: "list" } | { name: "cook"; id: string } | { name: "review"; draft: RecipeDraft };
 
@@ -23,6 +24,7 @@ export function CanCookTab() {
   const logs = useQuery(cookedQuery);
   const settings = useQuery(settingsQuery);
   const invalidate = useInvalidateCook();
+  const openSettings = useOpenAiSettings();
   const [screen, setScreen] = useState<Screen>({ name: "list" });
   const [now, setNow] = useState(() => new Date());
 
@@ -93,8 +95,10 @@ export function CanCookTab() {
 
   return (
     <div className="space-y-6">
-      {ranked.length === 0 ? (
-        <Empty>{book.data.recipes.length ? "Nothing you can cook right now." : "Add a recipe to see what you can cook."}</Empty>
+      {!book.data.recipes.length ? (
+        <RecipesEmpty onAdd={() => setScreen({ name: "review", draft: emptyDraft() })} onOpenSettings={openSettings} aiChat={settings.data.aiChat} />
+      ) : ranked.length === 0 ? (
+        <Empty>Nothing you can cook right now.</Empty>
       ) : (
         <ul className="space-y-3">
           {ranked.map((c) => {
@@ -118,8 +122,6 @@ export function CanCookTab() {
           })}
         </ul>
       )}
-
-      <AiIdeas settings={settings.data} items={pantryItems} nutrition={rows} onReview={(draft) => setScreen({ name: "review", draft })} />
 
       {meals.length > 0 && (
         <section className="space-y-2">

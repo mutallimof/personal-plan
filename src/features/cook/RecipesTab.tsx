@@ -5,11 +5,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Empty, Loading, QueryError } from "@/components/states";
-import { itemsQuery } from "@/features/pantry/data";
+import { itemsQuery, settingsQuery } from "@/features/pantry/data";
 import { cook, nutritionQuery, recipesQuery, useInvalidateCook, type Recipe } from "./data";
 import { recipeNutrition, toNutritionRows } from "./nutrition";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeForm } from "./RecipeForm";
+import { RecipesEmpty } from "./RecipesEmpty";
+import { useOpenAiSettings } from "./open-settings";
 import { emptyDraft, groupByRecipe, searchRecipes, toDrafts, type RecipeDraft } from "./recipes";
 
 type Editing = { recipe?: Recipe; draft: RecipeDraft } | null;
@@ -18,6 +20,8 @@ export function RecipesTab() {
   const book = useQuery(recipesQuery);
   const items = useQuery(itemsQuery);
   const nutrition = useQuery(nutritionQuery);
+  const settings = useQuery(settingsQuery);
+  const openSettings = useOpenAiSettings();
   const invalidate = useInvalidateCook();
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Editing>(null);
@@ -90,7 +94,7 @@ export function RecipesTab() {
       </div>
 
       {!book.data.recipes.length ? (
-        <Empty>No recipes yet.</Empty>
+        <RecipesEmpty onAdd={() => setEditing({ draft: emptyDraft() })} onOpenSettings={openSettings} aiChat={settings.data?.aiChat ?? false} />
       ) : !shown.length ? (
         <Empty>Nothing found.</Empty>
       ) : (

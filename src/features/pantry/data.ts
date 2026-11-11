@@ -73,7 +73,7 @@ export function useCategoryOptions() {
   return categoryOptions(rows.data ?? []);
 }
 
-export type PantrySettings = { aiCheck: boolean; aiLinesSent: number; aiRecipes: boolean; aiRecipeRequests: number };
+export type PantrySettings = { aiCheck: boolean; aiLinesSent: number; aiRecipes: boolean; aiRecipeRequests: number; aiChat: boolean; aiChatRequests: number };
 
 export const settingsQuery = queryOptions({
   queryKey: ["pantry", "settings"],
@@ -85,6 +85,8 @@ export const settingsQuery = queryOptions({
       aiLinesSent: row?.ai_lines_sent ?? 0,
       aiRecipes: row?.ai_recipes ?? false,
       aiRecipeRequests: row?.ai_recipe_requests ?? 0,
+      aiChat: row?.ai_chat ?? false,
+      aiChatRequests: row?.ai_chat_requests ?? 0,
     };
   },
 });
