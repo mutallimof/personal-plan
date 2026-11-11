@@ -32,7 +32,8 @@ export function idleBox(room: Pick<Room, "width" | "height">, aspect: number, pa
 
 /**
  * The view for looking into a rectangle: the rectangle plus a margin, grown to the screen's shape and kept
- * inside the room when it fits.
+ * inside the room when it fits. `topFraction` reserves that share of the view's height at the top (for the back
+ * button and the title): the rectangle is fitted into the part below it, so nothing drawn there is covered.
  */
 export function zoomBox(
   target: Rect,
@@ -40,10 +41,13 @@ export function zoomBox(
   room: Pick<Room, "width" | "height">,
   margin = 0.14,
   minWidth = 56,
+  topFraction = 0,
 ): Box {
   const a = aspect > 0 ? aspect : room.width / room.height;
+  const f = Math.min(0.4, Math.max(0, topFraction));
+  const usable = 1 - f;
   let width = target.width * (1 + 2 * margin);
-  let height = target.height * (1 + 2 * margin);
+  let height = (target.height * (1 + 2 * margin)) / usable;
   if (width / height < a) width = height * a;
   else height = width / a;
   // a small cabinet is not blown up to the whole screen
@@ -53,12 +57,11 @@ export function zoomBox(
   }
   const fit = (start: number, size: number, limit: number) =>
     size >= limit ? (limit - size) / 2 : clamp(start, 0, limit - size);
-  return {
-    width,
-    height,
-    x: fit(target.x + target.width / 2 - width / 2, width, room.width),
-    y: fit(target.y + target.height / 2 - height / 2, height, room.height),
-  };
+  // the rectangle's centre goes to the middle of the part below the reserved band
+  const cy = target.y + target.height / 2;
+  const wantY = cy - (f * height + (usable * height) / 2);
+  const y = f === 0 ? fit(wantY, height, room.height) : height >= room.height ? wantY : clamp(wantY, -f * height, room.height - height);
+  return { width, height, x: fit(target.x + target.width / 2 - width / 2, width, room.width), y };
 }
 
 /** Where to move the narrow view so the nearest area sits in the middle of it. Without areas the position stays. */

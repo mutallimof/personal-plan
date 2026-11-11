@@ -29,6 +29,7 @@ const COLLECT = `(() => {
   for (const el of document.querySelectorAll("[data-badge]")) add("badge", el.textContent || "", el);
   for (const el of document.querySelectorAll("[data-button]")) add("button", el.getAttribute("aria-label") || "", el);
   for (const el of document.querySelectorAll("button")) add("button", el.getAttribute("aria-label") || el.textContent || "", el);
+  for (const el of document.querySelectorAll("[data-sprite]")) add("sprite", el.closest("[data-item]")?.getAttribute("aria-label") || "product", el);
   for (const el of document.querySelectorAll("[data-board]")) add("board", "shelf line", el);
   for (const el of document.querySelectorAll("[data-overlay-text]")) add("text", el.textContent || "", el);
   return out;

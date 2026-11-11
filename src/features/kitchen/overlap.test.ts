@@ -14,6 +14,11 @@ describe("findClashes", () => {
     }
   });
 
+  it("finds a label over a product picture, and a chip over another chip", () => {
+    expect(findClashes([box("text", 0, 0), box("sprite", 5, 5)])).toHaveLength(1);
+    expect(findClashes([box("badge", 0, 0), box("badge", 5, 5)])).toHaveLength(1);
+  });
+
   it("finds a badge or a button cut by a shelf line", () => {
     expect(findClashes([box("badge", 0, 0), box("board", 0, 8, 50, 3)])).toHaveLength(1);
     expect(findClashes([box("button", 0, 0), box("board", 0, 8, 50, 3)])).toHaveLength(1);
@@ -27,7 +32,8 @@ describe("findClashes", () => {
   });
 
   it("allows what is allowed to overlap: badges on pictures, badges next to buttons", () => {
-    expect(findClashes([box("badge", 0, 0), box("badge", 5, 5)])).toEqual([]);
+    expect(findClashes([box("badge", 0, 0), box("sprite", 5, 5)])).toEqual([]);
+    expect(findClashes([box("sprite", 0, 0), box("sprite", 5, 5)])).toEqual([]); // stacks overlap on purpose
     expect(findClashes([box("badge", 0, 0), box("button", 5, 5)])).toEqual([]);
     expect(findClashes([box("board", 0, 0), box("board", 5, 5)])).toEqual([]);
   });

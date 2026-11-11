@@ -43,6 +43,18 @@ describe("zoomBox", () => {
     expect(b.y).toBeLessThanOrEqual(target.y);
     expect(b.y + b.height).toBeGreaterThanOrEqual(target.y + target.height);
   });
+  it("keeps the target below a reserved band at the top, whatever its place in the room", () => {
+    for (const y of [0, 20, 34, 60]) {
+      const t = { x: 60, y, width: 32, height: 30 };
+      const b = zoomBox(t, 0.5, room, undefined, undefined, 0.1);
+      expect(b.y + 0.1 * b.height).toBeLessThanOrEqual(t.y);
+      expect(b.y + b.height).toBeGreaterThanOrEqual(t.y + t.height);
+      expect(b.x).toBeLessThanOrEqual(t.x);
+    }
+  });
+  it("is unchanged without a band", () => {
+    expect(zoomBox(target, 0.6, room, undefined, undefined, 0)).toEqual(zoomBox(target, 0.6, room));
+  });
   it("stays inside the room when it fits", () => {
     const b = zoomBox({ x: 0, y: 0, width: 20, height: 10 }, 1.6, room);
     expect(b.x).toBeGreaterThanOrEqual(0);

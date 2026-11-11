@@ -160,7 +160,7 @@ describe("sprites", () => {
   });
 
   it("sizes pictures by the height of the shelf, within limits", () => {
-    expect(spriteSize({ x: 0, y: 0, width: 100, height: 2 })).toBe(2.2);
+    expect(spriteSize({ x: 0, y: 0, width: 100, height: 2 })).toBe(0.8); // a very low row: small, but never above the board
     expect(spriteSize({ x: 0, y: 0, width: 100, height: 100 })).toBe(7.5);
     expect(spriteSize({ x: 0, y: 0, width: 10, height: 100 })).toBeCloseTo(2.8); // never wider than the row allows
   });
@@ -200,4 +200,25 @@ describe("a layout with a cabinet that has no shelves of its own place", () => {
   it("still validates", () => {
     expect(readLayout({ ...DEFAULT_LAYOUT }).errors).toEqual([]);
   });
+});
+
+describe("a crowded cabinet: label, pictures and chips never share space", () => {
+  const sweep = [3.5, 4, 4.5, 5, 5.3, 6, 7.1, 9, 12];
+  for (const height of sweep) {
+    it(`row height ${height}`, () => {
+      const row = { x: 0, y: 10, width: 40, height };
+      const parts = rowParts(row, 1.2);
+      expect(parts.header).not.toBeNull();
+      const header = parts.header!;
+      // the label strip holds the label and sits above the standing area
+      expect(header.y + header.height).toBeLessThanOrEqual(parts.stand.y + 1e-9);
+      expect(parts.labelSize * 1.5).toBeLessThanOrEqual(header.height + 1e-9);
+      // pictures stand between the header and the board
+      const { sprites } = layOutRow([item({ name: "A", quantity: 500, unit: "g" }), item({ name: "B", quantity: 2, unit: "pieces" })], parts.stand);
+      for (const s of sprites) {
+        expect(s.y).toBeGreaterThanOrEqual(parts.stand.y - 1e-9);
+        expect(s.y + s.size).toBeLessThanOrEqual(parts.stand.y + parts.stand.height - BOARD + 1e-9);
+      }
+    });
+  }
 });

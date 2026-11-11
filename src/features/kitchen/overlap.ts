@@ -1,11 +1,11 @@
 /** What the layout check looks at: boxes of things drawn on screen, in pixels. */
-export type BoxKind = "text" | "badge" | "button" | "board";
+export type BoxKind = "text" | "badge" | "button" | "board" | "sprite";
 export type Box = { kind: BoxKind; name: string; x: number; y: number; width: number; height: number };
 
 export type Clash = { a: Box; b: Box };
 
 /** Pairs of kinds that must never overlap: text with anything, and badges or buttons with a shelf line. */
-const FORBIDDEN: ReadonlySet<string> = new Set(["text|text", "badge|text", "button|text", "board|text", "badge|board", "board|button"]);
+const FORBIDDEN: ReadonlySet<string> = new Set(["text|text", "badge|text", "button|text", "board|text", "badge|board", "board|button", "badge|badge", "sprite|text"]);
 
 const key = (a: BoxKind, b: BoxKind) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 

@@ -146,6 +146,10 @@ export const PAD = 1;
 /** Space between the top of the product area and the tallest product. */
 const TOP_GAP = 0.6;
 const MIN_SPRITE = 2.2;
+/** Smallest label strip, for rows that are too short for anything else. */
+const MIN_HEADER = 0.9;
+/** Pictures never get smaller than this, and never taller than the room between the header and the board. */
+const TINY_SPRITE = 0.8;
 const MAX_SPRITE = 7.5;
 
 export type RowParts = {
@@ -169,17 +173,18 @@ export function labelSizeFor(rows: readonly Pick<Row, "rect">[]): number {
  */
 export function rowParts(row: Rect, labelSize: number): RowParts {
   if (labelSize <= 0) return { header: null, stand: row, labelSize: 0 };
-  const height = labelSize * 1.5;
+  // on a short row the label shrinks first, so the products keep room to stand under it
+  const height = Math.min(labelSize * 1.5, Math.max(MIN_HEADER, row.height - (BOARD + TOP_GAP + MIN_SPRITE)));
   return {
     header: { x: row.x + PAD, y: row.y, width: row.width - 2 * PAD, height },
     stand: { x: row.x, y: row.y + height, width: row.width, height: row.height - height },
-    labelSize,
+    labelSize: height / 1.5,
   };
 }
 
 /** Height of a product picture on the standing area of a row, in room units: it always fits above the board. */
 export const spriteSize = (stand: Rect) =>
-  Math.min(MAX_SPRITE, stand.width * 0.28, Math.max(MIN_SPRITE, stand.height - BOARD - TOP_GAP));
+  Math.min(MAX_SPRITE, stand.width * 0.28, Math.max(TINY_SPRITE, stand.height - BOARD - TOP_GAP));
 
 /** How many copies are drawn for a quantity: 3 yogurts show as a small stack of 3. */
 export function stackCount(item: Pick<PantryItem, "quantity" | "unit">): number {

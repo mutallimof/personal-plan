@@ -76,6 +76,7 @@ export function ProductSprite({ sprite, icon, today, highlight, dimmed, handlers
         const i = stack - 1 - k;
         return (
           <image
+            data-sprite
             key={i}
             href={iconUrl(icon)}
             x={i * step}

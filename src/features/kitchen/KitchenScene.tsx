@@ -41,6 +41,8 @@ export type SceneProps = {
 };
 
 const DRAG_PX = 6;
+/** Height in pixels of the back button and title above a zoomed cabinet; the cabinet is fitted below it. */
+const TITLE_BAND = 68;
 
 export function KitchenScene(p: SceneProps) {
   const { layout, openKey } = p;
@@ -71,7 +73,7 @@ export function KitchenScene(p: SceneProps) {
   const zoomed = zoomedKey(view);
   const active = activeKey(view);
   const zoomedSpot = layout.hotspots.find((h) => h.key === zoomed);
-  const target = zoomedSpot ? zoomBox(zoomedSpot, aspect, room) : idleBox(room, aspect, pan);
+  const target = zoomedSpot ? zoomBox(zoomedSpot, aspect, room, undefined, undefined, size.height > 0 ? TITLE_BAND / size.height : 0) : idleBox(room, aspect, pan);
   const box = useAnimatedBox(target, panning ? 0 : ms);
   const pxPerUnit = size.width > 0 ? size.width / box.width : 0;
 
@@ -207,7 +209,8 @@ export function KitchenScene(p: SceneProps) {
         <Backdrop layout={layout} />
         {layout.hotspots.map((h) => {
           const isActive = active === h.key;
-          const shows = isActive || !hidesInside(h);
+          // while one cabinet is open, the others show nothing: their pictures would sit under the title and back button
+          const shows = isActive || (!zoomed && !hidesInside(h));
           const hit = hitRect(h, pxPerUnit);
           const doorOpen = isActive && (view.phase === "opening" || view.phase === "open");
           return (
