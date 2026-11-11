@@ -1,11 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
 import { ensureDefaultLocations } from "@/features/pantry/data";
+import { defaultAccepts } from "@/features/pantry/locations";
 import type { PantryLocation } from "@/features/pantry/model";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { readLayout, type Layout } from "./layout";
 import { DEFAULT_LAYOUT, fromLegacyZones, type LegacyZone } from "./legacy";
 import { missingPlaces, type NewPlace } from "./places";
+import { upgradeLayout } from "./upgrade";
 
 async function uid() {
   const { data } = await supabase.auth.getUser();
@@ -34,6 +36,7 @@ async function createPlaces(
           name: p.name,
           kind: p.kind,
           position: existing.length + i,
+          accepts: defaultAccepts(p.name),
           parent_id: p.parent ? (ids.get(p.parent.toLowerCase()) ?? null) : null,
         })
         .select("id")
@@ -70,6 +73,16 @@ async function legacyZones(): Promise<LegacyZone[]> {
   }));
 }
 
+/** Adds the default fridge and freezer compartments a saved layout lacks, once. Nothing is removed or moved. */
+async function upgradeOnce(user_id: string, saved: Layout): Promise<Layout> {
+  const settings = check(await supabase.from("pantry_settings").select("layout_upgraded").eq("user_id", user_id).maybeSingle());
+  if (settings?.layout_upgraded) return saved;
+  const { layout, added } = upgradeLayout(saved);
+  if (added.length) await saveLayout(layout);
+  check(await supabase.from("pantry_settings").upsert({ user_id, layout_upgraded: true }));
+  return layout;
+}
+
 /**
  * The layout, created on first use: converted from the earlier flat map when there is one, else the default.
  * A saved layout that cannot be read is not overwritten; the default is shown until a new one is imported.
@@ -79,7 +92,11 @@ async function loadOrCreateLayout(): Promise<Layout> {
   const row = check(
     await supabase.from("kitchen_layouts").select("layout").eq("user_id", user_id).maybeSingle(),
   );
-  if (row) return readLayout(row.layout).layout ?? DEFAULT_LAYOUT;
+  if (row) {
+    const saved = readLayout(row.layout).layout;
+    if (!saved) return DEFAULT_LAYOUT;
+    return upgradeOnce(user_id, saved);
+  }
 
   await ensureDefaultLocations();
   const zones = await legacyZones();

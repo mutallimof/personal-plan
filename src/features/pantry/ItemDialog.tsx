@@ -3,12 +3,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { pantry, useInvalidatePantry } from "./data";
+import { pantry, useCategoryOptions, useInvalidatePantry } from "./data";
 import { IconPicker } from "./icons/IconPicker";
 import { ItemIcon } from "./icons/ItemIcon";
 import { resolveIcon } from "./icons/registry";
 import {
-  CATEGORIES,
   isCategory,
   isUnit,
   UNITS,
@@ -28,6 +27,7 @@ type Props = {
 
 export function ItemDialog({ item, locations, defaultLocationId = "", onClose }: Props) {
   const invalidate = useInvalidatePantry();
+  const categories = useCategoryOptions();
   const [name, setName] = useState(item?.name ?? "");
   const [quantity, setQuantity] = useState(item ? String(item.quantity) : "1");
   const [unit, setUnit] = useState(item?.unit ?? "pieces");
@@ -148,7 +148,7 @@ export function ItemDialog({ item, locations, defaultLocationId = "", onClose }:
                   label="Category"
                   value={category}
                   onChange={setCategory}
-                  options={asOptions(CATEGORIES)}
+                  options={categories}
                 />
               </label>
               <label className={label}>

@@ -1,8 +1,9 @@
-import { queryOptions, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { findDuplicate, mergePatch } from "./items";
 import { DEFAULT_LOCATIONS } from "./locations";
+import { categoryOptions, type CategoryRow } from "./category-labels";
 import type { PantryItem, PantryLocation } from "./model";
 
 async function uid() {
@@ -29,7 +30,14 @@ export async function ensureDefaultLocations(): Promise<void> {
       const row = check(
         await supabase
           .from("pantry_locations")
-          .insert({ user_id, name: l.name, kind: l.kind, position, parent_id: l.parent ? (ids.get(l.parent) ?? null) : null })
+          .insert({
+            user_id,
+            name: l.name,
+            kind: l.kind,
+            position,
+            accepts: [...(l.accepts ?? [])],
+            parent_id: l.parent ? (ids.get(l.parent) ?? null) : null,
+          })
           .select("id")
           .single(),
       );
@@ -53,6 +61,18 @@ export const itemsQuery = queryOptions({
   queryFn: async (): Promise<PantryItem[]> => check(await supabase.from("pantry_items").select("*").order("name")) ?? [],
 });
 
+export const categoriesQuery = queryOptions({
+  queryKey: ["pantry", "categories"],
+  queryFn: async (): Promise<CategoryRow[]> =>
+    ((check(await supabase.from("pantry_categories").select("key,label").order("label")) ?? []) as CategoryRow[]),
+});
+
+/** Category choices for dropdowns: built-in and own categories with their current names. Falls back to the built-in list. */
+export function useCategoryOptions() {
+  const rows = useQuery(categoriesQuery);
+  return categoryOptions(rows.data ?? []);
+}
+
 export type PantrySettings = { aiCheck: boolean; aiLinesSent: number; aiRecipes: boolean; aiRecipeRequests: number };
 
 export const settingsQuery = queryOptions({
@@ -74,9 +94,21 @@ export function useInvalidatePantry() {
   return () => qc.invalidateQueries({ queryKey: ["pantry"] });
 }
 
+export const categoryApi = {
+  /** Adds a category, or sets a new label on an existing one. Items keep their category key. */
+  async save(key: string, label: string): Promise<void> {
+    const user_id = await uid();
+    check(await supabase.from("pantry_categories").upsert({ user_id, key, label: label.trim() }));
+  },
+};
+
 export type NewItem = Omit<TablesInsert<"pantry_items">, "id" | "user_id" | "added_at">;
 
 export const pantry = {
+  /** Sets which categories a place accepts. */
+  async setAccepts(locationId: string, accepts: string[]): Promise<void> {
+    check(await supabase.from("pantry_locations").update({ accepts }).eq("id", locationId));
+  },
   async setAiCheck(on: boolean): Promise<void> {
     const user_id = await uid();
     check(await supabase.from("pantry_settings").upsert({ user_id, ai_check: on }));

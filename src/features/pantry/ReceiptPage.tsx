@@ -8,22 +8,23 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Loading, QueryError } from "@/components/states";
 import { suggestProducts } from "./ai.functions";
-import { pantry, locationsQuery, settingsQuery, useInvalidatePantry } from "./data";
+import { pantry, locationsQuery, settingsQuery, useCategoryOptions, useInvalidatePantry } from "./data";
 import { aliasesQuery, writeAliases } from "./dictionary-data";
 import { cleanStore } from "./aliases";
 import { confidenceByLine, ocrText, recognize, type OcrProgress } from "./ocr";
-import { parseReceipt } from "./receipt";
+import { parseReceipt, type IgnoredLine } from "./receipt";
 import { readReceiptFile } from "./receipt-input";
-import { aliasesToLearn, buildReview, itemsToSave, withSuggestions, type ReviewLine } from "./review";
+import { aliasesToLearn, buildReview, itemsToSave, restoreLine, withSuggestions, type ReviewLine } from "./review";
 import { PhotoStep } from "./PhotoStep";
 import { ReviewScreen } from "./ReviewScreen";
 
-type Review = { store: string; lines: ReviewLine[] };
+type Review = { store: string; lines: ReviewLine[]; ignored: IgnoredLine[] };
 
 export function ReceiptPage() {
   const aliases = useQuery(aliasesQuery);
   const locations = useQuery(locationsQuery);
   const settings = useQuery(settingsQuery);
+  const categories = useCategoryOptions();
   const suggest = useServerFn(suggestProducts);
   const invalidate = useInvalidatePantry();
   const [pasted, setPasted] = useState("");
@@ -51,13 +52,13 @@ export function ReceiptPage() {
 
   /** Receipt text from any source goes through here. */
   function startReview(text: string, confidence?: ReadonlyMap<number, number>) {
-    const { store, lines } = parseReceipt(text);
+    const { store, lines, ignored } = parseReceipt(text);
     if (!lines.length) {
       toast.error("No items found in that receipt.");
       return;
     }
     const built = buildReview(lines, dictionary, store, places, confidence);
-    setReview({ store: store ?? "", lines: built });
+    setReview({ store: store ?? "", lines: built, ignored });
     if (settings.data?.aiCheck) void askAi(built);
   }
 
@@ -151,6 +152,12 @@ export function ReceiptPage() {
         onBack={() => setReview(null)}
         saving={busy}
         checking={checking}
+        categories={categories}
+        ignored={review.ignored}
+        onRestore={(g) => {
+          const line = restoreLine(g, dictionary, cleanStore(review.store), places);
+          if (line) setReview({ ...review, lines: [line, ...review.lines], ignored: review.ignored.filter((x) => x !== g) });
+        }}
       />
     );
   }

@@ -41,7 +41,7 @@ describe("toDraft", () => {
     [{ product_name: "x" }, "raw_text is empty"],
     [{ raw_text: "1,99", product_name: "x" }, "raw_text is empty"],
     [{ raw_text: "a" }, "product_name is empty"],
-    [{ raw_text: "a", product_name: "x", category: "candy" }, 'unknown category "candy"'],
+    [{ raw_text: "a", product_name: "x", category: "Candy!" }, 'unknown category "Candy!"'],
     [{ raw_text: "a", product_name: "x", default_location_kind: "attic" }, 'unknown default_location_kind "attic"'],
     [{ raw_text: "a", product_name: "x", default_unit: "oz" }, 'unknown default_unit "oz"'],
     [{ raw_text: "a", product_name: "x", default_quantity: 0 }, "default_quantity must be a number above 0"],

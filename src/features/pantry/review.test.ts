@@ -111,7 +111,7 @@ describe("buildReview", () => {
       ["matched", "Eggs"],
       ["matched", "Spaghetti"],
     ]);
-    expect(lines[0]).toMatchObject({ quantity: 0.946, unit: "kg", weighed: true });
+    expect(lines[0]).toMatchObject({ quantity: 946, unit: "g", weighed: true });
     expect(lines[1]).toMatchObject({ quantity: 3, unit: "pieces" });
   });
 });

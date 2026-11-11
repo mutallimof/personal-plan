@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loading, QueryError } from "@/components/states";
 import { locationsQuery, useInvalidatePantry } from "@/features/pantry/data";
+import type { PantryLocation } from "@/features/pantry/model";
+import { AcceptsEditor } from "./AcceptsEditor";
 import { LOCATION_KINDS } from "@/features/pantry/model";
 import { asOptions, Choice } from "@/features/pantry/ui";
 import {
@@ -70,11 +72,13 @@ function Num({
 function HotspotForm({
   h,
   placeNames,
+  places,
   onChange,
   onDelete,
 }: {
   h: Hotspot;
   placeNames: readonly string[];
+  places: readonly PantryLocation[];
   onChange: (patch: Partial<Omit<Hotspot, "key">>) => void;
   onDelete: () => void;
 }) {
@@ -130,6 +134,9 @@ function HotspotForm({
             onChange={(e) => onChange({ location: e.target.value || null })}
           />
         </label>
+        <div className="col-span-2">
+          <AcceptsEditor placeName={h.location} places={places} />
+        </div>
         <Num label="X" value={h.x} onChange={(x) => onChange({ x })} />
         <Num label="Y" value={h.y} onChange={(y) => onChange({ y })} />
         <Num label="Width" value={h.width} min={6} onChange={(width) => onChange({ width })} />
@@ -170,6 +177,9 @@ function HotspotForm({
                 value={c.location ?? ""}
                 onChange={(e) => setComp(i, { location: e.target.value || null })}
               />
+              <div className="col-span-3">
+                <AcceptsEditor placeName={c.location} places={places} />
+              </div>
             </div>
           ))}
           <Button
@@ -313,6 +323,7 @@ export function LayoutEditor() {
           key={current.key}
           h={current}
           placeNames={placesQ.data.map((p) => p.name)}
+          places={placesQ.data}
           onChange={(patch) => edit(updateHotspot(layout, current.key, patch))}
           onDelete={() => {
             edit(removeHotspot(layout, current.key));

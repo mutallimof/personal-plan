@@ -1,16 +1,51 @@
+import { DEFAULT_ACCEPTS } from "./categories";
 import type { LocationKind, PantryLocation } from "./model";
 
-/** A place in the default template. Children list their parent by name. */
-export type DefaultLocation = { name: string; kind: LocationKind; parent?: string };
+/** A place in the default template. Children list their parent by name. `accepts` lists the categories it takes. */
+export type DefaultLocation = { name: string; kind: LocationKind; parent?: string; accepts?: readonly string[] };
 
-export const DEFAULT_LOCATIONS: readonly DefaultLocation[] = [
+/** The categories a place of this name accepts by default (empty for places the defaults do not know). */
+export const defaultAccepts = (name: string): string[] => [...(DEFAULT_ACCEPTS[name] ?? [])];
+
+const withAccepts = (l: Omit<DefaultLocation, "accepts">): DefaultLocation => ({ ...l, accepts: defaultAccepts(l.name) });
+
+const BASE_LOCATIONS: readonly Omit<DefaultLocation, "accepts">[] = [
   { name: "Fridge", kind: "fridge" },
+  { name: "Meat and fish", kind: "shelf", parent: "Fridge" },
+  { name: "Dairy and eggs", kind: "shelf", parent: "Fridge" },
   { name: "Vegetable drawer", kind: "drawer", parent: "Fridge" },
   { name: "Fruit drawer", kind: "drawer", parent: "Fridge" },
+  { name: "Drinks and sauces", kind: "shelf", parent: "Fridge" },
   { name: "Freezer", kind: "freezer" },
   { name: "Dry-goods shelf", kind: "shelf" },
   { name: "Spice shelf", kind: "shelf" },
 ];
+
+export const DEFAULT_LOCATIONS: readonly DefaultLocation[] = BASE_LOCATIONS.map(withAccepts);
+
+/** True when the place lists this category. */
+export const accepts = (l: Pick<PantryLocation, "accepts">, category: string): boolean => (l.accepts ?? []).includes(category);
+
+/** Places that accept a category, in tree order. */
+export function placesAccepting(locations: readonly PantryLocation[], category: string): PantryLocation[] {
+  return sortLocations(locations).filter((l) => accepts(l, category));
+}
+
+/**
+ * Where a new item of this category goes: the first place that accepts it (preferring one of the wanted
+ * kind when several do), else the first place of the wanted kind, else null. Places follow categories, not names.
+ */
+export function pickPlace(
+  locations: readonly PantryLocation[],
+  category: string,
+  wantedKind: LocationKind | null = null,
+  fallbackKind: LocationKind | null = null,
+): PantryLocation | null {
+  const candidates = placesAccepting(locations, category);
+  const first = (wantedKind && candidates.find((l) => l.kind === wantedKind)) || candidates[0];
+  if (first) return first;
+  return (wantedKind && firstOfKind(locations, wantedKind)) || (fallbackKind && firstOfKind(locations, fallbackKind)) || null;
+}
 
 /** Places ordered as a tree: each parent followed by its children, both by position then name. */
 export function sortLocations(locations: readonly PantryLocation[]): PantryLocation[] {

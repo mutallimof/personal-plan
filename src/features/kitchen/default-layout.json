@@ -135,21 +135,21 @@
       "compartments": [
         {
           "key": "fz1",
-          "name": "Top drawer",
+          "name": "Vegetables and fruit",
           "kind": "drawer",
-          "location": "Freezer top drawer"
+          "location": "Frozen vegetables and fruit"
         },
         {
           "key": "fz2",
-          "name": "Middle drawer",
+          "name": "Meat and fish",
           "kind": "drawer",
-          "location": "Freezer middle drawer"
+          "location": "Frozen meat and fish"
         },
         {
           "key": "fz3",
-          "name": "Bottom drawer",
+          "name": "Ready meals",
           "kind": "drawer",
-          "location": "Freezer bottom drawer"
+          "location": "Frozen ready meals"
         }
       ],
       "x": 122,

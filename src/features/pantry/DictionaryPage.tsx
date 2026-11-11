@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Empty, Loading, QueryError } from "@/components/states";
 import { toDraft, exportAliases, parseAliasFile, type Alias } from "./aliases";
 import { aliasesQuery, dictionary, writeAliases } from "./dictionary-data";
-import { useInvalidatePantry } from "./data";
+import { useCategoryOptions, useInvalidatePantry } from "./data";
 import { normalizeReceiptText } from "./normalize";
-import { CATEGORIES, LOCATION_KINDS, UNITS } from "./model";
+import { LOCATION_KINDS, UNITS } from "./model";
 import { IconPicker } from "./icons/IconPicker";
 import { ItemIcon } from "./icons/ItemIcon";
 import { resolveIcon } from "./icons/registry";
@@ -18,6 +18,7 @@ import { asOptions, Choice } from "./ui";
 
 function AliasDialog({ alias, onClose }: { alias?: Alias | undefined; onClose: () => void }) {
   const invalidate = useInvalidatePantry();
+  const categories = useCategoryOptions();
   const [raw, setRaw] = useState(alias?.raw_text ?? "");
   const [store, setStore] = useState(alias?.store ?? "");
   const [name, setName] = useState(alias?.product_name ?? "");
@@ -111,7 +112,7 @@ function AliasDialog({ alias, onClose }: { alias?: Alias | undefined; onClose: (
                   label="Category"
                   value={category}
                   onChange={setCategory}
-                  options={asOptions(CATEGORIES)}
+                  options={categories}
                 />
               </label>
               <label className={label}>

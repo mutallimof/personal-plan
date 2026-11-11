@@ -1,6 +1,7 @@
 import type { Tables } from "@/integrations/supabase/types";
 import { normalizeReceiptText } from "./normalize";
 import { isIconKey } from "./icons/registry";
+import { legacyCategory } from "./categories";
 import { isCategory, isLocationKind, isUnit, type Category, type LocationKind, type Unit } from "./model";
 
 export type Alias = Tables<"product_aliases">;
@@ -35,7 +36,8 @@ export function toDraft(input: unknown): AliasDraft | string {
   const product_name = typeof o["product_name"] === "string" ? o["product_name"].trim().slice(0, 120) : "";
   if (!product_name) return "product_name is empty";
 
-  const category = o["category"] ?? "other";
+  const rawCategory = o["category"] ?? "other";
+  const category = typeof rawCategory === "string" ? legacyCategory(rawCategory) : rawCategory;
   if (!isCategory(category)) return `unknown category "${String(category)}"`;
   const kind = o["default_location_kind"] ?? null;
   if (kind !== null && !isLocationKind(kind)) return `unknown default_location_kind "${String(kind)}"`;

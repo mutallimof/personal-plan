@@ -253,3 +253,68 @@ describe("0009_kitchen_scene.sql", () => {
     expect(row).toEqual({ icon: "jar", shelf: 1 });
   });
 });
+
+describe("0010_categories_places.sql", () => {
+  it("can be run again without error", async () => {
+    await db.exec("RESET ROLE");
+    await db.exec(sql("0010_categories_places.sql"));
+    await db.exec(sql("0010_categories_places.sql"));
+  });
+
+  it("sets accepted categories on places with the default names, and leaves others empty", async () => {
+    await db.exec("RESET ROLE");
+    await db.exec(`
+      insert into pantry_locations (id, user_id, name, kind) values
+        ('cccccccc-0000-0000-0000-000000000001', '${ALICE}', 'Meat and fish', 'shelf'),
+        ('cccccccc-0000-0000-0000-000000000002', '${ALICE}', 'Top drawer', 'drawer');
+    `);
+    await db.exec(sql("0010_categories_places.sql"));
+    const rows = (await db.query<{ name: string; accepts: string[] }>("select name, accepts from pantry_locations where id::text like 'cccccccc%' order by name")).rows;
+    expect(rows).toEqual([
+      { name: "Meat and fish", accepts: ["meat", "poultry", "fish"] },
+      { name: "Top drawer", accepts: [] },
+    ]);
+  });
+
+  it("converts produce, meat and egg categories by keyword and moves nothing", async () => {
+    await db.exec("RESET ROLE");
+    const rows: [string, string, string][] = [
+      ["Tomatoes", "produce", "vegetables"],
+      ["Äpfel", "produce", "fruit"],
+      ["Mystery plant", "produce", "other"],
+      ["Chicken breast", "meat", "poultry"],
+      ["Hähnchenbrustfilet", "meat", "poultry"],
+      ["Mixed minced meat", "meat", "meat"],
+      ["Eggs", "dairy", "eggs"],
+      ["Milk", "dairy", "dairy"],
+      ["Chocolate", "snacks", "snacks and sweets"],
+    ];
+    for (const [i, [name, category]] of rows.entries()) {
+      await db.query("insert into pantry_items (id, user_id, name, category) values ($1, $2, $3, $4)", [`eeeeeeee-0000-0000-0000-00000000000${i}`, ALICE, name, category]);
+    }
+    await db.exec(sql("0010_categories_places.sql"));
+    const got = (await db.query<{ name: string; category: string }>("select name, category from pantry_items where id::text like 'eeeeeeee%'")).rows;
+    for (const [name, , want] of rows) expect(got.find((g) => g.name === name)?.category).toBe(want);
+  });
+
+  it("converts dictionary entries the same way", async () => {
+    await db.exec("RESET ROLE");
+    await db.exec(`insert into product_aliases (user_id, raw_text, product_name, category) values
+      ('${ALICE}', 'GURKE', 'Cucumber', 'produce'), ('${ALICE}', 'PUTENBRUST', 'Turkey breast', 'meat')`);
+    await db.exec(sql("0010_categories_places.sql"));
+    const got = (await db.query<{ product_name: string; category: string }>("select product_name, category from product_aliases where raw_text in ('GURKE','PUTENBRUST')")).rows;
+    expect(got.find((g) => g.product_name === "Cucumber")?.category).toBe("vegetables");
+    expect(got.find((g) => g.product_name === "Turkey breast")?.category).toBe("poultry");
+  });
+
+  it("keeps category names private to their owner", async () => {
+    await as(ALICE);
+    await db.query("insert into pantry_categories (key, label) values ('baby food', 'Baby food')");
+    await as(BOB);
+    expect((await db.query("select * from pantry_categories")).rows).toHaveLength(0);
+    await expect(db.query("insert into pantry_categories (user_id, key, label) values ($1, 'x', 'X')", [ALICE])).rejects.toThrow();
+    await as(ALICE);
+    await expect(db.query("insert into pantry_categories (key, label) values ('Bad Key!', 'x')")).rejects.toThrow();
+    await expect(db.query("insert into pantry_categories (key, label) values ('baby food', 'Again')")).rejects.toThrow();
+  });
+});

@@ -496,8 +496,30 @@ export type Database = {
         }
         Relationships: []
       }
+      pantry_categories: {
+        Row: {
+          created_at: string
+          key: string
+          label: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          label: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          label?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pantry_locations: {
         Row: {
+          accepts: string[]
           created_at: string
           id: string
           kind: string
@@ -507,6 +529,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accepts?: string[]
           created_at?: string
           id?: string
           kind?: string
@@ -516,6 +539,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          accepts?: string[]
           created_at?: string
           id?: string
           kind?: string
@@ -532,7 +556,11 @@ export type Database = {
           ai_lines_sent: number
           ai_recipe_requests: number
           ai_recipes: boolean
+          ai_chat: boolean
+          ai_chat_requests: number
+          aliases_seed_version: number
           aliases_seeded: boolean
+          layout_upgraded: boolean
           kitchen_seeded: boolean
           locations_seeded: boolean
           nutrition_seeded: boolean
@@ -543,7 +571,11 @@ export type Database = {
           ai_lines_sent?: number
           ai_recipe_requests?: number
           ai_recipes?: boolean
+          ai_chat?: boolean
+          ai_chat_requests?: number
+          aliases_seed_version?: number
           aliases_seeded?: boolean
+          layout_upgraded?: boolean
           kitchen_seeded?: boolean
           locations_seeded?: boolean
           nutrition_seeded?: boolean
@@ -554,10 +586,44 @@ export type Database = {
           ai_lines_sent?: number
           ai_recipe_requests?: number
           ai_recipes?: boolean
+          ai_chat?: boolean
+          ai_chat_requests?: number
+          aliases_seed_version?: number
           aliases_seeded?: boolean
+          layout_upgraded?: boolean
           kitchen_seeded?: boolean
           locations_seeded?: boolean
           nutrition_seeded?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shopping_list: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          name: string
+          quantity: number | null
+          unit: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          name: string
+          quantity?: number | null
+          unit?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          name?: string
+          quantity?: number | null
+          unit?: string | null
           user_id?: string
         }
         Relationships: []
