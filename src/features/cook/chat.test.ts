@@ -15,8 +15,6 @@ import {
   validateToolCall,
 } from "./chat";
 
-const today = new Date("2026-05-10T12:00:00");
-
 const recipe = {
   title: "Chicken and potatoes",
   servings: 2,
@@ -29,40 +27,33 @@ const recipe = {
 };
 
 describe("chatSummary", () => {
-  it("sends names, quantities, units and days until expiry only", () => {
-    const out = chatSummary(
-      [item({ name: "Chicken breast", quantity: 500, unit: "g", expires_on: "2026-05-12", location_id: "secret-place", note: "private note", added_at: "2026-04-01T00:00:00Z" })],
-      today,
-    );
-    expect(out).toEqual([{ name: "Chicken breast", quantity: 500, unit: "g", expires_in_days: 2 }]);
-    const text = contextPrompt(out, [], today);
+  it("sends name, quantity and unit only", () => {
+    const out = chatSummary([
+      item({ name: "Chicken breast", quantity: 500, unit: "g", expires_on: "2026-05-12", location_id: "secret-place", note: "private note", added_at: "2026-04-01T00:00:00Z" }),
+    ]);
+    expect(out).toEqual([{ name: "Chicken breast", quantity: 500, unit: "g" }]);
+    const text = contextPrompt(out, []);
     expect(text).not.toMatch(/secret|private|2026-04|2026-05-12/);
   });
 
-  it("leaves the expiry out when the item has none, and gives negative days for expired food", () => {
-    const [a, b] = chatSummary([item({ name: "Rice", quantity: 1, unit: "kg" }), item({ name: "Milk", quantity: 1, unit: "l", expires_on: "2026-05-08" })], today);
-    expect(a).toEqual({ name: "Rice", quantity: 1, unit: "kg" });
-    expect(a).not.toHaveProperty("expires_in_days");
-    expect(b?.expires_in_days).toBe(-2);
+  it("is one short line per item, so the request stays small", () => {
+    const out = chatSummary([item({ name: "Rice", quantity: 1, unit: "kg" }), item({ name: "Milk", quantity: 0.5, unit: "l" })]);
+    expect(contextPrompt(out, [])).toBe("Stock: Rice 1 kg; Milk 0.5 l");
+    expect(contextPrompt([], [])).toBe("Stock: nothing");
+    expect(contextPrompt(out, [{ id: "r1", title: "Soup" }])).toContain("Saved recipes (id: title): r1: Soup");
+    expect(contextPrompt(out, [])).not.toContain("{");
   });
 
-  it("merges the same food in the same unit and keeps the earliest expiry", () => {
-    const out = chatSummary(
-      [
-        item({ name: "Milk", quantity: 1, unit: "l", expires_on: "2026-05-14" }),
-        item({ name: "milk", quantity: 0.5, unit: "l", expires_on: "2026-05-11" }),
-        item({ name: "Milk", quantity: 200, unit: "ml" }),
-      ],
-      today,
-    );
+  it("merges the same food in the same unit", () => {
+    const out = chatSummary([item({ name: "Milk", quantity: 1, unit: "l" }), item({ name: "milk", quantity: 0.5, unit: "l" }), item({ name: "Milk", quantity: 200, unit: "ml" })]);
     expect(out).toHaveLength(2);
-    expect(out[0]).toEqual({ name: "Milk", quantity: 1.5, unit: "l", expires_in_days: 1 });
+    expect(out[0]).toEqual({ name: "Milk", quantity: 1.5, unit: "l" });
   });
 
   it("leaves out empty items and unknown units, and caps the list", () => {
-    expect(chatSummary([item({ quantity: 0 }), item({ unit: "cups" })], today)).toEqual([]);
+    expect(chatSummary([item({ quantity: 0 }), item({ unit: "cups" })])).toEqual([]);
     const many = Array.from({ length: MAX_SUMMARY_LINES + 20 }, (_, i) => item({ name: `Food ${i}`, quantity: 1, unit: "g" }));
-    expect(chatSummary(many, today)).toHaveLength(MAX_SUMMARY_LINES);
+    expect(chatSummary(many)).toHaveLength(MAX_SUMMARY_LINES);
   });
 });
 
@@ -102,13 +93,9 @@ describe("parseArguments", () => {
 
 describe("validateToolCall", () => {
   it("accepts search_pantry with and without arguments", () => {
-    expect(validateToolCall("search_pantry", {})).toEqual({ ok: true, call: { name: "search_pantry", query: "", expiringWithinDays: null } });
-    expect(validateToolCall("search_pantry", { query: " rice ", expiring_within_days: 3 })).toEqual({
-      ok: true,
-      call: { name: "search_pantry", query: "rice", expiringWithinDays: 3 },
-    });
+    expect(validateToolCall("search_pantry", {})).toEqual({ ok: true, call: { name: "search_pantry", query: "" } });
+    expect(validateToolCall("search_pantry", { query: " rice " })).toEqual({ ok: true, call: { name: "search_pantry", query: "rice" } });
     expect(validateToolCall("search_pantry", { query: 5 }).ok).toBe(false);
-    expect(validateToolCall("search_pantry", { expiring_within_days: -1 }).ok).toBe(false);
   });
 
   it("accepts valid recipes in suggest_recipes, drops invalid ones and keeps at most three", () => {
@@ -160,22 +147,22 @@ describe("validateToolCall", () => {
 });
 
 describe("searchSummary", () => {
-  const lines = chatSummary(
-    [
-      item({ name: "Chicken breast", quantity: 500, unit: "g", expires_on: "2026-05-11" }),
-      item({ name: "Potatoes", quantity: 1, unit: "kg", expires_on: "2026-05-30" }),
-      item({ name: "Rice", quantity: 1, unit: "kg" }),
-    ],
-    today,
-  );
+  const lines = chatSummary([
+    item({ name: "Chicken breast", quantity: 500, unit: "g" }),
+    item({ name: "Kartoffeln", quantity: 1, unit: "kg" }),
+    item({ name: "Schlagsahne", quantity: 200, unit: "ml" }),
+    item({ name: "Rice", quantity: 1, unit: "kg" }),
+  ]);
 
-  it("finds by word, including plurals", () => {
-    expect(searchSummary(lines, "potato", null).map((l) => l.name)).toEqual(["Potatoes"]);
-    expect(searchSummary(lines, "", null)).toHaveLength(3);
+  it("finds by word, including plurals and German names", () => {
+    expect(searchSummary(lines, "potato").map((l) => l.name)).toEqual(["Kartoffeln"]);
+    expect(searchSummary(lines, "Sahne").map((l) => l.name)).toEqual(["Schlagsahne"]);
+    expect(searchSummary(lines, "chicken").map((l) => l.name)).toEqual(["Chicken breast"]);
+    expect(searchSummary(lines, "")).toHaveLength(4);
   });
 
-  it("finds what expires soon and leaves out what has no date", () => {
-    expect(searchSummary(lines, "", 3).map((l) => l.name)).toEqual(["Chicken breast"]);
+  it("finds nothing for food that is not there", () => {
+    expect(searchSummary(lines, "saffron")).toEqual([]);
   });
 });
 

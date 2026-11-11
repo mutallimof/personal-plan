@@ -61,7 +61,7 @@ Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lova
 
 ## 8. Cooking
 1. **Migration:** `0008_recipes.sql` (step 1). It also creates two database functions; no extra setting is needed.
-2. **Optional AI cooking chat:** needs `AI_API_KEY` set (step 4) and migration `0011`. Turn on **AI cooking chat** in Pantry > Settings > AI. It is off by default. It sends your message, your pantry's item names, amounts and days until expiry, and your recipe titles; never receipts or photos. The old "AI recipe ideas" switch on the Can cook tab is gone (the chat replaces it).
+2. **Optional AI cooking chat:** needs `AI_API_KEY` set (step 4) and migration `0011`. Turn on **AI cooking chat** in Pantry > Settings > AI. It is off by default. It sends your message, your stock (item names, amounts and units) and your recipe titles; never receipts, photos or dates. The old "AI recipe ideas" switch on the Can cook tab is gone (the chat replaces it).
 3. **Nutrition data:** the table is filled once from USDA FoodData Central the first time you open the Cook tab. Foods it does not cover (for example quark, passata, 1.5% milk) are not in it; add them in Cook > Nutrition from the package label, or tell me which ones you use most.
 4. **Your recipes:** nothing is preloaded. Add your own in Cook > Recipes, or send me a few and I can load them.
 

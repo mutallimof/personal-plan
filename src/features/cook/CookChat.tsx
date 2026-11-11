@@ -10,13 +10,14 @@ import type { PantrySettings } from "@/features/pantry/data";
 import { aiDraft, type AiRecipe } from "./ai-recipes";
 import { lineStatus, missingText, type Need } from "./can-cook";
 import { cookChat } from "./chat.functions";
+import { readChatEvents, type ChatEvent } from "./chat-stream";
 import { CookScreen } from "./CookScreen";
 import { cook, recipesQuery, shopping, useInvalidateCook } from "./data";
 import { recipeNutrition, type NutritionRow } from "./nutrition";
 import { RecipeCard } from "./RecipeCard";
 import { groupByRecipe, toDrafts } from "./recipes";
 
-type Message = { id: number; role: "user" | "assistant"; text: string; cards?: AiRecipe[]; error?: boolean };
+type Message = { id: number; role: "user" | "assistant"; text: string; cards?: AiRecipe[]; error?: boolean; streaming?: boolean };
 type Cooking = { recipe: { id: string; title: string; servings: number }; needs: Need[] };
 
 type Props = {
@@ -26,7 +27,7 @@ type Props = {
   onOpenSettings: () => void;
 };
 
-const EXAMPLES = ["What can I cook with what I have?", "Something high in protein, no oven", "Use up what expires soon"];
+const EXAMPLES = ["What can I cook with what I have?", "Something high in protein, no oven", "Dinner in 20 minutes"];
 
 /** Talk to the AI about what to cook. Off until the person turns it on in Settings. */
 export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) {
@@ -54,25 +55,39 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
   async function send(message: string) {
     const clean = message.trim();
     if (!clean || busy) return;
-    const history = messages.filter((m) => !m.error).map((m) => ({ role: m.role, content: m.text }));
-    setMessages((all) => [...all, { id: next.current++, role: "user", text: clean }]);
+    const history = messages.filter((m) => !m.error && !m.streaming).map((m) => ({ role: m.role, content: m.text }));
+    const answerId = next.current + 1;
+    setMessages((all) => [...all, { id: next.current++, role: "user", text: clean }, { id: next.current++, role: "assistant", text: "", streaming: true }]);
     setText("");
     setBusy(true);
+    const patch = (change: Partial<Message>) => setMessages((all) => all.map((m) => (m.id === answerId ? { ...m, ...change } : m)));
+    let last: ChatEvent | null = null;
     try {
       const res = await ask({ data: { turns: [...history, { role: "user", content: clean }] } });
-      if (res.ok) {
-        setMessages((all) => [...all, { id: next.current++, role: "assistant", text: res.reply, cards: res.cards }]);
-        if (res.saved.length || res.shopping.length) await invalidate();
-        if (res.cook) await openCook(res.cook);
-      } else {
-        setMessages((all) => [...all, { id: next.current++, role: "assistant", text: res.error, error: true }]);
-      }
-      await qc.invalidateQueries({ queryKey: ["pantry", "settings"] });
+      let shown = "";
+      await readChatEvents(res.body, (e) => {
+        if (e.type === "text") {
+          shown += e.delta;
+          patch({ text: shown });
+        } else last = e;
+      });
     } catch {
-      setMessages((all) => [...all, { id: next.current++, role: "assistant", text: "The AI request failed — please try again.", error: true }]);
-    } finally {
-      setBusy(false);
+      last = { type: "error", error: "The AI request failed — please try again." };
     }
+    const end = last as ChatEvent | null;
+    if (end?.type === "done") {
+      patch({ text: end.reply, cards: end.cards, streaming: false });
+      try {
+        if (end.saved.length || end.shopping.length) await invalidate();
+        if (end.cook) await openCook(end.cook);
+        await qc.invalidateQueries({ queryKey: ["pantry", "settings"] });
+      } catch {
+        toast.error("Could not refresh your recipes.");
+      }
+    } else {
+      patch({ text: end?.type === "error" ? end.error : "The AI request failed — please try again.", error: true, streaming: false });
+    }
+    setBusy(false);
   }
 
   async function undo(id: string) {
@@ -130,9 +145,17 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
               <p className="max-w-[85%] rounded-2xl bg-primary px-4 py-2 text-sm text-primary-foreground">{m.text}</p>
             ) : (
               <>
-                <p role={m.error ? "alert" : undefined} className={m.error ? "rounded-2xl bg-card px-4 py-2 text-sm text-destructive" : "rounded-2xl bg-card px-4 py-2 text-sm"}>
-                  {m.text}
-                </p>
+                {m.streaming && !m.text ? (
+                  <p role="status" aria-label="Thinking" className="inline-flex items-center gap-1 rounded-2xl bg-card px-4 py-3" data-typing>
+                    {[0, 1, 2].map((i) => (
+                      <span key={i} className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 motion-reduce:animate-none" style={{ animationDelay: `${i * 150}ms` }} />
+                    ))}
+                  </p>
+                ) : (
+                  <p role={m.error ? "alert" : undefined} aria-busy={m.streaming || undefined} className={m.error ? "rounded-2xl bg-card px-4 py-2 text-sm text-destructive" : "rounded-2xl bg-card px-4 py-2 text-sm"}>
+                    {m.text}
+                  </p>
+                )}
                 {m.cards?.map((card, i) => (
                   <IdeaCard key={`${m.id}-${i}`} recipe={card} items={items} nutrition={nutrition} onCook={setCooking} />
                 ))}
@@ -141,11 +164,6 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
           </li>
         ))}
       </ul>
-      {busy && (
-        <p role="status" className="text-sm text-muted-foreground">
-          Thinking…
-        </p>
-      )}
       <div ref={end} />
       <form
         className="sticky bottom-0 flex gap-2 bg-background pb-2 pt-1"

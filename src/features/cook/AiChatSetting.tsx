@@ -27,7 +27,7 @@ export function AiChatSetting() {
         <Switch checked={on} onCheckedChange={onToggle} disabled={!settings.data} aria-label="AI cooking chat" />
       </label>
       <p className="pb-2 text-xs text-muted-foreground">
-        Sends your message, your pantry's item names, amounts and days until expiry, and your recipe titles. Never receipts or photos.
+        Sends your message, your stock (item names, amounts, units) and your recipe titles. Never receipts, photos or dates.
       </p>
       {(on || count > 0) && (
         <p className="pb-2 text-xs text-muted-foreground">

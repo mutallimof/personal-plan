@@ -4,8 +4,10 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { item } from "@/features/pantry/fixtures";
 import type { PantrySettings } from "@/features/pantry/data";
+import type { AiRecipe } from "./ai-recipes";
 import { AiChatSetting } from "./AiChatSetting";
 import { cookChat } from "./chat.functions";
+import { encodeEvent, type ChatEvent } from "./chat-stream";
 import { CookChat } from "./CookChat";
 import { cook } from "./data";
 import type { NutritionRow } from "./nutrition";
@@ -41,7 +43,19 @@ function chat(over: Partial<PantrySettings> = {}) {
   return { onOpenSettings };
 }
 
-const idea = {
+const enc = new TextEncoder();
+const ndjson = (...events: ChatEvent[]) =>
+  new Response(
+    new ReadableStream<Uint8Array>({
+      start(c) {
+        for (const e of events) c.enqueue(enc.encode(encodeEvent(e)));
+        c.close();
+      },
+    }),
+  );
+const done = (over: Partial<Extract<ChatEvent, { type: "done" }>> = {}): ChatEvent => ({ type: "done", requests: 1, reply: "", cards: [], cook: null, saved: [], shopping: [], ...over });
+
+const idea: AiRecipe = {
   title: "Chicken and potatoes",
   servings: 2,
   minutes: 30,
@@ -81,8 +95,8 @@ describe("AI cooking chat is opt-in", () => {
     const sw = await screen.findByRole("switch", { name: "AI cooking chat" });
     await waitFor(() => expect(sw).not.toBeDisabled());
     expect(sw).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByText(/item names, amounts and days until expiry, and your recipe titles/)).toBeInTheDocument();
-    expect(screen.getByText(/Never receipts or photos/)).toBeInTheDocument();
+    expect(screen.getByText(/your stock \(item names, amounts, units\) and your recipe titles/)).toBeInTheDocument();
+    expect(screen.getByText(/Never receipts, photos or dates/)).toBeInTheDocument();
     fireEvent.click(sw);
     await waitFor(() => expect(cook.setAiChat).toHaveBeenCalledWith(true));
   });
@@ -96,7 +110,7 @@ describe("AI cooking chat is opt-in", () => {
 
 describe("the chat", () => {
   it("sends the conversation and shows recipe cards with nutrition from the table only", async () => {
-    ask.mockResolvedValue({ ok: true, requests: 1, reply: "Here are some ideas.", cards: [idea], cook: null, saved: [], shopping: [] });
+    ask.mockResolvedValue(ndjson({ type: "text", delta: "Here are " }, done({ reply: "Here are some ideas.", cards: [idea] })));
     chat({ aiChat: true });
     await send("something with chicken");
     expect(await screen.findByText("Chicken and potatoes")).toBeInTheDocument();
@@ -108,11 +122,11 @@ describe("the chat", () => {
   });
 
   it("keeps the conversation for the next question but not error messages", async () => {
-    ask.mockResolvedValueOnce({ ok: false, error: "I'm a bit busy right now — try again in a moment." });
+    ask.mockResolvedValueOnce(ndjson({ type: "error", error: "I'm a bit busy right now — try again in a moment." }));
     chat({ aiChat: true });
     await send("first");
     expect(await screen.findByRole("alert")).toHaveTextContent("busy right now");
-    ask.mockResolvedValueOnce({ ok: true, requests: 2, reply: "Pasta.", cards: [], cook: null, saved: [], shopping: [] });
+    ask.mockResolvedValueOnce(ndjson(done({ reply: "Pasta." })));
     await send("second");
     await screen.findByText("Pasta.");
     expect(ask).toHaveBeenLastCalledWith({ data: { turns: [{ role: "user", content: "first" }, { role: "user", content: "second" }] } });
@@ -126,6 +140,32 @@ describe("the chat", () => {
     expect(screen.getByLabelText("Ask what to cook")).toBeEnabled();
   });
 
+  it("shows a typing state, then the words as they arrive", async () => {
+    let controller!: ReadableStreamDefaultController<Uint8Array>;
+    ask.mockResolvedValue(new Response(new ReadableStream<Uint8Array>({ start: (c) => void (controller = c) })));
+    chat({ aiChat: true });
+    await send("hello");
+    expect(await screen.findByRole("status", { name: "Thinking" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Ask what to cook")).toHaveValue("");
+    controller.enqueue(enc.encode(encodeEvent({ type: "text", delta: "Hel" })));
+    expect(await screen.findByText("Hel")).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "Thinking" })).not.toBeInTheDocument();
+    controller.enqueue(enc.encode(encodeEvent({ type: "text", delta: "lo" })));
+    expect(await screen.findByText("Hello")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled(); // no second question while it answers
+    controller.enqueue(enc.encode(encodeEvent(done({ reply: "Hello there." }))));
+    controller.close();
+    expect(await screen.findByText("Hello there.")).toBeInTheDocument();
+  });
+
+  it("shows an error when the stream breaks off", async () => {
+    ask.mockResolvedValue(ndjson({ type: "text", delta: "Hel" }));
+    chat({ aiChat: true });
+    await send("hello");
+    expect(await screen.findByRole("alert")).toHaveTextContent("cut off");
+    expect(screen.getByLabelText("Ask what to cook")).toBeEnabled();
+  });
+
   it("does not send an empty message", () => {
     chat({ aiChat: true });
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
@@ -134,7 +174,7 @@ describe("the chat", () => {
 
   it("saves a recipe only when asked", async () => {
     vi.mocked(cook.saveRecipe).mockResolvedValue("r1");
-    ask.mockResolvedValue({ ok: true, requests: 1, reply: "Idea", cards: [idea], cook: null, saved: [], shopping: [] });
+    ask.mockResolvedValue(ndjson(done({ reply: "Idea", cards: [idea] })));
     chat({ aiChat: true });
     await send("idea");
     await screen.findByText("Chicken and potatoes");

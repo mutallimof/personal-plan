@@ -31,9 +31,8 @@ function setup(replies: (ModelReply | Error)[], over: Partial<ChatDeps> = {}) {
       if (next instanceof Error) throw next;
       return next;
     }),
-    pantry: [{ name: "Chicken breast", quantity: 500, unit: "g", expires_in_days: 2 }],
+    pantry: [{ name: "Chicken breast", quantity: 500, unit: "g" }],
     recipes: [{ id: "r1", title: "Soup" }],
-    today: new Date("2026-05-10T12:00:00"),
     saveRecipe: vi.fn(async () => "new-id"),
     addToShoppingList: vi.fn(async () => {}),
     recipeExists: vi.fn(async (id: string) => id === "r1" || id === "new-id"),
@@ -51,7 +50,7 @@ describe("runChat", () => {
     await runChat(deps, ask);
     const [system, context, user] = seen[0] ?? [];
     expect(system?.role).toBe("system");
-    expect(context?.content).toContain("Chicken breast");
+    expect(context?.content).toContain("Chicken breast 500 g");
     expect(context?.content).toContain("Soup");
     expect(user).toEqual({ role: "user", content: "what can I cook" });
     expect(seen[0]).toHaveLength(3);
@@ -69,7 +68,7 @@ describe("runChat", () => {
     const { deps, seen } = setup([toolReply(call("search_pantry", { query: "chicken" })), textReply("You have chicken.")]);
     const out = await runChat(deps, ask);
     expect(out.reply).toBe("You have chicken.");
-    expect(toolResults(seen[1] ?? [])[0]).toEqual({ items: [{ name: "Chicken breast", quantity: 500, unit: "g", expires_in_days: 2 }] });
+    expect(toolResults(seen[1] ?? [])[0]).toEqual({ items: [{ name: "Chicken breast", quantity: 500, unit: "g" }] });
   });
 
   it("saves a recipe and adds to the shopping list only through valid calls", async () => {
@@ -182,5 +181,50 @@ describe("runChat", () => {
   it("lets provider errors through for the caller to show", async () => {
     const { deps } = setup([new Error("I'm a bit busy right now — try again in a moment.")]);
     await expect(runChat(deps, ask)).rejects.toThrow(/busy/);
+  });
+});
+
+describe("streaming", () => {
+  const streamingDeps = (pieces: string[][], replies: ModelReply[]) => {
+    const queue = [...replies];
+    const stream = [...pieces];
+    return setup([], {
+      complete: vi.fn(async (_m: ChatMessage[], _t: unknown, onText?: (d: string) => void) => {
+        for (const p of stream.shift() ?? []) onText?.(p);
+        return queue.shift() ?? textReply("");
+      }) as unknown as ChatDeps["complete"],
+    }).deps;
+  };
+
+  it("hands the model's words on as they come", async () => {
+    const deps = streamingDeps([["Here ", "are ", "ideas."]], [textReply("Here are ideas.")]);
+    const got: string[] = [];
+    const out = await runChat(deps, ask, (d) => got.push(d));
+    expect(got.join("")).toBe("Here are ideas.");
+    expect(got.length).toBeGreaterThan(1);
+    expect(out.reply).toBe("Here are ideas.");
+  });
+
+  it("streams the words said before a tool call too", async () => {
+    const deps = streamingDeps([["Let me look."], ["Found it."]], [toolReply(call("search_pantry", {})), textReply("Found it.")]);
+    const got: string[] = [];
+    await runChat(deps, ask, (d) => got.push(d));
+    expect(got.join("")).toBe("Let me look.Found it.");
+  });
+
+  it("does not stream a reply that is only JSON or a code fence", async () => {
+    for (const first of ["{", "```json\n", "  {"]) {
+      const json = JSON.stringify({ recipes: [recipe] });
+      const deps = streamingDeps([[first, json.slice(1)]], [textReply(first.trim().startsWith("{") ? json : "```json\n" + json + "\n```")]);
+      const got: string[] = [];
+      const out = await runChat(deps, ask, (d) => got.push(d));
+      expect(got).toEqual([]);
+      expect(out.cards).toHaveLength(1);
+    }
+  });
+
+  it("works the same without a listener", async () => {
+    const deps = streamingDeps([["Hi"]], [textReply("Hi")]);
+    expect((await runChat(deps, ask)).reply).toBe("Hi");
   });
 });

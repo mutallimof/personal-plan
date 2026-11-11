@@ -18,10 +18,10 @@ import {
 
 /** Everything the engine needs from outside, so it can be tested without a model or a database. */
 export type ChatDeps = {
-  complete: (messages: ChatMessage[], tools: ToolDef[]) => Promise<ModelReply>;
+  /** Asks the model. `onText` gets the answer text piece by piece when the provider streams it. */
+  complete: (messages: ChatMessage[], tools: ToolDef[], onText?: (delta: string) => void) => Promise<ModelReply>;
   pantry: readonly SummaryLine[];
   recipes: readonly SavedRecipe[];
-  today: Date;
   /** Saves a recipe to the book; returns its id. */
   saveRecipe: (recipe: AiRecipe) => Promise<string>;
   /** Adds entries to the shopping list. */
@@ -50,10 +50,10 @@ export const MAX_BAD_STEPS = 3;
  * again) and are counted; after a few the turn ends with a plain message. A reply that ignored the tools but contains
  * a recipes object is accepted too. Provider failures are thrown for the caller to turn into a short message.
  */
-export async function runChat(deps: ChatDeps, history: readonly ChatTurn[]): Promise<ChatOutcome> {
+export async function runChat(deps: ChatDeps, history: readonly ChatTurn[], onText?: (delta: string) => void): Promise<ChatOutcome> {
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: contextPrompt(deps.pantry, deps.recipes, deps.today) },
+    { role: "user", content: contextPrompt(deps.pantry, deps.recipes) },
     ...history.map((t): ChatMessage => ({ role: t.role, content: t.content })),
   ];
   const out: ChatOutcome = { reply: "", cards: [], cook: null, saved: [], shopping: [] };
@@ -61,7 +61,7 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[]): Pro
   let gaveUp = false;
 
   for (let step = 0; step < MAX_STEPS; step++) {
-    const res = await deps.complete(messages, CHAT_TOOLS);
+    const res = await deps.complete(messages, CHAT_TOOLS, onText && streamingFilter(onText));
     if (!res.toolCalls.length) {
       out.reply = res.text;
       break;
@@ -108,7 +108,7 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[]): Pro
 async function execute(deps: ChatDeps, out: ChatOutcome, call: ToolCallData): Promise<unknown> {
   switch (call.name) {
     case "search_pantry":
-      return { items: searchSummary(deps.pantry, call.query, call.expiringWithinDays) };
+      return { items: searchSummary(deps.pantry, call.query) };
     case "suggest_recipes": {
       for (const r of call.recipes) if (out.cards.length < MAX_CARDS && !out.cards.some((c) => c.title === r.title)) out.cards.push(r);
       return { ok: true, shown: call.recipes.length };
@@ -130,4 +130,24 @@ async function execute(deps: ChatDeps, out: ChatOutcome, call: ToolCallData): Pr
       return { ok: true, added: call.items.length };
     }
   }
+}
+
+/**
+ * Passes streamed text on, except when the model starts with JSON or a code fence (a reply that ignores the tools and
+ * is turned into cards afterwards): that would only show as clutter.
+ */
+function streamingFilter(onText: (delta: string) => void): (delta: string) => void {
+  let seen = "";
+  let allowed: boolean | null = null;
+  return (delta) => {
+    if (allowed === null) {
+      seen += delta;
+      const first = seen.trimStart()[0];
+      if (!first) return;
+      allowed = first !== "{" && first !== "`";
+      if (allowed) onText(seen);
+      return;
+    }
+    if (allowed) onText(delta);
+  };
 }

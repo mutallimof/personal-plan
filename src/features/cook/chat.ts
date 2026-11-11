@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { daysUntil } from "@/features/pantry/items";
 import { UNITS, type PantryItem, type Unit } from "@/features/pantry/model";
 import { recipeSchema, type AiRecipe } from "./ai-recipes";
-import { ingredientKey } from "./names";
+import { ingredientKey, ingredientTokens, sameIngredient } from "./names";
 
 /** Most pantry lines, saved-recipe titles and chat turns that ever go into one request. */
 export const MAX_SUMMARY_LINES = 80;
@@ -11,31 +10,21 @@ export const MAX_TURNS = 10;
 export const MAX_TURN_CHARS = 1000;
 export const MAX_CARDS = 3;
 
-/** One pantry entry as the model sees it. Nothing else about an item ever leaves the device. */
-export type SummaryLine = { name: string; quantity: number; unit: Unit; expires_in_days?: number };
+/** One pantry entry as the model sees it: name, quantity, unit. Nothing else about an item ever leaves the device. */
+export type SummaryLine = { name: string; quantity: number; unit: Unit };
 
 /**
- * The compact pantry summary for the chat: names, quantities, units and days until expiry, merged per name and unit.
- * No places, notes, ids, dates of purchase or anything about the person. Items that are used up are left out.
+ * The compact stock list for the chat: name, quantity and unit, merged per name and unit. No expiry dates, places,
+ * notes, ids or anything about the person. Items that are used up are left out.
  */
-export function chatSummary(items: readonly PantryItem[], today: Date): SummaryLine[] {
+export function chatSummary(items: readonly Pick<PantryItem, "name" | "quantity" | "unit">[]): SummaryLine[] {
   const merged = new Map<string, SummaryLine>();
   for (const i of items) {
     if (!(i.quantity > 0) || !UNITS.includes(i.unit as Unit) || !i.name.trim()) continue;
-    const days = i.expires_on ? daysUntil(i.expires_on, today) : null;
     const key = `${ingredientKey(i.name)}|${i.unit}`;
     const line = merged.get(key);
-    if (line) {
-      line.quantity = Math.round((line.quantity + i.quantity) * 1000) / 1000;
-      if (days !== null && (line.expires_in_days === undefined || days < line.expires_in_days)) line.expires_in_days = days;
-    } else {
-      merged.set(key, {
-        name: i.name.trim().slice(0, 80),
-        quantity: i.quantity,
-        unit: i.unit as Unit,
-        ...(days !== null ? { expires_in_days: days } : {}),
-      });
-    }
+    if (line) line.quantity = Math.round((line.quantity + i.quantity) * 1000) / 1000;
+    else merged.set(key, { name: i.name.trim().slice(0, 80), quantity: Math.round(i.quantity * 1000) / 1000, unit: i.unit as Unit });
   }
   return [...merged.values()].slice(0, MAX_SUMMARY_LINES);
 }
@@ -73,27 +62,23 @@ export function cleanRecipes(value: unknown): SavedRecipe[] {
 }
 
 export const SYSTEM_PROMPT = [
-  "You are a cooking helper inside a pantry app. You suggest simple home-cooking recipes from what the person has.",
+  "You are a cooking helper inside a pantry app. Suggest simple home-cooking recipes from the stock you are given.",
   "Use the tools: search_pantry to look something up, suggest_recipes to show 1 to 3 recipe cards, save_recipe only when the person asks to save, cook_recipe only when the person wants to cook a saved recipe now (they confirm on screen), add_to_shopping_list only when asked.",
-  `Use only these units: ${UNITS.join(", ")}. Use the pantry's ingredient names exactly when you use them. Basic staples (water, salt, pepper) may be added.`,
-  "Never give calories or protein: the app computes them from the person's own table. Keep any text short.",
+  `Use only these units: ${UNITS.join(", ")}. Use the stock's ingredient names exactly when you use them. Basic staples (water, salt, pepper) may be added.`,
+  "Never give calories or protein: the app computes them. Put recipes in suggest_recipes, not in the text; keep the text to one or two short sentences.",
 ].join(" ");
 
-/** The context message: the compact pantry summary and the saved recipe titles. */
-export function contextPrompt(pantry: readonly SummaryLine[], recipes: readonly SavedRecipe[], today: Date): string {
-  return [
-    `Today is ${today.toISOString().slice(0, 10)}.`,
-    `Pantry (name, quantity, unit, days until expiry when known): ${JSON.stringify(pantry)}`,
-    `Saved recipes (id, title): ${JSON.stringify(recipes)}`,
-  ].join("\n");
+/** The context message: the stock as one short line per item ("Chicken breast 500 g") and the saved recipes. */
+export function contextPrompt(pantry: readonly SummaryLine[], recipes: readonly SavedRecipe[]): string {
+  const stock = pantry.length ? pantry.map((l) => `${l.name} ${l.quantity} ${l.unit}`).join("; ") : "nothing";
+  const lines = [`Stock: ${stock}`];
+  if (recipes.length) lines.push(`Saved recipes (id: title): ${recipes.map((r) => `${r.id}: ${r.title}`).join("; ")}`);
+  return lines.join("\n");
 }
 
 const unit = z.enum(UNITS);
 
-const searchArgs = z.object({
-  query: z.string().trim().max(80).optional(),
-  expiring_within_days: z.number().int().min(0).max(365).optional(),
-});
+const searchArgs = z.object({ query: z.string().trim().max(80).optional() });
 const suggestArgs = z.object({ recipes: z.array(z.unknown()).min(1).max(10) });
 const saveArgs = z.object({ recipe: recipeSchema });
 const cookArgs = z.object({ recipe_id: z.string().trim().min(1).max(64) });
@@ -113,7 +98,7 @@ const shopArgs = z.object({
 export type ShoppingEntry = { name: string; quantity?: number | undefined; unit?: Unit | undefined };
 
 export type ToolCallData =
-  | { name: "search_pantry"; query: string; expiringWithinDays: number | null }
+  | { name: "search_pantry"; query: string }
   | { name: "suggest_recipes"; recipes: AiRecipe[] }
   | { name: "save_recipe"; recipe: AiRecipe }
   | { name: "cook_recipe"; recipeId: string }
@@ -140,7 +125,7 @@ export function validateToolCall(name: string, args: Record<string, unknown>): V
   switch (name) {
     case "search_pantry": {
       const r = searchArgs.safeParse(args);
-      return r.success ? { ok: true, call: { name, query: r.data.query ?? "", expiringWithinDays: r.data.expiring_within_days ?? null } } : bad(why(r.error));
+      return r.success ? { ok: true, call: { name, query: r.data.query ?? "" } } : bad(why(r.error));
     }
     case "suggest_recipes": {
       const r = suggestArgs.safeParse(args);
@@ -170,15 +155,10 @@ export function validateToolCall(name: string, args: Record<string, unknown>): V
   }
 }
 
-/** What search_pantry returns: lines matching the words, optionally only those expiring soon. */
-export function searchSummary(lines: readonly SummaryLine[], query: string, expiringWithinDays: number | null): SummaryLine[] {
+/** What search_pantry returns: the stock lines matching all the words. */
+export function searchSummary(lines: readonly SummaryLine[], query: string): SummaryLine[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  return lines.filter((l) => {
-    const text = l.name.toLowerCase();
-    const named = words.every((w) => text.includes(w) || text.includes(ingredientKey(w)));
-    const soon = expiringWithinDays === null || (l.expires_in_days !== undefined && l.expires_in_days <= expiringWithinDays);
-    return named && soon;
-  });
+  return lines.filter((l) => words.every((w) => sameIngredient(l.name, w) || l.name.toLowerCase().includes(w) || ingredientTokens(l.name).includes(ingredientTokens(w)[0] ?? "")));
 }
 
 /** Recipes from the text of a model reply that ignored the tools: a JSON object with a "recipes" list, maybe in fences. */
@@ -221,8 +201,8 @@ const recipeShape = obj(
 export const CHAT_TOOLS = [
   {
     name: "search_pantry",
-    description: "Look through the person's pantry. Optional words to match and optional days: only items expiring within that many days.",
-    parameters: obj({ query: { type: "string" }, expiring_within_days: { type: "integer" } }),
+    description: "Look through the person's stock. Optional words to match.",
+    parameters: obj({ query: { type: "string" } }),
   },
   {
     name: "suggest_recipes",
