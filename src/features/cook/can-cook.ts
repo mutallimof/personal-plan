@@ -12,10 +12,9 @@ export function matchingItems(need: Need, items: readonly PantryItem[]): PantryI
 }
 
 export type LineState =
-  | "ok" // enough in the pantry
+  | "ok" // in the pantry: enough, or in a unit that cannot be compared (see `loose`)
   | "short" // some, but not enough
-  | "missing" // nothing with that name
-  | "unit"; // something with that name, but in a unit that cannot be compared (e.g. pieces against grams)
+  | "missing"; // nothing with that name (or only used-up entries)
 
 export type LineStatus = {
   need: Need;
@@ -26,29 +25,37 @@ export type LineStatus = {
   short: number;
   /** The items that supply it. */
   items: PantryItem[];
+  /**
+   * True when it is in the pantry but in a unit that cannot be compared with the recipe's (2 pieces of salmon against
+   * 500 g, 1 bunch of dill against a pack). Such an ingredient counts as in stock: it is never reported missing
+   * because of its unit, and nothing is taken out of the pantry for it automatically.
+   */
+  loose: boolean;
 };
 
 const EPSILON = 1e-6;
 
 export function lineStatus(need: Need, items: readonly PantryItem[], factor = 1): LineStatus {
-  const named = matchingItems(need, items);
+  // used-up entries do not count as stock
+  const named = matchingItems(need, items).filter((i) => i.quantity > 0);
   const usable = named.filter((i) => comparable(i.unit, need.unit));
   const wanted = need.quantity * factor;
   if (!usable.length) {
-    return { need, state: named.length ? "unit" : "missing", have: 0, short: wanted, items: [] };
+    // something with that name exists, but in a unit that cannot be compared: in stock, amount unknown
+    if (named.length) return { need, state: "ok", have: 0, short: 0, items: [], loose: true };
+    return { need, state: "missing", have: 0, short: wanted, items: [], loose: false };
   }
   const have = fromBase(
     usable.reduce((sum, i) => sum + toBase(i.quantity, i.unit), 0),
     need.unit,
   );
   const enough = have + EPSILON >= wanted;
-  return { need, state: enough ? "ok" : "short", have, short: enough ? 0 : wanted - have, items: usable };
+  return { need, state: enough ? "ok" : "short", have, short: enough ? 0 : wanted - have, items: usable, loose: false };
 }
 
-/** What to show for an ingredient that is not fully covered: "Flour", "Eggs (4 pieces more)" or "Eggs (different unit)". */
+/** What to show for an ingredient that is not fully covered: "Flour" or "Eggs (4 pieces more)". */
 export function missingText(line: LineStatus): string {
   if (line.state === "short") return `${line.need.name} (${Math.round(line.short * 1000) / 1000} ${line.need.unit} more)`;
-  if (line.state === "unit") return `${line.need.name} (different unit)`;
   return line.need.name;
 }
 

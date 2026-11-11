@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { UNITS, type PantryItem, type Unit } from "@/features/pantry/model";
-import { ingredientKey } from "./names";
+import { ingredientKey, sameIngredient } from "./names";
 import type { RecipeDraft } from "./recipes";
 
 /** Most distinct pantry entries sent in one request. */
@@ -77,7 +77,7 @@ export function aiDraft(recipe: AiRecipe, items: readonly PantryItem[]): RecipeD
     steps: recipe.steps.join("\n"),
     source: "ai",
     ingredients: recipe.ingredients.map((ing) => {
-      const match = items.find((i) => ingredientKey(i.name) === ingredientKey(ing.name));
+      const match = items.find((i) => i.quantity > 0 && sameIngredient(i.name, ing.name));
       return match
         ? { name: match.name, quantity: ing.quantity, unit: ing.unit, pantry_item_id: match.id }
         : { name: ing.name, quantity: ing.quantity, unit: ing.unit, pantry_item_id: null };

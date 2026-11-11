@@ -39,10 +39,13 @@ describe("lineStatus", () => {
     expect(lineStatus(need("Flour", 100, "g"), [rice, eggs])).toMatchObject({ state: "missing", short: 100 });
   });
 
-  it("does not guess between pieces and grams", () => {
+  it("does not convert between pieces and grams, but counts the food as in stock", () => {
     const s = lineStatus(need("Eggs", 300, "g"), [eggs]);
-    expect(s.state).toBe("unit");
-    expect(s.have).toBe(0);
+    expect(s).toMatchObject({ state: "ok", loose: true, have: 0, short: 0 });
+  });
+
+  it("does not count a used-up entry as stock", () => {
+    expect(lineStatus(need("Eggs", 2, "pieces"), [item({ name: "Eggs", quantity: 0, unit: "pieces" })]).state).toBe("missing");
   });
 
   it("scales by servings", () => {
@@ -54,7 +57,6 @@ describe("missingText", () => {
   it("says what is wrong with each kind of line", () => {
     expect(missingText(lineStatus(need("Flour", 100, "g"), [rice]))).toBe("Flour");
     expect(missingText(lineStatus(need("Eggs", 10, "pieces"), [eggs]))).toBe("Eggs (4 pieces more)");
-    expect(missingText(lineStatus(need("Eggs", 300, "g"), [eggs]))).toBe("Eggs (different unit)");
   });
 });
 
@@ -118,5 +120,48 @@ describe("rankRecipes", () => {
       ["b", [need("Rice", 1, "g")]],
     ]);
     expect(rankRecipes(two, n, [rice], today).map((c) => c.recipe.title)).toEqual(["Alpha", "Beta"]);
+  });
+});
+
+describe("food that is in stock is not reported missing (receipt names, German names, units)", () => {
+  // what the pantry holds after a receipt, and what a recipe (or the AI) asks for
+  const stock = [
+    item({ id: "lachs", name: "Lachsfilet", quantity: 500, unit: "g" }),
+    item({ id: "dill", name: "Dill Bund", quantity: 1, unit: "pack" }),
+    item({ id: "zitrone", name: "Zitronen", quantity: 3, unit: "pieces" }),
+    item({ id: "sahne", name: "Schlagsahne", quantity: 200, unit: "ml" }),
+  ];
+  const state = (n: Need, items = stock) => lineStatus(n, items).state;
+
+  it("Lachsfilet: 2 pieces against 500 g, and by its other names", () => {
+    for (const name of ["Lachsfilet", "Lachs", "Salmon fillet", "Lachsfilets", "Lachsfil"]) expect(state(need(name, 2, "pieces"))).toBe("ok");
+    expect(state(need("Lachsfilet", 400, "g"))).toBe("ok");
+    expect(state(need("Lachsfilet", 900, "g"))).toBe("short");
+  });
+
+  it("Dill Bund: a bunch, a pack or just Dill", () => {
+    for (const n of [need("Dill", 1, "pack"), need("Dill", 1, "pieces"), need("Dill", 20, "g"), need("Dill Bund", 1, "pieces"), need("frischer Dill", 1, "pack")]) expect(state(n)).toBe("ok");
+  });
+
+  it("Zitronen: Zitrone, lemon, lemons, in pieces", () => {
+    for (const name of ["Zitrone", "Zitronen", "Lemon", "Lemons", "Bio Zitronen"]) expect(state(need(name, 2, "pieces"))).toBe("ok");
+    expect(state(need("Zitronensaft", 2, "pieces"))).toBe("missing"); // juice is another product
+  });
+
+  it("Schlagsahne: Sahne, cream, whipping cream, an abbreviation", () => {
+    for (const name of ["Sahne", "Schlagsahne", "Cream", "Whipping cream", "Schlagsah."]) expect(state(need(name, 200, "ml"))).toBe("ok");
+    expect(state(need("Sahne", 400, "ml"))).toBe("short");
+  });
+
+  it("is missing only when truly absent", () => {
+    for (const name of ["Thymian", "Saure Sahne", "Sour cream", "Milchreis", "Zitronengras", "Lachsfarbe"]) expect(state(need(name, 1, "pieces"))).toBe("missing");
+  });
+
+  it("a recipe with all four is complete, and is listed first", () => {
+    const needs = new Map([
+      ["r1", [need("Lachsfilet", 2, "pieces"), need("Dill", 1, "pack"), need("Zitrone", 2, "pieces"), need("Sahne", 200, "ml")]],
+    ]);
+    const [c] = rankRecipes([{ id: "r1", title: "Salmon" }], needs, stock, today);
+    expect(c?.missing).toEqual([]);
   });
 });

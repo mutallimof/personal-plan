@@ -102,7 +102,7 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
               </label>
             </div>
             {l.available <= 0 ? (
-              <p className="text-sm text-muted-foreground">Not in your pantry</p>
+              <p className="text-sm text-muted-foreground">{l.loose ? "In your pantry, in another unit. Nothing is taken out." : "Not in your pantry"}</p>
             ) : (
               <>
                 <div className="flex items-center gap-2">

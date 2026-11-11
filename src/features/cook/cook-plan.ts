@@ -17,6 +17,8 @@ export type PlanLine = {
   skip: boolean;
   /** The pantry items it is taken from. */
   itemIds: string[];
+  /** In the pantry, but in a unit that cannot be compared with the recipe's: nothing is taken out unless you enter an amount. */
+  loose: boolean;
 };
 
 /** Rows for the confirmation screen. Each starts at the amount the recipe needs, or all there is if that is less. */
@@ -34,6 +36,7 @@ export function planLines(needs: readonly Need[], items: readonly PantryItem[], 
       amount: Math.min(wanted, available),
       skip: available <= 0,
       itemIds: status.items.map((i) => i.id),
+      loose: status.loose,
     };
   });
 }
