@@ -22,8 +22,10 @@ in order, once each. Every file is safe to run again.
 | `0007_kitchen_zones.sql` | `kitchen_zones` | Pantry > Kitchen |
 | `0008_recipes.sql` | `recipes`, `recipe_ingredients`, `ingredient_nutrition`, `cooked_log`, AI recipe columns on `pantry_settings`, and the functions `cook_recipe` and `undo_cook` | Pantry > Cook |
 | `0009_kitchen_scene.sql` | `kitchen_layouts`; `icon` and `shelf` on `pantry_items`; `icon` on `product_aliases`; `undo_cook` now restores icon and shelf | The kitchen screen |
+| `0010_categories_places.sql` | `accepts` on `pantry_locations`; `pantry_categories`; `aliases_seed_version` and `layout_upgraded` on `pantry_settings`; converts the old categories `produce` and `meat` on items and dictionary entries | New categories, places that accept categories, receipt placement, Organize |
+| `0011_ai_chat_shopping.sql` | `ai_chat` and `ai_chat_requests` on `pantry_settings`; `shopping_list` | AI cooking chat, Shopping tab |
 
-Run 0004 to 0009 the same way, in that order (0005 to 0009 add to tables made by 0004). Run 0009 before opening the Pantry: the kitchen screen needs `kitchen_layouts` and the new columns (until then it shows "Could not load this"). The first time it opens, your old kitchen map (0007) is converted into the new layout; the old table stays untouched. After 0008, **Table Editor** should list the four new tables with the RLS badge, and **Database > Functions** should list `cook_recipe` and `undo_cook`. Until 0008 is run, the Cook tab shows "Could not load this"; cooking itself needs the two functions.
+Run 0004 to 0011 the same way, in that order (0005 to 0011 add to tables made by 0004). Run 0010 and 0011 after pulling this branch: the receipt screen, Organize, Categories and the Cook > Ask AI and Shopping tabs need them (until then they show "Could not load this"). Run 0009 before opening the Pantry: the kitchen screen needs `kitchen_layouts` and the new columns (until then it shows "Could not load this"). The first time it opens, your old kitchen map (0007) is converted into the new layout; the old table stays untouched. After 0008, **Table Editor** should list the four new tables with the RLS badge, and **Database > Functions** should list `cook_recipe` and `undo_cook`. Until 0008 is run, the Cook tab shows "Could not load this"; cooking itself needs the two functions.
 
 Until they are run, those screens show "Could not load this" or "Could not save the workout"; the rest of the app is unaffected.
 
@@ -59,7 +61,7 @@ Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lova
 
 ## 8. Cooking
 1. **Migration:** `0008_recipes.sql` (step 1). It also creates two database functions; no extra setting is needed.
-2. **Optional AI recipe ideas:** needs `AI_API_KEY` set (step 4). Turn the switch on in Pantry > Cook > Can cook. It is off by default and sends only ingredient names, quantities and units from your pantry.
+2. **Optional AI cooking chat:** needs `AI_API_KEY` set (step 4) and migration `0011`. Turn on **AI cooking chat** in Pantry > Settings > AI. It is off by default. It sends your message, your pantry's item names, amounts and days until expiry, and your recipe titles; never receipts or photos. The old "AI recipe ideas" switch on the Can cook tab is gone (the chat replaces it).
 3. **Nutrition data:** the table is filled once from USDA FoodData Central the first time you open the Cook tab. Foods it does not cover (for example quark, passata, 1.5% milk) are not in it; add them in Cook > Nutrition from the package label, or tell me which ones you use most.
 4. **Your recipes:** nothing is preloaded. Add your own in Cook > Recipes, or send me a few and I can load them.
 
@@ -68,3 +70,11 @@ Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lova
 2. **Your own kitchen:** when you have photos of your kitchen, send them, or write a layout file by hand (`docs/kitchen-layout.md`) and import it in Pantry > Settings > Kitchen layout.
 3. **Icons:** already in `public/icons/food`. To download them again: `node scripts/icons/fetch.mjs`.
 4. **Screenshots:** `npm install`, then `node scripts/kitchen-shots/shoot.mjs screenshots/kitchen` (needs Microsoft Edge; set `EDGE_PATH` otherwise).
+
+## 10. Receipts, categories and places (build-fixes)
+1. **Migration:** `0010_categories_places.sql` and `0011_ai_chat_shopping.sql` (step 1).
+2. **Layout upgrade:** the first time you open Pantry after 0010, the app adds the missing default fridge and freezer compartments to your kitchen layout and moves a plant that stood on the cooker or hood. Nothing else in your layout changes; it happens once (`layout_upgraded`).
+3. **Organize:** your existing items stay where they are. Pantry > All items > **Organize** lists suggested moves (for example fish out of the vegetable drawer); nothing moves until you confirm.
+4. **Needs a category:** items whose old category could not be converted by name (old `produce` that is neither fruit nor vegetable) are listed under All items > Needs a category.
+5. **Kaufland abbreviations:** only seven are seeded (`src/features/pantry/receipt-data.json`). Lines the parser cannot read stay "Unknown" in the review; confirm them once and they go into your dictionary. To add more, send the receipt line and the product.
+6. **Screenshots and the overlap check:** `node scripts/kitchen-shots/shoot.mjs screenshots/kitchen` and `npx tsx scripts/kitchen-shots/layout-check.ts` (both need Microsoft Edge; set `EDGE_PATH` otherwise).

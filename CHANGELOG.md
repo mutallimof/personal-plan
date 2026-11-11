@@ -2,6 +2,28 @@
 
 Changes on branch `build-v1`. Behavior changes to existing features are marked **Behavior**.
 
+## Fixes round (branch `build-fixes`)
+### Receipts
+- **Behavior:** the receipt parser was rewritten. Two-line items (name, then "2 x 1,29" or a weight line), sizes inside names ("1L", "250g", "6x0,33") and own-brand prefixes (Kaufland: K., KPur.H., KLC., KBB, ...; kept in `receipt-data.json`) are understood. A discount line now belongs to the previous product (price only). Deposit, bag, payment, loyalty and tax lines go to a collapsed **Ignored lines** list with **Restore**.
+- **Behavior:** weights under 1 kg are now stored in grams (0.946 kg becomes 946 g); the unit is taken from the name when it has one ("1L" gives 1 l). Unknown meat and fish without a printed weight default to 500 g.
+- **Behavior:** non-food (toilet paper, ...) goes to the new category *Household* and is skipped by default, with a **Track anyway** switch.
+- New: Kaufland parser module and seed of seven sure abbreviations; invented-receipt test suite.
+- **Behavior:** the review screen has a category dropdown and a place dropdown filtered by category; changing the category moves the item to a place that accepts it.
+### Categories, places, units
+- **Behavior:** the category list is new: vegetables, fruit, meat, poultry, fish, dairy, eggs, bakery, dry goods, canned, sauces and condiments, spices, oils and fats, snacks and sweets, drinks, frozen, household, other. Migration 0010 converts `produce` (by keyword to fruit, vegetables or other) and `meat` (poultry items to poultry) and moves nothing. Categories can be added and renamed in Settings > Categories (not deleted).
+- **Behavior:** places declare the categories they accept (editable in the layout editor). A receipt line goes to the first place that accepts its category, then to a place of the wanted kind. The default fridge has Meat and fish, Dairy and eggs and Drinks and sauces; the freezer compartments are renamed (Vegetables and fruit / Meat and fish / Ready meals). **Organize** proposes moves for existing items.
+- **Behavior:** the starter dictionary is versioned (`aliases_seed_version`); new entries are added once, your edits are kept.
+- **Behavior:** amounts read "1 piece" / "20 pieces"; items and recipes get sensible default units per category.
+### Icons
+- **Behavior:** icons are chosen by user icon, then dictionary icon, then specific keywords, then category. Cream and sauce bottle are new (Twemoji, CC-BY 4.0); pork goes with ham, cream words no longer show milk, "bananas" no longer shows a pineapple. A table of 85 names and a distinctness test guard this.
+### Kitchen visuals
+- **Behavior:** each compartment has a header strip with its name; products stand on the shelf line with the quantity badge fully visible; the open door fades out instead of leaving a sliver over the fridge; "Empty" and "+" no longer overlap (they are hidden when the shelf is too low); the plant no longer overlaps the cooker or hood (and existing layouts are corrected once).
+- New: an automated overlap check (`scripts/kitchen-shots/layout-check.ts`, also run by `npm test` when Edge is installed) opens every cabinet in headless Edge at 375 and 1280 px, light and dark, and fails on text over text, badge, button or shelf line, and on badges or buttons cut by a shelf line.
+### AI cooking chat
+- **Behavior:** the "AI recipe ideas" switch and **Get ideas** button on Can cook are replaced by the chat: Cook > **Ask AI**. Off by default; turn it on in Settings > AI (one line says what is sent). The model gets a compact pantry summary (names, amounts, units, days to expiry) and your recipe titles, and uses five tools: `search_pantry`, `suggest_recipes`, `save_recipe`, `cook_recipe` (only opens the existing confirmation screen; nothing leaves the pantry without your confirmation) and `add_to_shopping_list`. Every tool call and reply is validated; malformed output is handled without a crash. Calories and protein come only from your nutrition table. A request counter and short messages for provider errors and rate limits are included.
+- New: Cook > **Shopping** (a plain list), migration `0011` (`shopping_list` with row-level security, `ai_chat`, `ai_chat_requests`). Empty recipe list shows **Add recipe**, **Import recipes (JSON)** and, with AI off, a link to Settings. The manual path (Can cook ranking, recipe editor, Cook this with undo) is unchanged. The old `ai_recipes` columns stay in the database unused.
+- The Cook tab bar now has five tabs (Can cook, Recipes, Ask AI, Shopping, Nutrition), slightly narrower on phones.
+
 ## Kitchen round (branch `build-kitchen`)
 - **Behavior:** the Pantry tab bar (Items / Receipt / Dictionary / Kitchen / Cook) is gone. `/pantry` opens on the illustrated kitchen. Add receipt, Cook and All items open as full-screen sheets; Dictionary, Nutrition table, AI check and the layout editor are under Settings (gear). The AI check switch moved from the receipt page to Settings. Old addresses (`/pantry/receipt`, `/pantry/cook`, `/pantry/dictionary`, `/pantry/kitchen`) redirect.
 - **Behavior:** the flat zone map is replaced by the illustrated kitchen. The layout is one JSON document per user (`kitchen_layouts`, migration 0009), importable and exportable; your earlier map is converted the first time. The old `kitchen_zones` table is no longer used (not deleted).
