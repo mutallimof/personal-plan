@@ -1,16 +1,22 @@
 {
   "source": "Twemoji (jdecked/twemoji), graphics CC-BY 4.0, https://github.com/jdecked/twemoji",
   "categories": {
-    "produce": "broccoli",
-    "dairy": "milk",
+    "vegetables": "broccoli",
+    "fruit": "apple",
     "meat": "meat",
+    "poultry": "chicken",
     "fish": "fish",
+    "dairy": "milk",
+    "eggs": "egg",
     "bakery": "bread",
     "dry goods": "grain",
-    "frozen": "ice",
-    "drinks": "soda",
+    "canned": "canned",
+    "sauces and condiments": "sauce",
     "spices": "salt",
-    "snacks": "chocolate",
+    "oils and fats": "olive",
+    "snacks and sweets": "chocolate",
+    "drinks": "soda",
+    "frozen": "ice",
     "household": "sponge",
     "other": "box"
   },
@@ -19,10 +25,20 @@
       "key": "milk",
       "code": "1f95b",
       "label": "Milk",
-      "words": ["milk", "milch", "hafermilch", "sahne", "cream", "schlagsahne"]
+      "words": ["milk", "milch", "hafermilch", "kefir"]
     },
-    { "key": "egg", "code": "1f95a", "label": "Egg", "words": ["egg", "eggs", "ei", "eier"] },
-    { "key": "butter", "code": "1f9c8", "label": "Butter", "words": ["butter", "margarine"] },
+    {
+      "key": "egg",
+      "code": "1f95a",
+      "label": "Egg",
+      "words": ["egg", "eggs", "ei", "eier", "freilandeier"]
+    },
+    {
+      "key": "butter",
+      "code": "1f9c8",
+      "label": "Butter",
+      "words": ["butter", "margarine", "butterschmalz"]
+    },
     {
       "key": "cheese",
       "code": "1f9c0",
@@ -36,14 +52,31 @@
         "feta",
         "cheddar",
         "emmentaler",
-        "camembert"
+        "camembert",
+        "frischkase",
+        "cream cheese",
+        "raclette",
+        "halloumi",
+        "schafskase",
+        "ricotta"
       ]
     },
     {
       "key": "yogurt",
       "code": "1f963",
       "label": "Yogurt",
-      "words": ["yogurt", "yoghurt", "joghurt", "quark", "skyr", "muesli", "mushli"]
+      "words": [
+        "yogurt",
+        "yoghurt",
+        "joghurt",
+        "quark",
+        "skyr",
+        "muesli",
+        "mushli",
+        "kefir",
+        "joghurt natur",
+        "naturjoghurt"
+      ]
     },
     {
       "key": "icecream",
@@ -61,7 +94,7 @@
       "key": "potato",
       "code": "1f954",
       "label": "Potato",
-      "words": ["potato", "kartoffel", "potatoes"]
+      "words": ["potato", "kartoffel", "potatoes", "kartoffeln", "pellkartoffeln", "bratkartoffeln"]
     },
     {
       "key": "sweetpotato",
@@ -75,7 +108,12 @@
       "label": "Carrot",
       "words": ["carrot", "karotte", "mohre", "mohren", "moehre"]
     },
-    { "key": "corn", "code": "1f33d", "label": "Corn", "words": ["corn", "mais", "sweetcorn"] },
+    {
+      "key": "corn",
+      "code": "1f33d",
+      "label": "Corn",
+      "words": ["corn", "mais", "sweetcorn"]
+    },
     {
       "key": "cucumber",
       "code": "1f952",
@@ -114,25 +152,60 @@
       "label": "Onion",
       "words": ["onion", "zwiebel", "zwiebeln", "lauch", "leek"]
     },
-    { "key": "garlic", "code": "1f9c4", "label": "Garlic", "words": ["garlic", "knoblauch"] },
+    {
+      "key": "garlic",
+      "code": "1f9c4",
+      "label": "Garlic",
+      "words": ["garlic", "knoblauch"]
+    },
     {
       "key": "bellpepper",
       "code": "1fad1",
       "label": "Bell pepper",
       "words": ["paprika", "bell pepper"]
     },
-    { "key": "chili", "code": "1f336", "label": "Chili", "words": ["chili", "chilli", "peperoni"] },
+    {
+      "key": "chili",
+      "code": "1f336",
+      "label": "Chili",
+      "words": ["chili", "chilli", "peperoni"]
+    },
     {
       "key": "mushroom",
       "code": "1f344",
       "label": "Mushroom",
       "words": ["mushroom", "pilz", "pilze", "champignon", "champignons"]
     },
-    { "key": "eggplant", "code": "1f346", "label": "Eggplant", "words": ["eggplant", "aubergine"] },
-    { "key": "avocado", "code": "1f951", "label": "Avocado", "words": ["avocado"] },
-    { "key": "apple", "code": "1f34e", "label": "Apple", "words": ["apple", "apfel", "apfelmus"] },
-    { "key": "pear", "code": "1f350", "label": "Pear", "words": ["pear", "birne"] },
-    { "key": "banana", "code": "1f34c", "label": "Banana", "words": ["banana", "banane"] },
+    {
+      "key": "eggplant",
+      "code": "1f346",
+      "label": "Eggplant",
+      "words": ["eggplant", "aubergine"]
+    },
+    {
+      "key": "avocado",
+      "code": "1f951",
+      "label": "Avocado",
+      "words": ["avocado"]
+    },
+    {
+      "key": "apple",
+      "code": "1f34e",
+      "label": "Apple",
+      "words": ["apple", "apfel", "apfelmus"]
+    },
+    {
+      "key": "pear",
+      "code": "1f350",
+      "label": "Pear",
+      "words": ["pear", "birne"]
+    },
+    {
+      "key": "banana",
+      "code": "1f34c",
+      "label": "Banana",
+      "words": ["banana", "banane", "bananas"]
+    },
     {
       "key": "orange",
       "code": "1f34a",
@@ -167,7 +240,7 @@
       "key": "peach",
       "code": "1f351",
       "label": "Peach",
-      "words": ["peach", "pfirsich", "nectarine", "nektarine", "apricot", "aprikose"]
+      "words": ["peach", "pfirsich", "nectarine", "nektarine", "apricot", "aprikose", "nectarines"]
     },
     {
       "key": "cherries",
@@ -175,9 +248,24 @@
       "label": "Cherries",
       "words": ["cherry", "cherries", "kirsche", "kirschen"]
     },
-    { "key": "pineapple", "code": "1f34d", "label": "Pineapple", "words": ["pineapple", "ananas"] },
-    { "key": "mango", "code": "1f96d", "label": "Mango", "words": ["mango"] },
-    { "key": "kiwi", "code": "1f95d", "label": "Kiwi", "words": ["kiwi"] },
+    {
+      "key": "pineapple",
+      "code": "1f34d",
+      "label": "Pineapple",
+      "words": ["pineapple", "ananas"]
+    },
+    {
+      "key": "mango",
+      "code": "1f96d",
+      "label": "Mango",
+      "words": ["mango"]
+    },
+    {
+      "key": "kiwi",
+      "code": "1f95d",
+      "label": "Kiwi",
+      "words": ["kiwi"]
+    },
     {
       "key": "coconut",
       "code": "1f965",
@@ -220,7 +308,12 @@
         "hummus"
       ]
     },
-    { "key": "peas", "code": "1fadb", "label": "Peas", "words": ["peas", "erbsen", "erbse"] },
+    {
+      "key": "peas",
+      "code": "1fadb",
+      "label": "Peas",
+      "words": ["peas", "erbsen", "erbse"]
+    },
     {
       "key": "peanuts",
       "code": "1f95c",
@@ -262,13 +355,19 @@
         "mince",
         "hack",
         "hackfleisch",
-        "pork",
-        "schwein",
         "lamm",
-        "lamb"
+        "lamb",
+        "gulasch",
+        "roast",
+        "braten"
       ]
     },
-    { "key": "bacon", "code": "1f953", "label": "Bacon", "words": ["bacon", "speck"] },
+    {
+      "key": "bacon",
+      "code": "1f953",
+      "label": "Bacon",
+      "words": ["bacon", "speck"]
+    },
     {
       "key": "chicken",
       "code": "1f357",
@@ -282,7 +381,13 @@
         "turkey",
         "poultry",
         "geflugel",
-        "hahnchenbrust"
+        "hahnchenbrust",
+        "chicken breast",
+        "brustfilet",
+        "huhnerbrust",
+        "putenbrust",
+        "duck",
+        "ente"
       ]
     },
     {
@@ -291,7 +396,21 @@
       "label": "Sausage",
       "words": ["sausage", "wurst", "bratwurst", "wurstchen", "salami", "hotdog"]
     },
-    { "key": "ham", "code": "1f356", "label": "Ham", "words": ["ham", "schinken"] },
+    {
+      "key": "ham",
+      "code": "1f356",
+      "label": "Ham",
+      "words": [
+        "ham",
+        "schinken",
+        "pork",
+        "schwein",
+        "schweinefleisch",
+        "kotelett",
+        "schnitzel",
+        "schweinebauch"
+      ]
+    },
     {
       "key": "fish",
       "code": "1f41f",
@@ -308,7 +427,13 @@
         "forelle",
         "trout",
         "hering",
-        "herring"
+        "herring",
+        "seelachs",
+        "makrele",
+        "mackerel",
+        "scholle",
+        "dorade",
+        "fischstabchen"
       ]
     },
     {
@@ -317,7 +442,12 @@
       "label": "Shrimp",
       "words": ["shrimp", "garnele", "garnelen", "prawn", "prawns", "krabbe"]
     },
-    { "key": "rice", "code": "1f35a", "label": "Rice", "words": ["rice", "reis", "basmati"] },
+    {
+      "key": "rice",
+      "code": "1f35a",
+      "label": "Rice",
+      "words": ["rice", "reis", "basmati"]
+    },
     {
       "key": "pasta",
       "code": "1f35d",
@@ -359,7 +489,8 @@
         "quinoa",
         "polenta",
         "griess",
-        "semolina"
+        "semolina",
+        "cornflakes"
       ]
     },
     {
@@ -395,7 +526,12 @@
       "label": "Pretzel",
       "words": ["pretzel", "brezel", "breze", "salzstangen"]
     },
-    { "key": "bagel", "code": "1f96f", "label": "Bagel", "words": ["bagel"] },
+    {
+      "key": "bagel",
+      "code": "1f96f",
+      "label": "Bagel",
+      "words": ["bagel"]
+    },
     {
       "key": "flatbread",
       "code": "1fad3",
@@ -414,7 +550,12 @@
       "label": "Waffle",
       "words": ["waffle", "waffel", "waffeln"]
     },
-    { "key": "pizza", "code": "1f355", "label": "Pizza", "words": ["pizza", "flammkuchen"] },
+    {
+      "key": "pizza",
+      "code": "1f355",
+      "label": "Pizza",
+      "words": ["pizza", "flammkuchen"]
+    },
     {
       "key": "burger",
       "code": "1f354",
@@ -427,8 +568,18 @@
       "label": "Fries",
       "words": ["fries", "pommes", "chips", "crisps", "kartoffelchips"]
     },
-    { "key": "sandwich", "code": "1f96a", "label": "Sandwich", "words": ["sandwich", "belag"] },
-    { "key": "taco", "code": "1f32e", "label": "Taco", "words": ["taco", "burrito", "fajita"] },
+    {
+      "key": "sandwich",
+      "code": "1f96a",
+      "label": "Sandwich",
+      "words": ["sandwich", "belag"]
+    },
+    {
+      "key": "taco",
+      "code": "1f32e",
+      "label": "Taco",
+      "words": ["taco", "burrito", "fajita"]
+    },
     {
       "key": "soup",
       "code": "1f372",
@@ -445,15 +596,30 @@
         "ready meal"
       ]
     },
-    { "key": "curry", "code": "1f35b", "label": "Curry", "words": ["curry"] },
+    {
+      "key": "curry",
+      "code": "1f35b",
+      "label": "Curry",
+      "words": ["curry"]
+    },
     {
       "key": "dumpling",
       "code": "1f95f",
       "label": "Dumpling",
       "words": ["dumpling", "maultaschen", "pierogi", "gyoza", "ravioli", "tortellini"]
     },
-    { "key": "pie", "code": "1f967", "label": "Pie", "words": ["pie", "quiche", "strudel"] },
-    { "key": "tofu", "code": "1f362", "label": "Tofu", "words": ["tofu", "tempeh", "seitan"] },
+    {
+      "key": "pie",
+      "code": "1f967",
+      "label": "Pie",
+      "words": ["pie", "quiche", "strudel"]
+    },
+    {
+      "key": "tofu",
+      "code": "1f362",
+      "label": "Tofu",
+      "words": ["tofu", "tempeh", "seitan"]
+    },
     {
       "key": "honey",
       "code": "1f36f",
@@ -482,22 +648,7 @@
       "key": "canned",
       "code": "1f96b",
       "label": "Canned",
-      "words": [
-        "can",
-        "dose",
-        "canned",
-        "konserve",
-        "passata",
-        "sauce",
-        "sosse",
-        "ketchup",
-        "mustard",
-        "senf",
-        "mayonnaise",
-        "mayo",
-        "pesto",
-        "tomatenmark"
-      ]
+      "words": ["can", "dose", "canned", "konserve", "passata", "tomatenmark"]
     },
     {
       "key": "salt",
@@ -541,7 +692,12 @@
         "oregano"
       ]
     },
-    { "key": "ginger", "code": "1fada", "label": "Ginger", "words": ["ginger", "ingwer"] },
+    {
+      "key": "ginger",
+      "code": "1fada",
+      "label": "Ginger",
+      "words": ["ginger", "ingwer"]
+    },
     {
       "key": "chocolate",
       "code": "1f36b",
@@ -581,7 +737,12 @@
         "lollipop"
       ]
     },
-    { "key": "popcorn", "code": "1f37f", "label": "Popcorn", "words": ["popcorn"] },
+    {
+      "key": "popcorn",
+      "code": "1f37f",
+      "label": "Popcorn",
+      "words": ["popcorn"]
+    },
     {
       "key": "pudding",
       "code": "1f36e",
@@ -592,7 +753,7 @@
       "key": "water",
       "code": "1f4a7",
       "label": "Water",
-      "words": ["water", "wasser", "mineralwasser", "sprudel"]
+      "words": ["water", "wasser", "mineralwasser", "sprudel", "miwa", "mineral", "naturell"]
     },
     {
       "key": "juice",
@@ -623,7 +784,12 @@
       "label": "Coffee",
       "words": ["coffee", "kaffee", "espresso", "kaffeebohnen"]
     },
-    { "key": "tea", "code": "1f375", "label": "Tea", "words": ["tea", "tee", "matcha"] },
+    {
+      "key": "tea",
+      "code": "1f375",
+      "label": "Tea",
+      "words": ["tea", "tee", "matcha"]
+    },
     {
       "key": "beer",
       "code": "1f37a",
@@ -686,7 +852,12 @@
       "label": "Light bulb",
       "words": ["bulb", "gluhbirne", "lampe", "light"]
     },
-    { "key": "dog", "code": "1f415", "label": "Dog food", "words": ["dog", "hund", "hundefutter"] },
+    {
+      "key": "dog",
+      "code": "1f415",
+      "label": "Dog food",
+      "words": ["dog", "hund", "hundefutter"]
+    },
     {
       "key": "cat",
       "code": "1f408",
@@ -699,6 +870,49 @@
       "label": "Ice",
       "words": ["ice", "eiswurfel", "tiefkuhl", "frozen"]
     },
-    { "key": "box", "code": "1f4e6", "label": "Box", "words": [] }
+    {
+      "key": "box",
+      "code": "1f4e6",
+      "label": "Box",
+      "words": []
+    },
+    {
+      "key": "cream",
+      "code": "1fad7",
+      "label": "Cream",
+      "words": [
+        "cream",
+        "sahne",
+        "schlagsahne",
+        "whipping cream",
+        "sour cream",
+        "saure sahne",
+        "schmand",
+        "creme fraiche",
+        "kaffeesahne"
+      ]
+    },
+    {
+      "key": "sauce",
+      "code": "1f9f4",
+      "label": "Sauce bottle",
+      "words": [
+        "ketchup",
+        "mustard",
+        "senf",
+        "mayonnaise",
+        "mayo",
+        "sauce",
+        "sosse",
+        "dressing",
+        "pesto",
+        "sambal",
+        "sojasosse",
+        "soy sauce",
+        "bbq",
+        "essig",
+        "vinegar"
+      ]
+    }
   ]
 }
