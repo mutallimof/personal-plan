@@ -1,6 +1,6 @@
 import { placesAccepting } from "@/features/pantry/locations";
 import type { PantryItem, PantryLocation } from "@/features/pantry/model";
-import { LAYOUT_REV, MAX_COMPARTMENTS, type Compartment, type Decor, type Layout, type Rect } from "./layout";
+import { counterEnd, LAYOUT_REV, MAX_COMPARTMENTS, WORKTOP_TOP, type Compartment, type Decor, type Layout, type Rect } from "./layout";
 import { DEFAULT_LAYOUT } from "./legacy";
 
 const same = (a: string | null, b: string | null) => (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
@@ -8,22 +8,38 @@ const same = (a: string | null, b: string | null) => (a ?? "").trim().toLowerCas
 const overlap = (a: Rect, b: Rect) =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
-/** A plant that stands on the cooker or inside a cabinet goes to a free spot on the worktop. */
-function movePlants(layout: Layout): { decor: Decor[]; moved: boolean } {
+/**
+ * Puts every plant on the worktop, resting on its top edge, in a free spot: not over the cooker (which is
+ * drawn on the worktop), not in front of a cabinet, the hood or the window, not over another plant, and not past
+ * the end of the counter. A plant that already stands properly is left alone; one that does not moves along the
+ * counter to the nearest free spot. When there is no free spot it stays where it is.
+ */
+export function groundPlants(layout: Layout): { decor: Decor[]; moved: boolean } {
+  const end = counterEnd(layout);
+  const rest = (d: Decor) => layout.room.worktopY - WORKTOP_TOP - d.height;
   let moved = false;
   const decor = layout.decor.map((d) => {
     if (d.type !== "plant") return d;
-    const blockers: Rect[] = [...layout.decor.filter((o) => o.type === "cooker" || o.type === "hood"), ...layout.hotspots];
-    if (!blockers.some((b) => overlap(d, b))) return d;
-    const y = layout.room.worktopY - d.height;
-    for (let x = 4; x + d.width < layout.room.width; x += 2) {
+    const y = rest(d);
+    const free = (x: number) => {
       const spot = { x, y, width: d.width, height: d.height };
-      if (!blockers.some((b) => overlap(spot, b)) && !layout.decor.some((o) => o !== d && overlap(spot, o))) {
-        moved = true;
-        return { ...d, x, y };
-      }
+      if (x < 1 || x + d.width > end) return false;
+      if (layout.hotspots.some((h) => overlap(spot, h))) return false;
+      return !layout.decor.some((o) => {
+        if (o === d) return false;
+        // the cooker stands on the worktop, so it blocks its whole width; everything else by its own box
+        if (o.type === "cooker") return spot.x < o.x + o.width && o.x < spot.x + spot.width;
+        return overlap(spot, o);
+      });
+    };
+    if (d.y === y && free(d.x)) return d;
+    let best: number | null = null;
+    for (let x = 1; x + d.width <= end; x += 0.5) {
+      if (free(x) && (best === null || Math.abs(x - d.x) < Math.abs(best - d.x))) best = x;
     }
-    return d;
+    if (best === null) return d;
+    moved = true;
+    return { ...d, x: best, y };
   });
   return { decor, moved };
 }
@@ -52,8 +68,8 @@ export function upgradeLayout(layout: Layout): { layout: Layout; added: string[]
     }
     return compartments.length === h.compartments.length ? h : { ...h, compartments };
   });
-  const plants = movePlants(layout);
-  if (plants.moved) added.push("Plant moved off the cooker");
+  const plants = groundPlants(layout);
+  if (plants.moved) added.push("Plant moved onto the worktop");
   const next = added.length ? { ...layout, hotspots, decor: plants.decor } : layout;
   return { layout: next, added };
 }
@@ -63,16 +79,19 @@ const BY_POSITION = /^(top|middle|bottom) drawer$/i;
 const isMeatAndFish = (c: Pick<Compartment, "name">) => c.name.trim().toLowerCase() === "meat and fish";
 
 /**
- * One-time tidy-up of the fridge and the freezer (layout revision 2): the Top, Middle and Bottom drawers are removed,
- * Meat and fish is the only drawer, and every other drawer becomes an open shelf. The pantry places of removed
- * compartments are returned in `removed` so their items can be moved. Nothing else changes; a layout that already
- * has this revision comes back as the very same object.
+ * One-time tidy-ups of a saved layout, each by its revision (kept in the layout file, so no database change):
+ * - revision 2: in the fridge and the freezer the Top, Middle and Bottom drawers are removed, Meat and fish is the
+ *   only drawer, and every other drawer becomes an open shelf. The pantry places of removed compartments are
+ *   returned in `removed` so their items can be moved;
+ * - revision 3: plants are put on the worktop (see `groundPlants`).
+ * A layout that already has the current revision comes back as the very same object.
  */
-export function tidyColdStorage(layout: Layout): { layout: Layout; removed: string[] } {
+export function tidyLayout(layout: Layout): { layout: Layout; removed: string[] } {
   if (layout.rev >= LAYOUT_REV) return { layout, removed: [] };
   const removed: string[] = [];
+  const cold = layout.rev < 2;
   const hotspots = layout.hotspots.map((h) => {
-    if (h.kind !== "fridge" && h.kind !== "freezer") return h;
+    if (!cold || (h.kind !== "fridge" && h.kind !== "freezer")) return h;
     const compartments: Compartment[] = [];
     for (const c of h.compartments) {
       if (BY_POSITION.test(c.name.trim()) || BY_POSITION.test((c.location ?? "").trim())) {
@@ -83,7 +102,8 @@ export function tidyColdStorage(layout: Layout): { layout: Layout; removed: stri
     }
     return { ...h, compartments };
   });
-  return { layout: { ...layout, rev: LAYOUT_REV, hotspots }, removed };
+  const next = { ...layout, hotspots };
+  return { layout: { ...next, rev: LAYOUT_REV, decor: groundPlants(next).decor }, removed };
 }
 
 const lower = (s: string) => s.trim().toLowerCase();

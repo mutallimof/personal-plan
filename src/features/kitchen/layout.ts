@@ -5,7 +5,7 @@ import { LOCATION_KINDS } from "@/features/pantry/model";
 export const LAYOUT_VERSION = 2;
 
 /** Revision of the built-in tidy-ups a saved layout has had (kept inside the file, so no database change is needed). */
-export const LAYOUT_REV = 2;
+export const LAYOUT_REV = 3;
 
 export const DOORS = [
   "hinged-left",
@@ -22,6 +22,9 @@ export type CompartmentKind = (typeof COMPARTMENT_KINDS)[number];
 
 export const DECOR_TYPES = ["cooker", "hood", "window", "plant"] as const;
 export type DecorType = (typeof DECOR_TYPES)[number];
+
+/** How far the worktop slab rises above `room.worktopY`: things that stand on the counter rest on this line. */
+export const WORKTOP_TOP = 2;
 
 export const MIN_SIZE = 6;
 export const MAX_HOTSPOTS = 60;
@@ -237,3 +240,9 @@ export const removeHotspot = (layout: Layout, hotspotKey: string): Layout => ({
   ...layout,
   hotspots: layout.hotspots.filter((h) => h.key !== hotspotKey),
 });
+
+/** Right end of the worktop: it stops 3 units short of the fridge-freezer (or runs to the wall when there is none). */
+export function counterEnd(layout: Pick<Layout, "room" | "hotspots">): number {
+  const tall = layout.hotspots.filter((h) => h.kind === "fridge" || h.kind === "freezer");
+  return tall.length ? Math.min(...tall.map((h) => h.x)) - 3 : layout.room.width;
+}

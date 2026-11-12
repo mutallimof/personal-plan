@@ -1,4 +1,4 @@
-import type { Decor, Layout } from "./layout";
+import { counterEnd as counterEndOf, WORKTOP_TOP, type Decor, type Layout } from "./layout";
 
 const OUTLINE = { stroke: "var(--k-line)", strokeWidth: 0.3, strokeLinejoin: "round" } as const;
 
@@ -164,6 +164,7 @@ function Plant({ x, y, width: w, height: h }: Decor) {
   const top = y + h - pot;
   return (
     <g>
+      <ellipse cx={x + w * 0.5} cy={y + h} rx={w * 0.46} ry={0.55} fill="var(--k-shadow)" />
       <ellipse
         cx={x + w * 0.3}
         cy={top - h * 0.28}
@@ -209,7 +210,7 @@ export function Backdrop({ layout }: { layout: Layout }) {
   const right = tall.length ? Math.max(...tall.map((h) => h.x + h.width)) : 0;
   const top = tall.length ? Math.min(...tall.map((h) => h.y)) : 0;
   const bottom = tall.length ? Math.max(...tall.map((h) => h.y + h.height)) : 0;
-  const counterEnd = tall.length ? left - 3 : room.width;
+  const counterEnd = counterEndOf(layout);
   const { worktopY, floorY } = room;
 
   return (
@@ -267,7 +268,7 @@ export function Backdrop({ layout }: { layout: Layout }) {
       <rect x={1.5} y={floorY - 1.4} width={counterEnd - 1.5} height={1.4} fill="var(--k-plinth)" />
       <rect
         x={0.5}
-        y={worktopY - 2}
+        y={worktopY - WORKTOP_TOP}
         width={counterEnd}
         height={3.4}
         rx={0.7}

@@ -7,7 +7,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { readLayout, type Layout } from "./layout";
 import { DEFAULT_LAYOUT, fromLegacyZones, type LegacyZone } from "./legacy";
 import { missingPlaces, type NewPlace } from "./places";
-import { moveOutOfRemoved, tidyColdStorage, upgradeLayout } from "./upgrade";
+import { moveOutOfRemoved, tidyLayout, upgradeLayout } from "./upgrade";
 
 async function uid() {
   const { data } = await supabase.auth.getUser();
@@ -83,8 +83,8 @@ async function moveItemsOut(removed: readonly string[]): Promise<void> {
 
 /**
  * Brings a saved layout up to date, each step once: the default fridge and freezer compartments it lacks (nothing
- * removed), then the revision-2 tidy-up (no Top/Middle/Bottom drawers; only Meat and fish is a drawer), which also
- * moves the items of the removed drawers to shelves that fit them.
+ * removed), then the one-time tidy-ups by layout revision (no Top/Middle/Bottom drawers, only Meat and fish is a drawer, plants
+ * on the worktop), which also move the items of removed drawers to shelves that fit them.
  */
 async function upgradeOnce(user_id: string, saved: Layout): Promise<Layout> {
   let layout = saved;
@@ -97,7 +97,7 @@ async function upgradeOnce(user_id: string, saved: Layout): Promise<Layout> {
     }
     check(await supabase.from("pantry_settings").upsert({ user_id, layout_upgraded: true }));
   }
-  const tidy = tidyColdStorage(layout);
+  const tidy = tidyLayout(layout);
   if (tidy.layout !== layout) {
     if (tidy.removed.length) await moveItemsOut(tidy.removed);
     await saveLayout(tidy.layout);
