@@ -80,7 +80,7 @@ export function PhotoStep({ onRead, onCancel, busy }: Props) {
 
   if (stage === "working") {
     return (
-      <div role="status" className="rounded-2xl bg-card p-6 text-center text-sm text-muted-foreground">
+      <div role="status" className="tile p-6 text-center text-sm text-muted-foreground">
         Checking the photo
       </div>
     );
@@ -89,7 +89,7 @@ export function PhotoStep({ onRead, onCancel, busy }: Props) {
   if (stage === "problem" && issue) {
     return (
       <div className="space-y-3">
-        <div role="alert" className="rounded-2xl bg-card p-4 text-sm font-medium">
+        <div role="alert" className="tile p-4 text-sm font-medium">
           {ISSUE_MESSAGE[issue]}
         </div>
         <Button className="h-12 w-full" onClick={retake}>
@@ -109,11 +109,11 @@ export function PhotoStep({ onRead, onCancel, busy }: Props) {
           <Figure label="Original" url={originalUrl} active={useOriginal} />
           <Figure label="Cleaned up" url={processedUrl} active={!useOriginal} />
         </div>
-        <label className="flex min-h-11 items-center justify-between rounded-2xl bg-card px-4 text-sm">
+        <label className="flex min-h-11 items-center justify-between tile px-4 text-sm">
           Use original
           <Switch checked={useOriginal} onCheckedChange={setUseOriginal} disabled={busy} aria-label="Use original" />
         </label>
-        <label className="flex min-h-11 items-center justify-between rounded-2xl bg-card px-4 text-sm">
+        <label className="flex min-h-11 items-center justify-between tile px-4 text-sm">
           Black and white
           <Switch checked={blackWhite} onCheckedChange={setBlackWhite} disabled={busy || useOriginal} aria-label="Black and white" />
         </label>
@@ -129,7 +129,7 @@ export function PhotoStep({ onRead, onCancel, busy }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="rounded-2xl bg-card p-4 text-sm">Fit the whole receipt, hold the phone straight above it.</p>
+      <p className="tile p-4 text-sm">Fit the whole receipt, hold the phone straight above it.</p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -186,7 +186,7 @@ export function PhotoStep({ onRead, onCancel, busy }: Props) {
 
 function Figure({ label, url, active }: { label: string; url: string | null; active: boolean }) {
   return (
-    <figure className={cn("overflow-hidden rounded-2xl bg-card p-2", active && "ring-2 ring-primary")}>
+    <figure className={cn("overflow-hidden tile p-2", active && "ring-2 ring-primary")}>
       <div className="flex h-64 items-center justify-center overflow-hidden rounded-xl bg-muted">
         {url && <img src={url} alt={label} className="max-h-full max-w-full object-contain" />}
       </div>

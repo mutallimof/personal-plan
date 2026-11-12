@@ -49,10 +49,10 @@ export function ProgressChart({ sessions }: { sessions: ExerciseSession[] }) {
     <div className="h-56 w-full" role="img" aria-label="Weight and reps over time">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-          <CartesianGrid stroke="#E5E7EB" vertical={false} />
+          <CartesianGrid stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: "#6B7280" }}
+            tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
             tickLine={false}
             axisLine={false}
           />
@@ -61,7 +61,7 @@ export function ProgressChart({ sessions }: { sessions: ExerciseSession[] }) {
               yAxisId="w"
               allowDecimals={false}
               domain={[(m: number) => Math.floor(m - 2), (m: number) => Math.ceil(m + 2)]}
-              tick={{ fontSize: 11, fill: "#6B7280" }}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
               tickLine={false}
               axisLine={false}
               width={44}
@@ -76,7 +76,7 @@ export function ProgressChart({ sessions }: { sessions: ExerciseSession[] }) {
               type="monotone"
               dataKey="weight"
               name="kg"
-              stroke="#22C55E"
+              stroke="var(--primary)"
               strokeWidth={2.5}
               dot={{ r: 3 }}
               connectNulls
@@ -87,7 +87,7 @@ export function ProgressChart({ sessions }: { sessions: ExerciseSession[] }) {
             type="monotone"
             dataKey="reps"
             name="reps"
-            stroke="#9CA3AF"
+            stroke="var(--muted-foreground)"
             strokeWidth={2}
             strokeDasharray="4 3"
             dot={{ r: 3 }}

@@ -46,18 +46,18 @@ function Row({
   const problem = line.skip ? null : lineProblem(line);
   const label = "space-y-1 text-xs text-muted-foreground";
   return (
-    <li className={cn("space-y-3 rounded-2xl border p-3", needs ? "border-amber-400 bg-amber-50" : "bg-card", line.skip && "opacity-50")}>
+    <li className={cn("space-y-3 rounded-2xl border p-3", needs ? "border-warning-ink/40 bg-warning-soft/50" : "bg-card shadow-card", line.skip && "opacity-50")}>
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">{line.rawText}</span>
         {line.confidence !== null && (
-          <span className={cn("text-xs tabular-nums", isLowConfidence(line) ? "font-medium text-amber-900" : "text-muted-foreground")}>
+          <span className={cn("text-xs tabular-nums", isLowConfidence(line) ? "font-semibold text-warning-ink" : "text-muted-foreground")}>
             {Math.round(line.confidence)}%
           </span>
         )}
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-xs font-medium",
-            needs ? "bg-amber-200 text-amber-950" : "bg-secondary text-secondary-foreground",
+            needs ? "bg-warning-soft text-warning-ink" : "bg-secondary text-secondary-foreground",
           )}
         >
           {line.status === "matched" && isLowConfidence(line) ? "Unsure" : STATUS[line.status]}

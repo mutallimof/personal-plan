@@ -1,8 +1,9 @@
 import type { IExerciseData, Muscle } from "react-body-highlighter";
 
-export const PRIMARY_COLOR = "#22C55E";
-export const SECONDARY_COLOR = "#BBF7D0";
-export const BODY_COLOR = "#E5E7EB";
+// theme tokens, so the diagram follows the theme and dark mode
+export const PRIMARY_COLOR = "var(--primary)";
+export const SECONDARY_COLOR = "var(--primary-soft)";
+export const BODY_COLOR = "var(--muscle-idle)";
 
 /**
  * Our muscle ids -> react-body-highlighter muscle names.

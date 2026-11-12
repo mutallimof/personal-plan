@@ -177,7 +177,7 @@ function ExercisePage() {
 
         <div className="space-y-6 md:order-1">
           <header className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{exercise.name}</h1>
+            <h1 className="text-[1.75rem] leading-tight">{exercise.name}</h1>
             <p className="flex items-center gap-2 text-sm capitalize text-muted-foreground">
               {exercise.equipment}
               {isReady(history) && <ReadyBadge />}
@@ -198,7 +198,7 @@ function ExercisePage() {
           <ExerciseImages slug={exercise.slug} name={exercise.name} />
 
           {exercise.steps.length > 0 && (
-            <ol className="list-decimal space-y-2 rounded-2xl bg-card py-4 pl-9 pr-4 text-sm">
+            <ol className="list-decimal space-y-2 tile py-4 pl-9 pr-4 text-sm">
               {exercise.steps.map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
@@ -210,7 +210,7 @@ function ExercisePage() {
       {history && history.length > 0 && (
         <section className="space-y-3">
           <h2 className="font-semibold">Progress</h2>
-          <div className="rounded-2xl bg-card p-4">
+          <div className="tile p-4">
             <ProgressChart sessions={history} />
           </div>
         </section>
@@ -222,8 +222,8 @@ function ExercisePage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {variations.map(({ eq, list }) => (
               <div key={eq} className="space-y-1.5">
-                <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{eq}</h3>
-                <ul className="divide-y rounded-2xl bg-card">
+                <h3 className="eyebrow px-1">{eq}</h3>
+                <ul className="tile divide-y">
                   {list.map((v) => (
                     <li key={v.id}>
                       <Link

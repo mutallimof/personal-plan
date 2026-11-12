@@ -163,7 +163,7 @@ export function ReceiptPage() {
   }
 
   const progressBar = progress && (
-    <div role="status" className="space-y-2 rounded-2xl bg-card p-4 text-sm">
+    <div role="status" className="space-y-2 tile p-4 text-sm">
       <div className="flex justify-between">
         <span>{progress.label}</span>
         <span className="tabular-nums text-muted-foreground">{Math.round(progress.progress * 100)}%</span>
@@ -186,7 +186,7 @@ export function ReceiptPage() {
       <Textarea
         aria-label="Receipt text"
         placeholder="Paste the receipt text"
-        className="min-h-40 rounded-2xl bg-card text-base sm:text-sm"
+        className="min-h-40 tile text-base sm:text-sm"
         value={pasted}
         onChange={(e) => setPasted(e.target.value)}
       />

@@ -29,7 +29,7 @@ export function BodyMap({ primary = [], secondary = [], selected, onSelect, comp
 
   return (
     <div
-      className="grid grid-cols-2 gap-4 rounded-2xl bg-card p-4"
+      className="grid grid-cols-2 gap-4 tile p-4"
       role={onSelect ? "group" : "img"}
       aria-label={onSelect ? "Tap a muscle to filter" : "Muscles worked, front and back"}
     >

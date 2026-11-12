@@ -31,14 +31,14 @@ function PlanPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Plan</h1>
+      <h1 className="text-[1.75rem] leading-tight">Plan</h1>
 
       {isError && !sessions.length && <QueryError onRetry={() => refetch()} />}
 
       {next && next.session.items.length > 0 && (
         <section className="flex items-center justify-between gap-3 rounded-2xl bg-accent p-4 sm:p-5" aria-label="Next session">
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-accent-foreground">Next</p>
+            <p className="eyebrow text-accent-foreground">Next</p>
             <p className="truncate text-lg font-semibold">{next.session.name}</p>
             <p className="text-sm text-muted-foreground">~{estimateMinutes(next.session.items)} min</p>
           </div>
@@ -57,7 +57,7 @@ function PlanPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {sessions.map((s) => (
-            <div key={s.id} className="flex flex-col rounded-2xl bg-card">
+            <div key={s.id} className="flex flex-col tile">
               <Link
                 to="/gym/session/$id"
                 params={{ id: s.id }}

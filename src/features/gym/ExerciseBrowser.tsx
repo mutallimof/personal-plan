@@ -106,7 +106,7 @@ function VirtualList({
     <div
       ref={ref}
       onScroll={(ev) => setScrollTop(ev.currentTarget.scrollTop)}
-      className="h-[60vh] min-h-72 overflow-y-auto rounded-2xl bg-card"
+      className="h-[60vh] min-h-72 overflow-y-auto tile"
       role="list"
       aria-label="Exercises"
     >
