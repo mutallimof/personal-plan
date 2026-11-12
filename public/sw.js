@@ -3,7 +3,7 @@
  * - Pages under /gym and /: network first, last good copy when offline, /offline.html as the last resort.
  * - Everything else (Supabase, server functions, non-GET) is never touched.
  * Bump VERSION to drop old caches. */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `lifeplan-shell-${VERSION}`;
 const ASSETS = `lifeplan-assets-${VERSION}`;
 

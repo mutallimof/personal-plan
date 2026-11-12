@@ -1,99 +1,41 @@
-// Generates the PWA icons (public/icons/*.png) from the same dumbbell shape as public/favicon.svg.
-// No dependencies: rasterises the shapes with 4x supersampling and writes PNG by hand.
+// Generates the PWA icons (public/icons/*.png) from the sprout mark in public/favicon.svg (the same paths as
+// src/components/Logo.tsx). Draws each icon as SVG in headless Microsoft Edge and saves a PNG.
 //   node scripts/make-icons.mjs
-import { deflateSync } from "node:zlib";
-import { mkdirSync, writeFileSync } from "node:fs";
+// Needs Edge (set EDGE_PATH to override the default Windows location).
+import { mkdirSync, readFileSync } from "node:fs";
+import puppeteer from "puppeteer-core";
 
-const GREEN = [0x22, 0xc5, 0x5e];
-const WHITE = [255, 255, 255];
-// Dumbbell rects in the favicon's 64x64 space: [x, y, w, h, radius]
-const BELLS = [
-  [10, 22, 7, 20, 2.5],
-  [18, 26, 5, 12, 2],
-  [26, 30, 12, 4, 2],
-  [41, 26, 5, 12, 2],
-  [47, 22, 7, 20, 2.5],
-];
+const GREEN = "#22C55E";
+const edge = process.env.EDGE_PATH ?? "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 
-function inRoundRect(px, py, [x, y, w, h, r]) {
-  if (px < x || px > x + w || py < y || py > y + h) return false;
-  const cx = Math.min(Math.max(px, x + r), x + w - r);
-  const cy = Math.min(Math.max(py, y + r), y + h - r);
-  return (px - cx) ** 2 + (py - cy) ** 2 <= r * r;
-}
+// Everything after the tile in favicon.svg is the sprout.
+const favicon = readFileSync("public/favicon.svg", "utf8");
+const sprout = favicon.slice(favicon.indexOf("/>") + 2, favicon.lastIndexOf("</svg>"));
 
-/** size px square. rounded: rounded-corner tile on transparent. maskable: full-bleed with a smaller mark. */
-function render(size, { rounded, scale }) {
-  const SS = 4;
-  const px = Buffer.alloc(size * size * 4);
-  for (let j = 0; j < size; j++)
-    for (let i = 0; i < size; i++) {
-      let g = 0, w = 0;
-      for (let sj = 0; sj < SS; sj++)
-        for (let si = 0; si < SS; si++) {
-          const u = ((i + (si + 0.5) / SS) / size) * 64;
-          const v = ((j + (sj + 0.5) / SS) / size) * 64;
-          if (!rounded || inRoundRect(u, v, [0, 0, 64, 64, 14])) {
-            g++;
-            const mu = (u - 32) / scale + 32;
-            const mv = (v - 32) / scale + 32;
-            if (BELLS.some((b) => inRoundRect(mu, mv, b))) w++;
-          }
-        }
-      const n = SS * SS;
-      const o = (j * size + i) * 4;
-      const wf = w / n, gf = (g - w) / n;
-      px[o] = Math.round(WHITE[0] * wf + GREEN[0] * gf);
-      px[o + 1] = Math.round(WHITE[1] * wf + GREEN[1] * gf);
-      px[o + 2] = Math.round(WHITE[2] * wf + GREEN[2] * gf);
-      px[o + 3] = Math.round(((g) / n) * 255);
-    }
-  return px;
-}
+/** rounded: a rounded tile on transparent. Otherwise full bleed, with the sprout scaled around the centre. */
+const svg = (size, { rounded, scale }) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64">` +
+  `<rect width="64" height="64" rx="${rounded ? 17 : 0}" fill="${GREEN}"/>` +
+  `<g transform="translate(32 32) scale(${scale}) translate(-32 -32)">${sprout}</g></svg>`;
 
-const crcTable = Array.from({ length: 256 }, (_, n) => {
-  let c = n;
-  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-  return c >>> 0;
-});
-const crc32 = (buf) => {
-  let c = 0xffffffff;
-  for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-};
-const chunk = (type, data) => {
-  const t = Buffer.from(type);
-  const len = Buffer.alloc(4);
-  len.writeUInt32BE(data.length);
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(Buffer.concat([t, data])));
-  return Buffer.concat([len, t, data, crc]);
-};
-function png(size, rgba) {
-  const raw = Buffer.alloc((size * 4 + 1) * size);
-  for (let y = 0; y < size; y++) {
-    raw[y * (size * 4 + 1)] = 0;
-    rgba.copy(raw, y * (size * 4 + 1) + 1, y * size * 4, (y + 1) * size * 4);
-  }
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(size, 0);
-  ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // RGBA
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", ihdr),
-    chunk("IDAT", deflateSync(raw, { level: 9 })),
-    chunk("IEND", Buffer.alloc(0)),
-  ]);
-}
-
-mkdirSync("public/icons", { recursive: true });
-const out = [
+const OUT = [
   ["icon-192.png", 192, { rounded: true, scale: 1 }],
   ["icon-512.png", 512, { rounded: true, scale: 1 }],
-  ["icon-maskable-512.png", 512, { rounded: false, scale: 0.72 }], // mark stays inside the 80% safe zone
-  ["apple-touch-icon.png", 180, { rounded: false, scale: 0.9 }], // iOS rounds the corners itself
+  ["icon-maskable-512.png", 512, { rounded: false, scale: 0.78 }], // the sprout stays inside the 80% safe zone
+  ["apple-touch-icon.png", 180, { rounded: false, scale: 0.92 }], // iOS rounds the corners itself
 ];
-for (const [name, size, opts] of out) writeFileSync(`public/icons/${name}`, png(size, render(size, opts)));
-console.log("wrote", out.map((o) => o[0]).join(", "));
+
+mkdirSync("public/icons", { recursive: true });
+const browser = await puppeteer.launch({ executablePath: edge, headless: true });
+try {
+  for (const [name, size, opts] of OUT) {
+    const page = await browser.newPage();
+    await page.setViewport({ width: size, height: size, deviceScaleFactor: 1 });
+    await page.setContent(`<body style="margin:0;background:transparent">${svg(size, opts)}</body>`);
+    await page.screenshot({ path: `public/icons/${name}`, omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
+    await page.close();
+  }
+} finally {
+  await browser.close();
+}
+console.log("wrote", OUT.map((o) => o[0]).join(", "));
