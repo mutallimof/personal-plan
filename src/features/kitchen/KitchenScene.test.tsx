@@ -39,6 +39,18 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe("KitchenScene", () => {
+  it("asks for the list of a shelf when an open cabinet's shelf is tapped", () => {
+    mockMotion(true);
+    const onOpenRow = vi.fn();
+    const { container } = render(<KitchenScene {...props({ openKey: "fridge", onOpenRow })} />);
+    act(() => void vi.advanceTimersByTime(REDUCED_MS + 10));
+    const hit = container.querySelector("[data-row-hit]");
+    expect(hit).not.toBeNull();
+    fireEvent.click(hit!);
+    expect(onOpenRow).toHaveBeenCalledTimes(1);
+    expect(onOpenRow.mock.calls[0]![0].key).toBe("fridge");
+  });
+
   it("has a tappable spot for every cabinet in the layout, named after it", () => {
     mockMotion(false);
     render(<KitchenScene {...props()} />);
