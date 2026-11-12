@@ -100,7 +100,7 @@ export function ItemDialog({ item, locations, defaultLocationId = "", onClose }:
                 type="button"
                 aria-label="Change icon"
                 onClick={() => setPicking(true)}
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-14 w-14 shrink-0 items-center justify-center tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <ItemIcon icon={resolveIcon({ icon, name, category })} className="h-10 w-10" />
               </button>

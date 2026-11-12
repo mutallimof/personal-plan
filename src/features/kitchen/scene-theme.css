@@ -32,7 +32,7 @@
   --k-sun: #fff4cf;
   --k-sun-opacity: 0.22;
   --k-shadow: rgb(60 45 25 / 0.18);
-  --k-highlight: #22c55e;
+  --k-highlight: var(--primary, #22c55e);
   --k-soon: #f59e0b;
   --k-expired: #dc2626;
   --k-badge: #fffdf7;

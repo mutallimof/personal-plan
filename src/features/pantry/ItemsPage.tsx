@@ -141,8 +141,8 @@ export function ItemsPage({ initialQuery = "" }: { initialQuery?: string }) {
 
       {needsCategory.length > 0 && (
         <section className="space-y-1.5">
-          <h2 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Needs a category · {needsCategory.length}</h2>
-          <ul className="divide-y rounded-2xl bg-card">
+          <h2 className="eyebrow px-1">Needs a category · {needsCategory.length}</h2>
+          <ul className="tile divide-y">
             {needsCategory.map((i) => (
               <li key={i.id} className="flex items-center gap-2 px-3 py-2">
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{i.name}</span>
@@ -184,10 +184,10 @@ export function ItemsPage({ initialQuery = "" }: { initialQuery?: string }) {
       ) : (
         groups.map((g) => (
           <section key={g.id ?? "none"} className="space-y-1.5">
-            <h2 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <h2 className="eyebrow px-1">
               {g.label} · {g.items.length}
             </h2>
-            <ul className="divide-y rounded-2xl bg-card">
+            <ul className="tile divide-y">
               {g.items.map((i) => (
                 <ItemRow key={i.id} item={i} today={today} onEdit={() => setDialog({ item: i })} />
               ))}

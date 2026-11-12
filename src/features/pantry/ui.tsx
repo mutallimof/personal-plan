@@ -110,7 +110,7 @@ export function ExpiryBadge({ expiresOn, today }: { expiresOn: string | null; to
     <span
       className={cn(
         "rounded-full px-2 py-0.5 text-xs font-medium",
-        state === "expired" ? "bg-destructive/10 text-destructive" : "bg-amber-100 text-amber-900",
+        state === "expired" ? "bg-destructive/10 text-destructive" : "bg-warning-soft text-warning-ink",
       )}
     >
       {expiryLabel(expiresOn, today)}

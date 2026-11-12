@@ -109,7 +109,7 @@ export function KitchenScreen({
   return (
     <div className="space-y-3">
       {query.trim() !== "" && (
-        <ul className="divide-y rounded-2xl bg-card" aria-label="Search results">
+        <ul className="tile divide-y" aria-label="Search results">
           {hits.map((h) => (
             <li key={h.item.id}>
               <button
