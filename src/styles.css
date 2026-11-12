@@ -2,17 +2,37 @@
 @source "../src";
 @import "tw-animate-css";
 
+/*
+ * Design tokens. The rules are in docs/STYLE.md; the sheets are at /design (dev only).
+ * Three themes (data-theme on <html>): garden (default), clay, tide. Each has a light and a dark set (.dark on <html>).
+ * Components use the semantic names only (bg-card, text-muted-foreground, shadow-card, ...), never a raw colour.
+ */
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: calc(var(--radius) - 2px);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 6px);
   --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-4xl: calc(var(--radius) + 18px);
+
+  --shadow-card: var(--elev-1);
+  --shadow-pop: var(--elev-2);
+  --shadow-float: var(--elev-3);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --animate-rise: rise 0.4s var(--ease-out-soft) both;
+  --animate-leaf: leaf 0.7s var(--ease-spring) both;
+  --animate-breathe: breathe 1.8s ease-in-out infinite;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -31,6 +51,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -52,57 +74,395 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ---------- Shared by every theme ---------- */
 :root {
-  --radius: 0.875rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.2 0.01 260);
-  --card: oklch(0.97 0.003 260);
-  --card-foreground: oklch(0.2 0.01 260);
+  /* motion */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+  /* touch: the smallest thing a thumb is asked to hit */
+  --tap: 2.75rem;
+  /* height of the phone tab bar, used to keep content and floating buttons clear of it */
+  --dock: 4.5rem;
+  /* elevation, tinted with the theme's ink instead of plain black */
+  --elev-1: 0 1px 2px color-mix(in oklab, var(--shade) 7%, transparent);
+  --elev-2: 0 2px 4px color-mix(in oklab, var(--shade) 6%, transparent), 0 8px 20px -6px color-mix(in oklab, var(--shade) 14%, transparent);
+  --elev-3: 0 4px 8px color-mix(in oklab, var(--shade) 8%, transparent), 0 18px 40px -10px color-mix(in oklab, var(--shade) 26%, transparent);
+
+  /* the selected pill of a segmented control: lighter than its track in both modes */
+  --raised: var(--card);
+  --card-foreground: var(--foreground);
+  --popover-foreground: var(--foreground);
+  --secondary-foreground: var(--foreground);
+  --ring: var(--primary-ink);
+  --chart-1: var(--primary);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+/* ---------- Garden (default): warm paper, forest ink, one living green ---------- */
+:root,
+[data-theme="garden"] {
+  --font-heading: "Bricolage Grotesque", "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --heading-weight: 700;
+  --heading-tracking: -0.025em;
+  --radius: 1rem;
+
+  --background: oklch(0.972 0.008 100);
+  --foreground: oklch(0.21 0.03 160);
+  --card: oklch(1 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.01 260);
   /* #22C55E */
   --primary: oklch(0.723 0.192 149.58);
-  /* dark text on the green: white on #22C55E is only 2.3:1, this is 7.9:1 */
-  --primary-foreground: oklch(0.2 0.01 260);
-  /* dark green for green-coloured text and focus rings on light backgrounds (6:1) */
-  --primary-ink: oklch(0.45 0.11 152);
-  --primary-soft: oklch(0.9 0.09 152);
-  --secondary: oklch(0.95 0.003 260);
-  --secondary-foreground: oklch(0.25 0.01 260);
-  --muted: oklch(0.95 0.003 260);
-  --muted-foreground: oklch(0.5 0.01 260);
-  --accent: oklch(0.94 0.04 152);
-  --accent-foreground: oklch(0.35 0.1 150);
-  --destructive: oklch(0.6 0.2 27);
+  /* ink on the green: white on #22C55E is only 2.3:1, this is over 7:1 */
+  --primary-foreground: oklch(0.2 0.04 160);
+  /* green for text, icons and focus rings on light surfaces (6:1) */
+  --primary-ink: oklch(0.43 0.11 152);
+  --primary-soft: oklch(0.92 0.075 152);
+  --secondary: oklch(0.94 0.011 105);
+  --muted: oklch(0.945 0.009 105);
+  --muted-foreground: oklch(0.47 0.022 160);
+  --accent: oklch(0.94 0.05 152);
+  --accent-foreground: oklch(0.33 0.09 152);
+  --destructive: oklch(0.57 0.2 27);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.004 260);
-  --input: oklch(0.9 0.004 260);
-  --ring: oklch(0.45 0.11 152);
-  --body-base: oklch(0.93 0.004 260);
-  --muscle-idle: oklch(0.86 0.005 260);
-  --chart-1: oklch(0.723 0.192 149.58);
+  --warning-soft: oklch(0.94 0.07 88);
+  --warning-ink: oklch(0.41 0.1 65);
+  --border: oklch(0.9 0.011 105);
+  --input: oklch(0.85 0.014 105);
+  --shade: oklch(0.25 0.05 160);
+  --body-base: oklch(0.93 0.008 105);
+  --muscle-idle: oklch(0.86 0.01 105);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0.002 260);
-  --sidebar-foreground: oklch(0.2 0.01 260);
-  --sidebar-primary: oklch(0.723 0.192 149.58);
-  --sidebar-primary-foreground: oklch(0.2 0.01 260);
-  --sidebar-accent: oklch(0.94 0.04 152);
-  --sidebar-accent-foreground: oklch(0.35 0.1 150);
-  --sidebar-border: oklch(0.92 0.004 260);
-  --sidebar-ring: oklch(0.723 0.192 149.58);
+}
+
+.dark,
+[data-theme="garden"].dark {
+  --background: oklch(0.165 0.014 160);
+  --foreground: oklch(0.95 0.012 120);
+  --card: oklch(0.212 0.017 160);
+  --popover: oklch(0.24 0.018 160);
+  --raised: oklch(0.36 0.02 160);
+  --primary: oklch(0.76 0.19 150);
+  --primary-foreground: oklch(0.17 0.035 160);
+  --primary-ink: oklch(0.81 0.17 150);
+  --primary-soft: oklch(0.33 0.075 152);
+  --secondary: oklch(0.262 0.018 160);
+  --muted: oklch(0.262 0.018 160);
+  --muted-foreground: oklch(0.73 0.02 150);
+  --accent: oklch(0.295 0.05 152);
+  --accent-foreground: oklch(0.89 0.1 150);
+  --destructive: oklch(0.7 0.17 25);
+  --destructive-foreground: oklch(0.17 0.03 25);
+  --warning-soft: oklch(0.33 0.06 80);
+  --warning-ink: oklch(0.88 0.11 88);
+  --border: oklch(0.3 0.018 160);
+  --input: oklch(0.38 0.02 160);
+  --shade: oklch(0 0 0);
+  --body-base: oklch(0.27 0.016 160);
+  --muscle-idle: oklch(0.36 0.016 160);
+  --chart-2: oklch(0.7 0.11 184);
+  --chart-3: oklch(0.65 0.1 227);
+  --chart-4: oklch(0.83 0.16 84);
+  --chart-5: oklch(0.77 0.16 70);
+}
+
+/* ---------- Clay: cream, warm brown ink, terracotta; serif headings ---------- */
+[data-theme="clay"] {
+  --font-heading: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --heading-weight: 600;
+  --heading-tracking: -0.02em;
+  --radius: 0.75rem;
+
+  --background: oklch(0.968 0.013 80);
+  --foreground: oklch(0.24 0.025 50);
+  --card: oklch(0.995 0.005 85);
+  --popover: oklch(0.995 0.005 85);
+  --primary: oklch(0.57 0.15 40);
+  --primary-foreground: oklch(0.99 0.01 85);
+  --primary-ink: oklch(0.5 0.14 40);
+  --primary-soft: oklch(0.91 0.05 50);
+  --secondary: oklch(0.935 0.016 80);
+  --muted: oklch(0.94 0.014 80);
+  --muted-foreground: oklch(0.48 0.028 55);
+  --accent: oklch(0.925 0.038 55);
+  --accent-foreground: oklch(0.4 0.1 40);
+  --destructive: oklch(0.52 0.2 22);
+  --destructive-foreground: oklch(1 0 0);
+  --warning-soft: oklch(0.93 0.075 92);
+  --warning-ink: oklch(0.4 0.09 75);
+  --border: oklch(0.895 0.016 80);
+  --input: oklch(0.845 0.02 80);
+  --shade: oklch(0.3 0.05 50);
+  --body-base: oklch(0.925 0.014 80);
+  --muscle-idle: oklch(0.855 0.016 80);
+  --chart-2: oklch(0.6 0.09 150);
+  --chart-3: oklch(0.45 0.07 250);
+  --chart-4: oklch(0.8 0.14 85);
+  --chart-5: oklch(0.65 0.12 20);
+}
+
+[data-theme="clay"].dark {
+  --background: oklch(0.185 0.012 55);
+  --foreground: oklch(0.94 0.016 80);
+  --card: oklch(0.232 0.014 55);
+  --popover: oklch(0.258 0.015 55);
+  --raised: oklch(0.37 0.018 55);
+  --primary: oklch(0.71 0.135 42);
+  --primary-foreground: oklch(0.18 0.025 50);
+  --primary-ink: oklch(0.79 0.115 45);
+  --primary-soft: oklch(0.35 0.065 42);
+  --secondary: oklch(0.275 0.015 55);
+  --muted: oklch(0.275 0.015 55);
+  --muted-foreground: oklch(0.73 0.022 70);
+  --accent: oklch(0.315 0.045 45);
+  --accent-foreground: oklch(0.89 0.07 50);
+  --destructive: oklch(0.7 0.17 22);
+  --destructive-foreground: oklch(0.17 0.03 25);
+  --warning-soft: oklch(0.34 0.06 85);
+  --warning-ink: oklch(0.88 0.1 90);
+  --border: oklch(0.315 0.015 55);
+  --input: oklch(0.39 0.018 55);
+  --shade: oklch(0 0 0);
+  --body-base: oklch(0.28 0.014 55);
+  --muscle-idle: oklch(0.37 0.015 55);
+  --chart-2: oklch(0.7 0.09 150);
+  --chart-3: oklch(0.68 0.08 250);
+  --chart-4: oklch(0.82 0.13 85);
+  --chart-5: oklch(0.72 0.12 20);
+}
+
+/* ---------- Tide: cool white, navy ink, cobalt; geometric headings ---------- */
+[data-theme="tide"] {
+  --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --heading-weight: 600;
+  --heading-tracking: -0.03em;
+  --radius: 0.5rem;
+
+  --background: oklch(0.972 0.007 250);
+  --foreground: oklch(0.22 0.035 262);
+  --card: oklch(1 0 0);
+  --popover: oklch(1 0 0);
+  --primary: oklch(0.52 0.2 262);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --primary-ink: oklch(0.47 0.19 262);
+  --primary-soft: oklch(0.915 0.048 262);
+  --secondary: oklch(0.94 0.011 250);
+  --muted: oklch(0.945 0.009 250);
+  --muted-foreground: oklch(0.48 0.028 258);
+  --accent: oklch(0.932 0.036 262);
+  --accent-foreground: oklch(0.38 0.15 262);
+  --destructive: oklch(0.56 0.21 25);
+  --destructive-foreground: oklch(1 0 0);
+  --warning-soft: oklch(0.94 0.07 90);
+  --warning-ink: oklch(0.4 0.09 70);
+  --border: oklch(0.9 0.013 250);
+  --input: oklch(0.85 0.017 250);
+  --shade: oklch(0.3 0.08 262);
+  --body-base: oklch(0.93 0.01 250);
+  --muscle-idle: oklch(0.86 0.013 250);
+  --chart-2: oklch(0.65 0.13 195);
+  --chart-3: oklch(0.45 0.12 300);
+  --chart-4: oklch(0.8 0.15 85);
+  --chart-5: oklch(0.68 0.17 30);
+}
+
+[data-theme="tide"].dark {
+  --background: oklch(0.175 0.022 262);
+  --foreground: oklch(0.95 0.008 250);
+  --card: oklch(0.222 0.026 262);
+  --popover: oklch(0.25 0.028 262);
+  --raised: oklch(0.37 0.03 262);
+  --primary: oklch(0.71 0.145 255);
+  --primary-foreground: oklch(0.17 0.035 262);
+  --primary-ink: oklch(0.79 0.115 255);
+  --primary-soft: oklch(0.34 0.085 262);
+  --secondary: oklch(0.268 0.027 262);
+  --muted: oklch(0.268 0.027 262);
+  --muted-foreground: oklch(0.73 0.025 255);
+  --accent: oklch(0.305 0.06 262);
+  --accent-foreground: oklch(0.89 0.06 255);
+  --destructive: oklch(0.7 0.17 22);
+  --destructive-foreground: oklch(0.17 0.03 25);
+  --warning-soft: oklch(0.34 0.06 85);
+  --warning-ink: oklch(0.88 0.1 90);
+  --border: oklch(0.31 0.027 262);
+  --input: oklch(0.39 0.03 262);
+  --shade: oklch(0 0 0);
+  --body-base: oklch(0.275 0.025 262);
+  --muscle-idle: oklch(0.37 0.027 262);
+  --chart-2: oklch(0.74 0.12 195);
+  --chart-3: oklch(0.7 0.12 300);
+  --chart-4: oklch(0.83 0.14 85);
+  --chart-5: oklch(0.73 0.15 30);
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
   }
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: var(--heading-tracking);
+    text-wrap: balance;
+  }
+  h1 {
+    font-weight: var(--heading-weight);
+  }
+  ::selection {
+    background-color: var(--primary-soft);
+  }
+  input[type="checkbox"] {
+    accent-color: var(--primary);
+  }
+}
+
+/* A white tile on the paper: the one container shape of the app (lists, cards, panels). */
+@utility tile {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--elev-1);
+}
+
+/* Small caps label above a group. */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Display type for numbers and titles outside h1-h3. */
+@utility font-heading {
+  font-family: var(--font-display);
+  letter-spacing: var(--heading-tracking);
+}
+
+/* The track of a segmented control; children carry seg-item. */
+@utility seg {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: calc(infinity * 1px);
+  background-color: var(--secondary);
+}
+
+@utility seg-item {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  height: var(--tap);
+  border-radius: calc(infinity * 1px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-base) var(--ease-out-soft),
+    color var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft);
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+  &[aria-selected="true"],
+  &[aria-current="page"],
+  &[data-state="active"],
+  &[data-on="true"] {
+    background-color: var(--raised);
+    color: var(--foreground);
+    box-shadow: var(--elev-1);
+  }
+}
+
+/* Gives a tap a small physical answer. */
+@utility press {
+  transition: transform var(--dur-fast) var(--ease-out-soft);
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes leaf {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
