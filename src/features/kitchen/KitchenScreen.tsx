@@ -157,9 +157,7 @@ export function KitchenScreen({
         onDropOnRow={dropOnRow}
         onDropOutside={(item) => setDialog({ kind: "move", item })}
         onOpenRow={(h, row) => setRowList({ hotspot: h.key, row: row.id })}
-        onAdd={(_h, row) =>
-          setDialog({ kind: "add", locationId: placeByName(places, row.place)?.id ?? "" })
-        }
+        onAdd={(h, row) => setRowList({ hotspot: h.key, row: row.id })}
       />
       <p className="text-center text-xs text-muted-foreground">
         Icons:{" "}
