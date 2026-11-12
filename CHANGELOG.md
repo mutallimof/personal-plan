@@ -5,6 +5,8 @@ Changes on branch `build-v1`. Behavior changes to existing features are marked *
 ## Redesign (branch `redesign`)
 Looks only: no data, query or rule changed, no migration. The rules are in `docs/STYLE.md`.
 
+- **Behavior:** Workout: every exercise card has an info button that opens the how-to steps, images and muscle diagram in a sheet; the workout stays as it is.
+- **Behavior:** deleting a plan day asks in a dialog (was the browser's own confirm, which some phone browsers and installed apps hide, so the button seemed to do nothing). A delete that removes no row now shows an error instead of passing silently.
 - **Behavior:** in the fridge and freezer, tapping a shelf or drawer (also an "Empty" one) opens a list of all its items, including those hidden behind "+3", with quantity and Edit, Move, Remove and Add.
 - **Behavior:** the freezer no longer has a "Vegetables and fruit" shelf. Saved layouts are tidied once (layout `rev` 4, no migration): the shelf is removed and its items move to another freezer shelf that accepts them, else the freezer's own place ("Other"). The pantry place "Frozen vegetables and fruit" is not deleted.
 - **Behavior:** new look everywhere ("Garden": warm paper, forest ink, one green; Bricolage Grotesque headings, Figtree text). Two more themes with the same layout, **Clay** and **Tide**, and **System / Light / Dark**, are in **Pantry > Settings > Appearance**. The choice is stored on the device (`localStorage`), not in the account. Dark mode is new; before, the app was always light.

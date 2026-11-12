@@ -23,6 +23,16 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Empty, Loading, QueryError } from "@/components/states";
 import { ExerciseBrowser } from "@/features/gym/ExerciseBrowser";
@@ -143,6 +153,8 @@ function SessionPage() {
   const { data: sessions = [], isLoading, isError, refetch } = useQuery(planQuery);
   const session = sessions.find((s) => s.id === id);
   const [picker, setPicker] = useState<{ mode: "add" } | { mode: "swap"; item: SessionExercise } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [order, setOrder] = useState<SessionExercise[] | null>(null);
   const items = order ?? session?.items ?? [];
   const history = useExerciseSessions(items.map((i) => i.exercise_id));
@@ -187,6 +199,22 @@ function SessionPage() {
     }
   }
 
+  async function remove() {
+    if (!session) return;
+    setDeleting(true);
+    try {
+      await gym.deleteSession(session.id);
+      setConfirmDelete(false);
+      await invalidate();
+      navigate({ to: "/gym" });
+    } catch (err) {
+      setConfirmDelete(false);
+      toast.error(err instanceof Error ? err.message : "Could not delete");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function duplicate() {
     if (!session) return;
     try {
@@ -228,16 +256,7 @@ function SessionPage() {
           size="icon"
           className="shrink-0"
           aria-label="Delete session"
-          onClick={async () => {
-            if (!confirm(`Delete "${session.name}"?`)) return;
-            try {
-              await gym.deleteSession(session.id);
-              await invalidate();
-              navigate({ to: "/gym" });
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Could not delete");
-            }
-          }}
+          onClick={() => setConfirmDelete(true)}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -283,6 +302,31 @@ function SessionPage() {
       <Button variant="outline" className="h-12 w-full" onClick={() => setPicker({ mode: "add" })}>
         <Plus className="mr-1 h-4 w-4" /> Add exercise
       </Button>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete “{session.name}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {items.length > 0
+                ? `This removes the day and its ${items.length} ${items.length === 1 ? "exercise" : "exercises"} from your plan. Logged workouts stay.`
+                : "This removes the day from your plan. Logged workouts stay."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                void remove();
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={!!picker} onOpenChange={(o) => !o && setPicker(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
