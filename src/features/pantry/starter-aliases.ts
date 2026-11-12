@@ -1,6 +1,7 @@
 import { normalizeReceiptText } from "./normalize";
 import type { AliasDraft } from "./aliases";
 import type { Category, LocationKind, Unit } from "./model";
+import storeSeed from "./receipt-data.json";
 
 // A small starter dictionary of common German supermarket receipt texts. Texts are written the way they are
 // printed and normalized when loaded. Sizes are left out on purpose (the weight in the text is stripped), so
@@ -16,10 +17,10 @@ const ROWS: readonly Row[] = [
   ["Frischmilch 3,5%", "Fresh milk 3.5%", "dairy", "fridge", "l", 1],
   ["Vollmilch 3,5%", "Whole milk", "dairy", "fridge", "l", 1],
   ["Bio Vollmilch 3,5%", "Whole milk", "dairy", "fridge", "l", 1],
-  ["Eier", "Eggs", "dairy", "fridge", "pieces", 10],
-  ["Eier M 10er", "Eggs", "dairy", "fridge", "pieces", 10],
-  ["Bio Eier", "Eggs", "dairy", "fridge", "pieces", 10],
-  ["Freiland Eier", "Eggs", "dairy", "fridge", "pieces", 10],
+  ["Eier", "Eggs", "eggs", "fridge", "pieces", 10],
+  ["Eier M 10er", "Eggs", "eggs", "fridge", "pieces", 10],
+  ["Bio Eier", "Eggs", "eggs", "fridge", "pieces", 10],
+  ["Freiland Eier", "Eggs", "eggs", "fridge", "pieces", 10],
   ["Naturjoghurt", "Natural yogurt", "dairy", "fridge", "pack", 1],
   ["Joghurt Natur", "Natural yogurt", "dairy", "fridge", "pack", 1],
   ["Griechischer Joghurt", "Greek yogurt", "dairy", "fridge", "pack", 1],
@@ -29,10 +30,10 @@ const ROWS: readonly Row[] = [
   ["Gouda", "Gouda", "dairy", "fridge", "pack", 1],
   ["Mozzarella", "Mozzarella", "dairy", "fridge", "pack", 1],
   // Meat and fish
-  ["Hähnchenbrustfilet", "Chicken breast", "meat", "fridge", "pack", 1],
-  ["Hähnchen Brustfilet", "Chicken breast", "meat", "fridge", "pack", 1],
-  ["Hähnch Brustfil", "Chicken breast", "meat", "fridge", "pack", 1],
-  ["Putenbrust", "Turkey breast", "meat", "fridge", "pack", 1],
+  ["Hähnchenbrustfilet", "Chicken breast", "poultry", "fridge", "pack", 1],
+  ["Hähnchen Brustfilet", "Chicken breast", "poultry", "fridge", "pack", 1],
+  ["Hähnch Brustfil", "Chicken breast", "poultry", "fridge", "pack", 1],
+  ["Putenbrust", "Turkey breast", "poultry", "fridge", "pack", 1],
   ["Hackfleisch gemischt", "Mixed minced meat", "meat", "fridge", "pack", 1],
   ["Lachsfilet", "Salmon fillet", "fish", "fridge", "pack", 1],
   // Bread
@@ -41,18 +42,18 @@ const ROWS: readonly Row[] = [
   ["Toastbrot", "Toast bread", "bakery", "shelf", "pack", 1],
   ["Brötchen", "Bread rolls", "bakery", "shelf", "pieces", 1],
   // Vegetables and fruit
-  ["Gurke", "Cucumber", "produce", "drawer", "pieces", 1],
-  ["Tomaten", "Tomatoes", "produce", "drawer", "pack", 1],
-  ["Rispentomaten", "Vine tomatoes", "produce", "drawer", "pack", 1],
-  ["Paprika", "Bell pepper", "produce", "drawer", "pieces", 1],
-  ["Karotten", "Carrots", "produce", "drawer", "pack", 1],
-  ["Zucchini", "Zucchini", "produce", "drawer", "pieces", 1],
-  ["Champignons", "Mushrooms", "produce", "drawer", "pack", 1],
-  ["Kartoffeln", "Potatoes", "produce", "shelf", "pack", 1],
-  ["Zwiebeln", "Onions", "produce", "shelf", "pack", 1],
-  ["Bananen", "Bananas", "produce", "shelf", "pieces", 1],
-  ["Äpfel", "Apples", "produce", "drawer", "pack", 1],
-  ["Zitronen", "Lemons", "produce", "drawer", "pack", 1],
+  ["Gurke", "Cucumber", "vegetables", "drawer", "pieces", 1],
+  ["Tomaten", "Tomatoes", "vegetables", "drawer", "pack", 1],
+  ["Rispentomaten", "Vine tomatoes", "vegetables", "drawer", "pack", 1],
+  ["Paprika", "Bell pepper", "vegetables", "drawer", "pieces", 1],
+  ["Karotten", "Carrots", "vegetables", "drawer", "pack", 1],
+  ["Zucchini", "Zucchini", "vegetables", "drawer", "pieces", 1],
+  ["Champignons", "Mushrooms", "vegetables", "drawer", "pack", 1],
+  ["Kartoffeln", "Potatoes", "vegetables", "shelf", "pack", 1],
+  ["Zwiebeln", "Onions", "vegetables", "shelf", "pack", 1],
+  ["Bananen", "Bananas", "fruit", "shelf", "pieces", 1],
+  ["Äpfel", "Apples", "fruit", "drawer", "pack", 1],
+  ["Zitronen", "Lemons", "fruit", "drawer", "pack", 1],
   // Dry goods
   ["Spaghetti", "Spaghetti", "dry goods", "shelf", "pack", 1],
   ["Penne", "Penne", "dry goods", "shelf", "pack", 1],
@@ -71,6 +72,7 @@ const ROWS: readonly Row[] = [
   ["Apfelsaft", "Apple juice", "drinks", "shelf", "l", 1],
 ];
 
+/** Version 1 of the starter dictionary: general German supermarket names. */
 export const STARTER_ALIASES: readonly AliasDraft[] = ROWS.map(([text, name, category, place, unit, qty]) => ({
   raw_text: normalizeReceiptText(text),
   store: null,
@@ -80,3 +82,29 @@ export const STARTER_ALIASES: readonly AliasDraft[] = ROWS.map(([text, name, cat
   default_unit: unit,
   default_quantity: qty,
 }));
+
+type StoreAlias = { raw_text: string; product_name: string; category: Category; place: LocationKind; unit: Unit; quantity: number | null };
+
+/** Version 2: store-specific entries from `receipt-data.json` (only ones whose meaning is certain). */
+export const STORE_ALIASES: readonly AliasDraft[] = Object.entries(
+  (storeSeed.stores ?? {}) as Record<string, { aliases?: StoreAlias[] }>,
+).flatMap(([store, d]) =>
+  (d.aliases ?? []).map(
+    (a): AliasDraft => ({
+      raw_text: normalizeReceiptText(a.raw_text),
+      store,
+      product_name: a.product_name,
+      category: a.category,
+      default_location_kind: a.place,
+      default_unit: a.unit,
+      default_quantity: a.quantity,
+    }),
+  ),
+);
+
+/** What to add for a user whose dictionary was filled up to `seeded` (0 means never). Entries they deleted in earlier versions stay deleted. */
+export const SEED_VERSION = 2;
+
+export function seedsSince(seeded: number): readonly AliasDraft[] {
+  return [...(seeded < 1 ? STARTER_ALIASES : []), ...(seeded < 2 ? STORE_ALIASES : [])];
+}

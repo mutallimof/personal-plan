@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { binarize, enhance, otsuThreshold, stretchContrast, targetSize, toGray } from "./image-prep";
+import { adaptiveThreshold, grayToRgba, otsuThreshold, stretchContrast, targetSize, toGray } from "./image-prep";
 
 const rgba = (...px: [number, number, number][]) => new Uint8ClampedArray(px.flatMap(([r, g, b]) => [r, g, b, 255]));
 
@@ -34,7 +34,7 @@ describe("stretchContrast", () => {
   });
 });
 
-describe("otsuThreshold / binarize", () => {
+describe("otsuThreshold", () => {
   const gray = new Uint8ClampedArray([...Array(60).fill(30), ...Array(40).fill(220)]);
 
   it("splits two clusters", () => {
@@ -43,33 +43,48 @@ describe("otsuThreshold / binarize", () => {
     expect(t).toBeLessThan(220);
   });
 
-  it("makes pure black and white", () => {
-    const out = binarize(gray, otsuThreshold(gray));
-    expect(new Set(out)).toEqual(new Set([0, 255]));
-    expect(out.filter((v) => v === 0)).toHaveLength(60);
-  });
-
   it("does not crash on a single-colour image", () => {
     expect(otsuThreshold(new Uint8ClampedArray(10).fill(7))).toBeGreaterThanOrEqual(0);
   });
 });
 
-describe("enhance", () => {
-  const px = rgba([10, 10, 10], [10, 10, 10], [240, 240, 240], [240, 240, 240]);
+describe("adaptiveThreshold", () => {
+  /** Paper that gets darker from left to right (a shadow), with one dark ink pixel on it. */
+  function shadowed(inkX: number) {
+    const w = 60;
+    const h = 20;
+    const g = new Uint8ClampedArray(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) g[y * w + x] = 230 - x * 0.5;
+    g[10 * w + inkX] = 20;
+    return { g, w, h };
+  }
 
-  it("returns opaque grey RGBA of the same size", () => {
-    const out = enhance(px, { threshold: false });
-    expect(out).toHaveLength(px.length);
-    for (let i = 0; i < out.length; i += 4) {
-      expect(out[i]).toBe(out[i + 1]);
-      expect(out[i + 1]).toBe(out[i + 2]);
-      expect(out[i + 3]).toBe(255);
+  it("keeps ink black and paper white, in the light and in the shadow", () => {
+    for (const inkX of [8, 50]) {
+      const { g, w, h } = shadowed(inkX);
+      const out = adaptiveThreshold(g, w, h);
+      expect(out[10 * w + inkX]).toBe(0);
+      expect(out[5 * w + inkX]).toBe(255);
+      expect(out[2 * w + 30]).toBe(255);
     }
   });
 
-  it("can threshold to black and white", () => {
-    const out = enhance(rgba([90, 90, 90], [95, 95, 95], [170, 170, 170], [175, 175, 175]), { threshold: true });
-    expect(new Set([out[0], out[4], out[8], out[12]])).toEqual(new Set([0, 255]));
+  it("a single global cut would lose the shadowed paper, the local one does not", () => {
+    const { g, w, h } = shadowed(8);
+    const out = adaptiveThreshold(g, w, h);
+    expect(out.filter((v) => v === 0)).toHaveLength(1);
+  });
+
+  it("returns only black and white", () => {
+    const out = adaptiveThreshold(new Uint8ClampedArray([10, 200, 90, 250, 30, 220, 60, 255, 100]), 3, 3, 3, 5);
+    expect(new Set(out).size).toBeLessThanOrEqual(2);
+    expect([...out].every((v) => v === 0 || v === 255)).toBe(true);
+  });
+});
+
+describe("grayToRgba", () => {
+  it("makes opaque grey pixels", () => {
+    expect([...grayToRgba(new Uint8ClampedArray([0, 128]))]).toEqual([0, 0, 0, 255, 128, 128, 128, 255]);
   });
 });
 

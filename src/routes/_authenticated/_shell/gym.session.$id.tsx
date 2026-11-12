@@ -266,7 +266,7 @@ function SessionPage() {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-            <ul className="divide-y overflow-hidden rounded-2xl bg-card">
+            <ul className="divide-y overflow-hidden tile">
               {items.map((it) => (
                 <ItemRow
                   key={it.id}

@@ -1,13 +1,13 @@
 {
   "name": "Lifeplan",
   "short_name": "Lifeplan",
-  "description": "Plan and log your gym sessions.",
+  "description": "Training, kitchen and meals in one plan.",
   "start_url": "/gym",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFFFFF",
-  "theme_color": "#22C55E",
+  "background_color": "#F7F6F0",
+  "theme_color": "#F7F6F0",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

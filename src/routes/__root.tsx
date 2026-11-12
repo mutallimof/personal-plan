@@ -14,20 +14,21 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { clearPlanCache } from "@/lib/plan-cache";
+import { APPEARANCE_SCRIPT, useAppearance } from "@/lib/appearance";
+import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/Logo";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
+      <div className="flex max-w-md flex-col items-center text-center">
+        <LogoMark className="h-14 w-14" />
+        <h1 className="mt-6 text-7xl font-extrabold leading-none text-foreground">404</h1>
+        <h2 className="mt-3 text-xl font-semibold text-foreground">Page not found</h2>
         <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Go home
-          </Link>
+          <Button asChild>
+            <Link to="/">Go home</Link>
+          </Button>
         </div>
       </div>
     </div>
@@ -38,22 +39,22 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
+      <div className="flex max-w-md flex-col items-center text-center">
+        <LogoMark className="h-14 w-14" />
+        <h1 className="mt-6 text-2xl text-foreground">This page didn't load</h1>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
+          <Button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             Try again
-          </button>
-          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input px-4 py-2 text-sm font-medium">
-            Go home
-          </a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/">Go home</a>
+          </Button>
         </div>
       </div>
     </div>
@@ -71,7 +72,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "A personal life planner. Plan your gym sessions, by hand or by chat." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "theme-color", content: "#22C55E" },
+      { name: "theme-color", content: "#F7F6F0" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Lifeplan" },
@@ -79,7 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400..800&family=Fraunces:opsz,wght@9..144,400..700&family=DM+Sans:opsz,wght@9..40,400..700&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
@@ -94,9 +95,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* sets the theme before the first paint */}
+        <script dangerouslySetInnerHTML={{ __html: APPEARANCE_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -109,6 +112,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const { dark } = useAppearance();
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -136,7 +140,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
-      <Toaster position="top-center" />
+      <Toaster position="top-center" theme={dark ? "dark" : "light"} />
     </QueryClientProvider>
   );
 }

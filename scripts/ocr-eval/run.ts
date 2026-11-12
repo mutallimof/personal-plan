@@ -1,11 +1,13 @@
 /// <reference types="node" />
-// Measures how well receipt OCR works on your own photos. See scripts/ocr-eval/README.md.
+// Measures how well receipt OCR works on your own photos, with and without the photo helper.
+// See scripts/ocr-eval/README.md.
 //
 //   npm run ocr:eval                       every image in scripts/ocr-eval/samples
 //   npm run ocr:eval -- path/to/folder     another folder
-//   npm run ocr:eval -- --threshold        black-and-white preprocessing
+//   npm run ocr:eval -- --threshold        the helper also reduces to black and white
 //   npm run ocr:eval -- --verbose          also list lines that were read exactly
 //
+// Each image is read twice: as taken ("original") and after the helper (crop, straighten, contrast: "helper").
 // Photos and expected files stay on your machine: the samples folder is ignored by git, and OCR runs locally.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -13,20 +15,22 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import jpeg from "jpeg-js";
 import { PNG } from "pngjs";
-import { enhance, targetSize } from "../../src/features/pantry/image-prep";
+import { resizeGray, type GrayImage } from "../../src/features/pantry/image-geometry";
+import { grayToRgba, targetSize, toGray } from "../../src/features/pantry/image-prep";
 import { recognize } from "../../src/features/pantry/ocr";
 import { scoreLines, type EvalResult } from "../../src/features/pantry/ocr-score";
-
-type Image = { width: number; height: number; data: Uint8ClampedArray };
+import { prepareReceipt } from "../../src/features/pantry/receipt-prep";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith("--")));
 const folder = resolve(args.find((a) => !a.startsWith("--")) ?? join(here, "samples"));
-const threshold = flags.has("--threshold");
+const blackWhite = flags.has("--threshold");
 const verbose = flags.has("--verbose");
 
-function decode(file: string): Image {
+type Rgba = { width: number; height: number; data: Uint8ClampedArray };
+
+function decode(file: string): Rgba {
   const buf = readFileSync(file);
   if (/\.png$/i.test(file)) {
     const png = PNG.sync.read(buf);
@@ -36,29 +40,10 @@ function decode(file: string): Image {
   return { width: img.width, height: img.height, data: new Uint8ClampedArray(img.data) };
 }
 
-/** Bilinear resize, standing in for what the browser's canvas does. */
-function resize(src: Image, width: number, height: number): Image {
-  if (width === src.width && height === src.height) return src;
-  const data = new Uint8ClampedArray(width * height * 4);
-  const sx = src.width / width;
-  const sy = src.height / height;
-  for (let y = 0; y < height; y++) {
-    const fy = Math.min(src.height - 1, y * sy);
-    const y0 = Math.floor(fy);
-    const y1 = Math.min(src.height - 1, y0 + 1);
-    for (let x = 0; x < width; x++) {
-      const fx = Math.min(src.width - 1, x * sx);
-      const x0 = Math.floor(fx);
-      const x1 = Math.min(src.width - 1, x0 + 1);
-      for (let c = 0; c < 4; c++) {
-        const at = (px: number, py: number) => src.data[(py * src.width + px) * 4 + c] ?? 0;
-        const top = at(x0, y0) * (1 - (fx - x0)) + at(x1, y0) * (fx - x0);
-        const bottom = at(x0, y1) * (1 - (fx - x0)) + at(x1, y1) * (fx - x0);
-        data[(y * width + x) * 4 + c] = top * (1 - (fy - y0)) + bottom * (fy - y0);
-      }
-    }
-  }
-  return { width, height, data };
+function png(gray: GrayImage): Buffer {
+  const out = new PNG({ width: gray.width, height: gray.height });
+  out.data = Buffer.from(grayToRgba(gray.data));
+  return PNG.sync.write(out);
 }
 
 function expectedLines(file: string): string[] {
@@ -89,6 +74,26 @@ function print(name: string, r: EvalResult) {
   console.log(`  products found: ${r.products.found} of ${r.products.expected}`);
 }
 
+type Mode = "original" | "helper";
+const MODES: readonly Mode[] = ["original", "helper"];
+type Totals = { lines: number; exact: number; close: number; edits: number; chars: number; found: number; products: number };
+const empty = (): Totals => ({ lines: 0, exact: 0, close: 0, edits: 0, chars: 0, found: 0, products: 0 });
+
+function add(t: Totals, r: EvalResult, expected: readonly string[]) {
+  const chars = expected.reduce((n, l) => n + l.replace(/\s+/g, " ").trim().length, 0);
+  t.lines += expected.length;
+  t.exact += r.exact;
+  t.close += r.close;
+  t.chars += chars;
+  t.edits += r.cer * chars;
+  t.found += r.products.found;
+  t.products += r.products.expected;
+}
+
+const summary = (t: Totals) =>
+  `${t.exact + t.close} of ${t.lines} lines exact or close (${pct((t.exact + t.close) / (t.lines || 1))}), ` +
+  `exact ${pct(t.exact / (t.lines || 1))}, character errors ${pct(t.edits / (t.chars || 1))}, products found ${t.found} of ${t.products}`;
+
 async function main() {
   if (!existsSync(folder)) {
     console.error(`No folder at ${folder}.\nCreate it and add photos with matching .expected.json files (see scripts/ocr-eval/README.md).`);
@@ -105,36 +110,40 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`OCR on ${pairs.length} image(s), ${threshold ? "black and white" : "greyscale"}. The first run downloads the German language data.`);
-  const totals = { lines: 0, exact: 0, close: 0, edits: 0, chars: 0, found: 0, products: 0 };
+  console.log(
+    `OCR on ${pairs.length} image(s), each twice: as taken, and after the photo helper${blackWhite ? " (black and white)" : ""}. ` +
+      "The first run downloads the German language data.",
+  );
+  const totals: Record<Mode, Totals> = { original: empty(), helper: empty() };
   for (const p of pairs) {
-    const src = decode(p.image);
-    const size = targetSize(src.width, src.height);
-    const scaled = resize(src, size.width, size.height);
-    const png = new PNG({ width: size.width, height: size.height });
-    png.data = Buffer.from(enhance(scaled.data, { threshold }));
-    const got = (await recognize(PNG.sync.write(png), () => {}, join(here, ".cache"))).map((l) => l.text);
+    const rgba = decode(p.image);
+    const size = targetSize(rgba.width, rgba.height);
+    const gray = resizeGray({ width: rgba.width, height: rgba.height, data: toGray(rgba.data) }, size.width, size.height);
+    const prepared = prepareReceipt(gray, { width: rgba.width, height: rgba.height }, { blackWhite });
     const expected = expectedLines(p.expected);
-    const r = scoreLines(expected, got);
-    print(basename(p.image), r);
-
-    const chars = expected.reduce((n, l) => n + l.replace(/\s+/g, " ").trim().length, 0);
-    totals.lines += expected.length;
-    totals.exact += r.exact;
-    totals.close += r.close;
-    totals.chars += chars;
-    totals.edits += r.cer * chars;
-    totals.found += r.products.found;
-    totals.products += r.products.expected;
-  }
-
-  if (pairs.length > 1) {
+    const { cropped, tilt } = prepared.steps;
     console.log(
-      `\nAll images: ${totals.exact + totals.close} of ${totals.lines} lines read exactly or closely ` +
-        `(${pct((totals.exact + totals.close) / (totals.lines || 1))}), exact ${pct(totals.exact / (totals.lines || 1))}, ` +
-        `character errors ${pct(totals.edits / (totals.chars || 1))}, products found ${totals.found} of ${totals.products}`,
+      `\n${basename(p.image)}  [check: ${prepared.quality.issue ?? "ok"}, brightness ${prepared.quality.brightness.toFixed(0)}, ` +
+        `sharpness ${prepared.quality.sharpness.toFixed(0)}; helper ${cropped ? "cropped" : "no crop"}, tilt ${tilt.toFixed(1)}°]`,
     );
+    for (const mode of MODES) {
+      const image = mode === "original" ? gray : prepared.processed;
+      const got = (await recognize(png(image), () => {}, join(here, ".cache"))).map((l) => l.text);
+      const r = scoreLines(expected, got);
+      print(mode, r);
+      add(totals[mode], r, expected);
+    }
   }
+
+  console.log("\nAll images");
+  for (const mode of MODES) console.log(`  ${mode.padEnd(8)} ${summary(totals[mode])}`);
+  const gain = (totals.helper.exact + totals.helper.close - totals.original.exact - totals.original.close) / (totals.helper.lines || 1);
+  const cerDelta = totals.helper.edits / (totals.helper.chars || 1) - totals.original.edits / (totals.original.chars || 1);
+  console.log(
+    `  helper vs original: ${gain >= 0 ? "+" : ""}${(gain * 100).toFixed(1)} points of lines read, ` +
+      `${cerDelta <= 0 ? "" : "+"}${(cerDelta * 100).toFixed(1)} points of character errors ` +
+      `(${gain > 0 || (gain === 0 && cerDelta < 0) ? "the helper helps" : gain === 0 && cerDelta === 0 ? "no difference" : "the helper does not help on these images"})`,
+  );
 }
 
 main().catch((e: unknown) => {

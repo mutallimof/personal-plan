@@ -15,14 +15,13 @@ const TABS = [
 function GymLayout() {
   return (
     <div className="space-y-6">
-      <div className="flex gap-1 rounded-full bg-card p-1">
+      <div className="seg">
         {TABS.map((t) => (
           <Link
             key={t.to}
             to={t.to}
             activeOptions={{ exact: t.exact }}
-            className="flex h-11 flex-1 items-center justify-center rounded-full text-sm font-medium text-muted-foreground"
-            activeProps={{ className: "bg-background text-foreground shadow-sm" }}
+            className="seg-item"
           >
             {t.label}
           </Link>

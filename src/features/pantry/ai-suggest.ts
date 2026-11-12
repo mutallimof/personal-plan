@@ -1,4 +1,5 @@
-import { CATEGORIES, isCategory, isLocationKind, LOCATION_KINDS, type Category, type LocationKind } from "./model";
+import { BUILTIN_CATEGORIES, isBuiltinCategory } from "./categories";
+import { isLocationKind, LOCATION_KINDS, type Category, type LocationKind } from "./model";
 import { normalizeReceiptText } from "./normalize";
 
 /** A guess for one receipt line. Shown on the review screen, never saved without a person accepting it. */
@@ -24,7 +25,7 @@ export function textsToSend(rawTexts: readonly string[]): string[] {
 export const SYSTEM_PROMPT =
   "You help to identify grocery products from abbreviated German supermarket receipt texts. " +
   "For each text give a short, plain English product name, a category and the place it is usually stored. " +
-  `Categories: ${CATEGORIES.join(", ")}. Places: ${LOCATION_KINDS.join(", ")}. ` +
+  `Categories: ${BUILTIN_CATEGORIES.join(", ")}. Places: ${LOCATION_KINDS.join(", ")}. ` +
   "If a text is not a grocery product or you are not sure, still answer with your best guess and category \"other\". " +
   'Reply with ONLY a JSON object: {"items":[{"text":"<the text exactly as given>","name":"...","category":"...","place":"..."}]}.';
 
@@ -52,7 +53,7 @@ export function parseSuggestions(value: unknown, asked: readonly string[]): Sugg
     out.push({
       text,
       name,
-      category: isCategory(category) ? category : "other",
+      category: isBuiltinCategory(category) ? category : "other",
       kind: isLocationKind(place) ? place : null,
     });
   }

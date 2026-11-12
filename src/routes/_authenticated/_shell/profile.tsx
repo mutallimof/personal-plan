@@ -59,7 +59,7 @@ function ProfileForm() {
   }
 
   return (
-    <section className="space-y-4 rounded-2xl bg-card p-4 sm:p-5" aria-label="Profile">
+    <section className="space-y-4 tile p-4 sm:p-5" aria-label="Profile">
       <div className="grid grid-cols-3 gap-3 text-xs text-muted-foreground">
         <label className="space-y-1">
           Height (cm)
@@ -88,7 +88,7 @@ function ProfileForm() {
               onClick={() => setGoal(g)}
               className={cn(
                 "h-11 rounded-full border px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                goal === g ? "border-primary bg-accent text-accent-foreground" : "bg-background text-muted-foreground",
+                goal === g ? "border-primary-ink bg-accent font-semibold text-accent-foreground" : "border-input bg-card text-muted-foreground",
               )}
             >
               {g}
@@ -135,7 +135,7 @@ function BodyWeight() {
   return (
     <section className="space-y-4" aria-label="Body weight">
       <h2 className="text-lg font-semibold">Body weight</h2>
-      <div className="flex flex-wrap items-end gap-2 rounded-2xl bg-card p-4">
+      <div className="flex flex-wrap items-end gap-2 tile p-4">
         <label className="min-w-36 flex-1 space-y-1 text-xs text-muted-foreground">
           Date
           <Input className="h-11" type="date" value={date} max={toISO(new Date())} onChange={(e) => setDate(e.target.value)} />
@@ -165,19 +165,19 @@ function BodyWeight() {
       ) : (
         <>
           {data.length > 1 && (
-            <div className="h-56 rounded-2xl bg-card p-4" role="img" aria-label="Body weight over time">
+            <div className="h-56 tile p-4" role="img" aria-label="Body weight over time">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-                  <CartesianGrid stroke="#E5E7EB" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#6B7280" }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[(m: number) => Math.floor(m - 1), (m: number) => Math.ceil(m + 1)]} allowDecimals={false} tick={{ fontSize: 11, fill: "#6B7280" }} tickLine={false} axisLine={false} width={44} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="kg" stroke="#22C55E" strokeWidth={2.5} dot={{ r: 3 }} />
+                  <CartesianGrid stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                  <YAxis domain={[(m: number) => Math.floor(m - 1), (m: number) => Math.ceil(m + 1)]} allowDecimals={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={44} />
+                  <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" }} />
+                  <Line type="monotone" dataKey="kg" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
-          <ul className="divide-y rounded-2xl bg-card">
+          <ul className="tile divide-y">
             {recent.map((d) => (
               <li key={d.id} className="flex min-h-12 items-center justify-between gap-2 px-4 text-sm">
                 <span className="text-muted-foreground">
@@ -214,7 +214,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+      <h1 className="text-[1.75rem] leading-tight">Profile</h1>
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <ProfileForm />
         <BodyWeight />

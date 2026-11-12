@@ -6,7 +6,7 @@ export function Loading({ rows = 3, className = "h-24" }: { rows?: number; class
   return (
     <div className="space-y-3" role="status" aria-label="Loading">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className={`animate-pulse rounded-2xl bg-card ${className}`} />
+        <div key={i} className={`animate-pulse rounded-2xl bg-secondary ${className}`} />
       ))}
     </div>
   );
@@ -15,7 +15,7 @@ export function Loading({ rows = 3, className = "h-24" }: { rows?: number; class
 /** Shown when a query fails. */
 export function QueryError({ onRetry }: { onRetry?: (() => void) | undefined }) {
   return (
-    <div role="alert" className="space-y-3 rounded-2xl bg-card p-6 text-center">
+    <div role="alert" className="tile space-y-3 p-6 text-center">
       <p className="text-sm text-muted-foreground">Could not load this. Check your connection.</p>
       {onRetry && (
         <Button variant="outline" className="h-11" onClick={onRetry}>
@@ -29,7 +29,7 @@ export function QueryError({ onRetry }: { onRetry?: (() => void) | undefined }) 
 /** Shown when there is nothing to list yet. */
 export function Empty({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="space-y-3 rounded-2xl bg-card p-6 text-center text-sm text-muted-foreground">
+    <div className="space-y-3 rounded-2xl border border-dashed border-input p-8 text-center text-sm text-muted-foreground">
       <p>{children}</p>
       {action}
     </div>

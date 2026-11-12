@@ -2,45 +2,83 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { CATEGORIES, isCategory, isUnit, UNITS, type PantryLocation } from "./model";
+import { Switch } from "@/components/ui/switch";
+import { categoryOptions, type CategoryOption } from "./category-labels";
+import { placesAccepting } from "./locations";
+import { isCategory, isUnit, UNITS, type PantryLocation } from "./model";
+import type { IgnoredLine } from "./receipt";
 import { applySuggestion, canSave, confirmLine, editLine, isLowConfidence, lineProblem, toggleSkip, unresolvedCount, type ReviewLine } from "./review";
 import { asOptions, Choice, locationOptions, QuantityField } from "./ui";
 
 const STATUS: Record<ReviewLine["status"], string> = { matched: "Known", uncertain: "Check", unknown: "Unknown" };
 
+const REASON: Record<IgnoredLine["reason"], string> = {
+  deposit: "Deposit",
+  discount: "Discount",
+  bag: "Bag",
+  total: "Total",
+  tax: "Tax",
+  payment: "Payment",
+  loyalty: "Points",
+};
+
+/** Place choices for a category: the places that accept it, the current place, and "Any place" for none. */
+function placeChoices(locations: readonly PantryLocation[], category: string, current: string | null) {
+  const accepting = placesAccepting(locations, category);
+  const pool = accepting.length ? accepting : locations;
+  const ids = new Set(pool.map((p) => p.id));
+  const extra = current && !ids.has(current) ? locations.filter((p) => p.id === current) : [];
+  return locationOptions([...pool, ...extra]);
+}
+
 function Row({
   line,
   locations,
+  categories,
   onChange,
 }: {
   line: ReviewLine;
   locations: readonly PantryLocation[];
+  categories: readonly CategoryOption[];
   onChange: (next: ReviewLine) => void;
 }) {
   const needs = !line.skip && !line.confirmed;
   const problem = line.skip ? null : lineProblem(line);
   const label = "space-y-1 text-xs text-muted-foreground";
   return (
-    <li className={cn("space-y-3 rounded-2xl border p-3", needs ? "border-amber-400 bg-amber-50" : "bg-card", line.skip && "opacity-50")}>
+    <li className={cn("space-y-3 rounded-2xl border p-3", needs ? "border-warning-ink/40 bg-warning-soft/50" : "bg-card shadow-card", line.skip && "opacity-50")}>
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">{line.rawText}</span>
         {line.confidence !== null && (
-          <span className={cn("text-xs tabular-nums", isLowConfidence(line) ? "font-medium text-amber-900" : "text-muted-foreground")}>
+          <span className={cn("text-xs tabular-nums", isLowConfidence(line) ? "font-semibold text-warning-ink" : "text-muted-foreground")}>
             {Math.round(line.confidence)}%
           </span>
         )}
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-xs font-medium",
-            needs ? "bg-amber-200 text-amber-950" : "bg-secondary text-secondary-foreground",
+            needs ? "bg-warning-soft text-warning-ink" : "bg-secondary text-secondary-foreground",
           )}
         >
           {line.status === "matched" && isLowConfidence(line) ? "Unsure" : STATUS[line.status]}
         </span>
-        <Button variant="ghost" className="h-11 px-3" onClick={() => onChange(toggleSkip(line))}>
-          {line.skip ? "Undo" : "Skip"}
-        </Button>
+        {line.price !== null && <span className="text-xs tabular-nums text-muted-foreground">{line.price.toFixed(2)}</span>}
+        {line.autoSkip || (line.category === "household" && line.skip) ? null : (
+          <Button variant="ghost" className="h-11 px-3" onClick={() => onChange(toggleSkip(line))}>
+            {line.skip ? "Undo" : "Skip"}
+          </Button>
+        )}
       </div>
+
+      {line.category === "household" && (
+        <label className="flex min-h-11 items-center justify-between gap-3 text-sm">
+          <span className="text-muted-foreground">Not food</span>
+          <span className="flex items-center gap-2">
+            Track anyway
+            <Switch checked={!line.skip} onCheckedChange={() => onChange(toggleSkip(line))} aria-label="Track anyway" />
+          </span>
+        </label>
+      )}
 
       {!line.skip && (
         <>
@@ -73,8 +111,8 @@ function Row({
               <Choice
                 label="Category"
                 value={line.category}
-                options={asOptions(CATEGORIES)}
-                onChange={(c) => isCategory(c) && onChange(editLine(line, { category: c }))}
+                options={categories}
+                onChange={(c) => isCategory(c) && onChange(editLine(line, { category: c }, locations))}
               />
             </label>
             <label className={cn(label, "col-span-2 lg:col-span-1")}>
@@ -82,8 +120,8 @@ function Row({
               <Choice
                 label="Place"
                 value={line.locationId ?? ""}
-                options={locationOptions(locations)}
-                empty="No place"
+                options={placeChoices(locations, line.category, line.locationId)}
+                empty="Any place"
                 onChange={(id) => onChange(editLine(line, { locationId: id || null }))}
               />
             </label>
@@ -124,6 +162,9 @@ export function ReviewScreen({
   onBack,
   saving,
   checking = 0,
+  categories = categoryOptions([]),
+  ignored = [],
+  onRestore,
 }: {
   lines: readonly ReviewLine[];
   locations: readonly PantryLocation[];
@@ -135,6 +176,10 @@ export function ReviewScreen({
   saving: boolean;
   /** Number of lines the AI check is working on right now. */
   checking?: number;
+  categories?: readonly CategoryOption[];
+  /** Lines the parser left out (deposits, discounts, bags, totals, payment). */
+  ignored?: readonly IgnoredLine[];
+  onRestore?: (line: IgnoredLine) => void;
 }) {
   const open = unresolvedCount(lines);
   const count = lines.filter((l) => !l.skip).length;
@@ -158,9 +203,31 @@ export function ReviewScreen({
 
       <ul className="space-y-3">
         {lines.map((l) => (
-          <Row key={l.id} line={l} locations={locations} onChange={(next) => onChange(lines.map((x) => (x.id === l.id ? next : x)))} />
+          <Row key={l.id} line={l} locations={locations} categories={categories} onChange={(next) => onChange(lines.map((x) => (x.id === l.id ? next : x)))} />
         ))}
       </ul>
+
+      {ignored.length > 0 && (
+        <details className="rounded-2xl border bg-card px-3">
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm text-muted-foreground">
+            Ignored lines ({ignored.length})
+          </summary>
+          <ul className="divide-y pb-1">
+            {ignored.map((g) => (
+              <li key={`${g.lineNo}-${g.text}`} className="flex min-h-11 items-center gap-2 py-1 text-sm">
+                <span className="min-w-0 flex-1 truncate">{g.text}</span>
+                <span className="text-xs text-muted-foreground">{REASON[g.reason]}</span>
+                {g.total_price !== null && <span className="text-xs tabular-nums text-muted-foreground">{g.total_price.toFixed(2)}</span>}
+                {g.restore && onRestore && (
+                  <Button variant="outline" className="h-11" onClick={() => onRestore(g)}>
+                    Restore
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       <div className="sticky bottom-[4.5rem] z-10 rounded-2xl border bg-background p-3 shadow-sm md:bottom-4">
         <Button className="h-12 w-full" disabled={saving || !canSave(lines)} onClick={onSave}>

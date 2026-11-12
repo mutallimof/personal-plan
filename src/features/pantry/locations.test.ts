@@ -12,8 +12,11 @@ describe("DEFAULT_LOCATIONS", () => {
   it("has the fridge drawers, a freezer and two shelves", () => {
     expect(DEFAULT_LOCATIONS.map((l) => l.name)).toEqual([
       "Fridge",
+      "Meat and fish",
+      "Dairy and eggs",
       "Vegetable drawer",
       "Fruit drawer",
+      "Drinks and sauces",
       "Freezer",
       "Dry-goods shelf",
       "Spice shelf",

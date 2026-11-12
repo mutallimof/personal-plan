@@ -58,7 +58,7 @@ export function ChatPanel() {
         aria-label="Open chat"
         onClick={() => setOpen(true)}
         className={cn(
-          "fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6 md:right-6",
+          "press fixed bottom-[calc(var(--dock)+1.25rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-float focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:bottom-6 md:right-6",
           (open || onWorkout) && "hidden",
         )}
       >
@@ -98,7 +98,7 @@ export function ChatPanel() {
               submit();
             }}
           >
-            <div className="flex items-end gap-2 rounded-2xl bg-card p-2">
+            <div className="flex items-end gap-2 tile p-2">
               <textarea
                 ref={inputRef}
                 rows={1}

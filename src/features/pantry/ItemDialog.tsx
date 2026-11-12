@@ -3,8 +3,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { pantry, useInvalidatePantry } from "./data";
-import { CATEGORIES, isCategory, isUnit, UNITS, type PantryItem, type PantryLocation } from "./model";
+import { pantry, useCategoryOptions, useInvalidatePantry } from "./data";
+import { IconPicker } from "./icons/IconPicker";
+import { ItemIcon } from "./icons/ItemIcon";
+import { resolveIcon } from "./icons/registry";
+import {
+  isCategory,
+  isUnit,
+  UNITS,
+  type PantryItem,
+  type PantryLocation,
+} from "./model";
 import { asOptions, Choice, locationOptions, Stepper } from "./ui";
 
 type Props = {
@@ -18,6 +27,7 @@ type Props = {
 
 export function ItemDialog({ item, locations, defaultLocationId = "", onClose }: Props) {
   const invalidate = useInvalidatePantry();
+  const categories = useCategoryOptions();
   const [name, setName] = useState(item?.name ?? "");
   const [quantity, setQuantity] = useState(item ? String(item.quantity) : "1");
   const [unit, setUnit] = useState(item?.unit ?? "pieces");
@@ -25,6 +35,8 @@ export function ItemDialog({ item, locations, defaultLocationId = "", onClose }:
   const [locationId, setLocationId] = useState(item ? (item.location_id ?? "") : defaultLocationId);
   const [expires, setExpires] = useState(item?.expires_on ?? "");
   const [note, setNote] = useState(item?.note ?? "");
+  const [icon, setIcon] = useState<string | null>(item?.icon ?? null);
+  const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const qty = Number(quantity);
@@ -41,6 +53,7 @@ export function ItemDialog({ item, locations, defaultLocationId = "", onClose }:
       location_id: locationId || null,
       expires_on: expires || null,
       note: note.trim() || null,
+      icon,
     };
     try {
       if (item) {
@@ -78,67 +91,110 @@ export function ItemDialog({ item, locations, defaultLocationId = "", onClose }:
         <DialogHeader>
           <DialogTitle>{item ? "Edit item" : "Add item"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <label className={label}>
-            Name
-            <Input className="h-11 text-base sm:text-sm" value={name} onChange={(e) => setName(e.target.value)} autoFocus={!item} />
-          </label>
-
-          <div className="grid grid-cols-[1fr_7rem] items-end gap-3">
-            <div className={label}>
-              Quantity
-              <Stepper value={qty || 0} unit={isUnit(unit) ? unit : "pieces"} onChange={(n) => setQuantity(String(Math.max(0, n)))}>
+        {picking ? (
+          <IconPicker value={icon} onPick={setIcon} onDone={() => setPicking(false)} />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-end gap-3">
+              <button
+                type="button"
+                aria-label="Change icon"
+                onClick={() => setPicking(true)}
+                className="flex h-14 w-14 shrink-0 items-center justify-center tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ItemIcon icon={resolveIcon({ icon, name, category })} className="h-10 w-10" />
+              </button>
+              <label className={`${label} min-w-0 flex-1`}>
+                Name
                 <Input
-                  aria-label="Quantity"
-                  type="number"
-                  min={0}
-                  step="any"
-                  inputMode="decimal"
-                  className="h-11 min-w-0 text-center text-base sm:text-sm"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  className="h-11 text-base sm:text-sm"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoFocus={!item}
                 />
-              </Stepper>
+              </label>
             </div>
-            <label className={label}>
-              Unit
-              <Choice label="Unit" value={unit} onChange={setUnit} options={asOptions(UNITS)} />
-            </label>
-          </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className={label}>
-              Category
-              <Choice label="Category" value={category} onChange={setCategory} options={asOptions(CATEGORIES)} />
-            </label>
-            <label className={label}>
-              Place
-              <Choice label="Place" value={locationId} onChange={setLocationId} options={locationOptions(locations)} empty="No place" />
-            </label>
-          </div>
+            <div className="grid grid-cols-[1fr_7rem] items-end gap-3">
+              <div className={label}>
+                Quantity
+                <Stepper
+                  value={qty || 0}
+                  unit={isUnit(unit) ? unit : "pieces"}
+                  onChange={(n) => setQuantity(String(Math.max(0, n)))}
+                >
+                  <Input
+                    aria-label="Quantity"
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    className="h-11 min-w-0 text-center text-base sm:text-sm"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                  />
+                </Stepper>
+              </div>
+              <label className={label}>
+                Unit
+                <Choice label="Unit" value={unit} onChange={setUnit} options={asOptions(UNITS)} />
+              </label>
+            </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className={label}>
-              Expires
-              <Input type="date" className="h-11 text-base sm:text-sm" value={expires} onChange={(e) => setExpires(e.target.value)} />
-            </label>
-            <label className={label}>
-              Note
-              <Input className="h-11 text-base sm:text-sm" value={note} onChange={(e) => setNote(e.target.value)} />
-            </label>
-          </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={label}>
+                Category
+                <Choice
+                  label="Category"
+                  value={category}
+                  onChange={setCategory}
+                  options={categories}
+                />
+              </label>
+              <label className={label}>
+                Place
+                <Choice
+                  label="Place"
+                  value={locationId}
+                  onChange={setLocationId}
+                  options={locationOptions(locations)}
+                  empty="No place"
+                />
+              </label>
+            </div>
 
-          <div className="flex gap-2">
-            {item && (
-              <Button variant="outline" className="h-12" disabled={busy} onClick={remove}>
-                Remove
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={label}>
+                Expires
+                <Input
+                  type="date"
+                  className="h-11 text-base sm:text-sm"
+                  value={expires}
+                  onChange={(e) => setExpires(e.target.value)}
+                />
+              </label>
+              <label className={label}>
+                Note
+                <Input
+                  className="h-11 text-base sm:text-sm"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className="flex gap-2">
+              {item && (
+                <Button variant="outline" className="h-12" disabled={busy} onClick={remove}>
+                  Remove
+                </Button>
+              )}
+              <Button className="h-12 flex-1" disabled={busy || !valid} onClick={save}>
+                {item ? "Save" : "Add"}
               </Button>
-            )}
-            <Button className="h-12 flex-1" disabled={busy || !valid} onClick={save}>
-              {item ? "Save" : "Add"}
-            </Button>
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,7 @@
 import type { Tables } from "@/integrations/supabase/types";
 import { normalizeReceiptText } from "./normalize";
+import { isIconKey } from "./icons/registry";
+import { legacyCategory } from "./categories";
 import { isCategory, isLocationKind, isUnit, type Category, type LocationKind, type Unit } from "./model";
 
 export type Alias = Tables<"product_aliases">;
@@ -13,6 +15,8 @@ export type AliasDraft = {
   default_location_kind: LocationKind | null;
   default_unit: Unit;
   default_quantity: number | null;
+  /** Picture for the product (see pantry/icons). Left out when the entry says nothing about it. */
+  icon?: string | null;
 };
 
 /** Identity of an alias: normalized text plus store (a missing store is its own value). */
@@ -32,7 +36,8 @@ export function toDraft(input: unknown): AliasDraft | string {
   const product_name = typeof o["product_name"] === "string" ? o["product_name"].trim().slice(0, 120) : "";
   if (!product_name) return "product_name is empty";
 
-  const category = o["category"] ?? "other";
+  const rawCategory = o["category"] ?? "other";
+  const category = typeof rawCategory === "string" ? legacyCategory(rawCategory) : rawCategory;
   if (!isCategory(category)) return `unknown category "${String(category)}"`;
   const kind = o["default_location_kind"] ?? null;
   if (kind !== null && !isLocationKind(kind)) return `unknown default_location_kind "${String(kind)}"`;
@@ -40,6 +45,9 @@ export function toDraft(input: unknown): AliasDraft | string {
   if (!isUnit(unit)) return `unknown default_unit "${String(unit)}"`;
   const qty = o["default_quantity"] ?? null;
   if (qty !== null && !(typeof qty === "number" && Number.isFinite(qty) && qty > 0)) return "default_quantity must be a number above 0";
+
+  const icon = o["icon"];
+  if (icon !== undefined && icon !== null && !isIconKey(icon)) return `unknown icon "${String(icon)}"`;
 
   return {
     raw_text,
@@ -49,6 +57,7 @@ export function toDraft(input: unknown): AliasDraft | string {
     default_location_kind: kind,
     default_unit: unit,
     default_quantity: qty,
+    ...(icon === undefined ? {} : { icon }),
   };
 }
 
@@ -84,6 +93,7 @@ export function exportAliases(aliases: readonly Alias[]): string {
       default_location_kind: a.default_location_kind,
       default_unit: a.default_unit,
       default_quantity: a.default_quantity,
+      ...(a.icon ? { icon: a.icon } : {}),
     }));
   return JSON.stringify({ version: 1, aliases: rows }, null, 2) + "\n";
 }
