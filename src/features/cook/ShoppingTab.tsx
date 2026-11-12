@@ -8,7 +8,7 @@ import { Empty, Loading, QueryError } from "@/components/states";
 import { cn } from "@/lib/utils";
 import { shopping, shoppingQuery, useInvalidateCook } from "./data";
 
-/** A plain shopping list: things the chat adds, and things you type. */
+/** A plain shopping list, kept by hand: you type items, or tick missing ingredients on a recipe. Nothing is added automatically. */
 export function ShoppingTab() {
   const list = useQuery(shoppingQuery);
   const invalidate = useInvalidateCook();

@@ -12,7 +12,7 @@ import { lineStatus, missingText, type Need } from "./can-cook";
 import { cookChat } from "./chat.functions";
 import { readChatEvents, type ChatEvent } from "./chat-stream";
 import { CookScreen } from "./CookScreen";
-import { cook, recipesQuery, shopping, useInvalidateCook } from "./data";
+import { cook, recipesQuery, useInvalidateCook } from "./data";
 import { recipeNutrition, type NutritionRow } from "./nutrition";
 import { RecipeCard } from "./RecipeCard";
 import { groupByRecipe, toDrafts } from "./recipes";
@@ -78,7 +78,7 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
     if (end?.type === "done") {
       patch({ text: end.reply, cards: end.cards, streaming: false });
       try {
-        if (end.saved.length || end.shopping.length) await invalidate();
+        if (end.saved.length) await invalidate();
         if (end.cook) await openCook(end.cook);
         await qc.invalidateQueries({ queryKey: ["pantry", "settings"] });
       } catch {
@@ -208,16 +208,6 @@ function IdeaCard({ recipe, items, nutrition, onCook }: CardProps) {
     }
   }
 
-  async function addMissing() {
-    try {
-      await shopping.add(missing.map((l) => ({ name: l.need.name, quantity: l.short || l.need.quantity, unit: l.need.unit })));
-      await invalidate();
-      toast.success("Added to your shopping list");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not add");
-    }
-  }
-
   return (
     <RecipeCard
       className="bg-background ring-1 ring-border"
@@ -240,11 +230,6 @@ function IdeaCard({ recipe, items, nutrition, onCook }: CardProps) {
           <Button variant="outline" className="h-11" disabled={busy || !!savedId} onClick={() => void save()}>
             {savedId ? "Saved" : "Save recipe"}
           </Button>
-          {missing.length > 0 && (
-            <Button variant="outline" className="h-11" onClick={() => void addMissing()}>
-              Add missing to list
-            </Button>
-          )}
         </>
       }
     >

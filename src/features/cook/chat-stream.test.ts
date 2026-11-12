@@ -10,7 +10,7 @@ const streamOf = (chunks: string[]) =>
     },
   });
 
-const done: ChatEvent = { type: "done", reply: "Here you go", cards: [], cook: null, saved: [], shopping: [], requests: 3 };
+const done: ChatEvent = { type: "done", reply: "Here you go", cards: [], cook: null, saved: [], requests: 3 };
 
 async function collect(chunks: string[]) {
   const events: ChatEvent[] = [];
@@ -30,7 +30,7 @@ describe("chat events", () => {
   });
 
   it("fills in what a done event leaves out", () => {
-    expect(parseEvent('{"type":"done","reply":"x","cards":[]}')).toEqual({ type: "done", reply: "x", cards: [], cook: null, saved: [], shopping: [], requests: 0 });
+    expect(parseEvent('{"type":"done","reply":"x","cards":[]}')).toEqual({ type: "done", reply: "x", cards: [], cook: null, saved: [], requests: 0 });
   });
 });
 

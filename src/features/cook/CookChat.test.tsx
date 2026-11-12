@@ -9,7 +9,7 @@ import { AiChatSetting } from "./AiChatSetting";
 import { cookChat } from "./chat.functions";
 import { encodeEvent, type ChatEvent } from "./chat-stream";
 import { CookChat } from "./CookChat";
-import { cook } from "./data";
+import { cook, shopping } from "./data";
 import type { NutritionRow } from "./nutrition";
 import { RecipesEmpty } from "./RecipesEmpty";
 
@@ -18,12 +18,14 @@ vi.mock("./chat.functions", () => ({ cookChat: vi.fn() }));
 vi.mock("./data", () => ({
   cook: { saveRecipe: vi.fn(), setAiChat: vi.fn(), undoCook: vi.fn(), saveNutrition: vi.fn() },
   shopping: { add: vi.fn() },
+  shoppingQuery: { queryKey: ["cook", "shopping"], queryFn: async () => [] },
   recipesQuery: { queryKey: ["cook", "recipes"], queryFn: async () => ({ recipes: [], ingredients: [] }) },
   useInvalidateCook: () => async () => {},
 }));
 let settingsData: PantrySettings;
 vi.mock("@/features/pantry/data", () => ({
   settingsQuery: { queryKey: ["pantry", "settings"], queryFn: async () => settingsData },
+  itemsQuery: { queryKey: ["pantry", "items"], queryFn: async () => [] },
   useInvalidatePantry: () => async () => {},
 }));
 
@@ -53,7 +55,7 @@ const ndjson = (...events: ChatEvent[]) =>
       },
     }),
   );
-const done = (over: Partial<Extract<ChatEvent, { type: "done" }>> = {}): ChatEvent => ({ type: "done", requests: 1, reply: "", cards: [], cook: null, saved: [], shopping: [], ...over });
+const done = (over: Partial<Extract<ChatEvent, { type: "done" }>> = {}): ChatEvent => ({ type: "done", requests: 1, reply: "", cards: [], cook: null, saved: [], ...over });
 
 const idea: AiRecipe = {
   title: "Chicken and potatoes",
@@ -117,7 +119,9 @@ describe("the chat", () => {
     expect(ask).toHaveBeenCalledWith({ data: { turns: [{ role: "user", content: "something with chicken" }] } });
     // 400 g chicken (440 kcal, 92 g) + 600 g potatoes (462 kcal, 12 g), two servings; saffron has no row
     expect(screen.getByText(/451 kcal · 52 g protein per serving \(approx\., 1 ingredient missing\)/)).toBeInTheDocument();
-    expect(screen.getByText((_, el) => el?.tagName === "P" && /Missing:.*Saffron/.test(el.textContent ?? ""))).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Saffron/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add selected to shopping list" })).toBeInTheDocument();
+    expect(shopping.add).not.toHaveBeenCalled(); // nothing is added until the button is pressed
     expect(screen.getByText("30 min")).toBeInTheDocument();
   });
 

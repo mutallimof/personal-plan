@@ -34,7 +34,6 @@ function setup(replies: (ModelReply | Error)[], over: Partial<ChatDeps> = {}) {
     pantry: [{ name: "Chicken breast", quantity: 500, unit: "g" }],
     recipes: [{ id: "r1", title: "Soup" }],
     saveRecipe: vi.fn(async () => "new-id"),
-    addToShoppingList: vi.fn(async () => {}),
     recipeExists: vi.fn(async (id: string) => id === "r1" || id === "new-id"),
     ...over,
   };
@@ -71,16 +70,22 @@ describe("runChat", () => {
     expect(toolResults(seen[1] ?? [])[0]).toEqual({ items: [{ name: "Chicken breast", quantity: 500, unit: "g" }] });
   });
 
-  it("saves a recipe and adds to the shopping list only through valid calls", async () => {
-    const { deps } = setup([
-      toolReply(call("save_recipe", { recipe }, "a"), call("add_to_shopping_list", { items: [{ name: "Milk", quantity: 1, unit: "l" }] }, "b")),
-      textReply("Done"),
-    ]);
+  it("saves a recipe through a valid call", async () => {
+    const { deps } = setup([toolReply(call("save_recipe", { recipe }, "a")), textReply("Done")]);
     const out = await runChat(deps, ask);
     expect(deps.saveRecipe).toHaveBeenCalledTimes(1);
-    expect(deps.addToShoppingList).toHaveBeenCalledWith([{ name: "Milk", quantity: 1, unit: "l" }]);
     expect(out.saved).toEqual([{ id: "new-id", title: "Chicken and potatoes" }]);
-    expect(out.shopping).toEqual(["Milk"]);
+  });
+
+  it("cannot touch the shopping list: a call to add_to_shopping_list is an unknown tool and changes nothing", async () => {
+    const { deps, seen } = setup([
+      toolReply(call("add_to_shopping_list", { items: [{ name: "Lachsfilet" }, { name: "Dill" }] }, "a")),
+      textReply("I can only suggest; the list is yours."),
+    ]);
+    const out = await runChat(deps, ask);
+    expect(toolResults(seen[1] ?? [])[0]).toHaveProperty("error");
+    expect(out).not.toHaveProperty("shopping");
+    expect(out.reply).toBe("I can only suggest; the list is yours.");
   });
 
   it("only opens the confirmation for cook_recipe; nothing is removed", async () => {
@@ -113,12 +118,11 @@ describe("runChat", () => {
 
     it("does not save or add anything for invalid calls", async () => {
       const { deps } = setup([
-        toolReply(call("save_recipe", { recipe: { title: "x" } }, "a"), call("add_to_shopping_list", { items: [{ name: "" }] }, "b"), call("delete_everything", {}, "c")),
+        toolReply(call("save_recipe", { recipe: { title: "x" } }, "a"), call("delete_everything", {}, "c")),
         textReply("sorry"),
       ]);
       const out = await runChat(deps, ask);
       expect(deps.saveRecipe).not.toHaveBeenCalled();
-      expect(deps.addToShoppingList).not.toHaveBeenCalled();
       expect(out.saved).toEqual([]);
       expect(out.reply).toBe("sorry");
     });

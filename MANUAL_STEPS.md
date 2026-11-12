@@ -43,6 +43,11 @@ Follow `DEPLOY.md`: pick Vercel or Cloudflare Pages, set the environment variabl
 Without it the app works; chat and "Generate my plan" will say they are unavailable.
 3. **If the chat says "has no quota left" (HTTP 429):** your key has no allowance for the model in `AI_MODEL` (the free tier has a limit of 0 for the newest and Pro models, for example `gemini-4-carbon`). Either set `AI_MODEL=gemini-3.6-flash` (works on the free tier), or turn on billing for the key's project in Google AI Studio (Usage and billing) to use a stronger model. The chat already falls back to `AI_FALLBACK_MODEL` (default `gemini-3.6-flash` for Gemini) when the main model has no quota, and retries busy or overloaded answers up to 3 times; the server log shows `AI provider error: model=... kind=... status=...` (never the key).
 
+## 4b. Shopping list rows added earlier by the AI
+The app never deletes them for you. To look at what is there, run in the Supabase SQL editor (read-only):
+`select name, quantity, unit, done, created_at from shopping_list order by created_at;`
+Remove what you do not want with the trash button in Cook > Shopping, or (only after you have checked the rows) delete in the Table Editor.
+
 ## 5. After pulling this branch
 Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lovable packages removed; the lockfile is now `package-lock.json`).
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { missingText, type LineStatus } from "./can-cook";
+import type { LineStatus } from "./can-cook";
+import { MissingToList } from "./MissingToList";
 import { approxLabel, formatKcal, formatProtein, type RecipeNutrition } from "./nutrition";
 
 export function NutritionLine({ facts }: { facts: RecipeNutrition }) {
@@ -34,12 +35,7 @@ export function RecipeCard({ title, servings, facts, missing = [], expiring = fa
       </div>
       <NutritionLine facts={facts} />
       {expiring && <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Uses food that expires soon</span>}
-      {missing.length > 0 && (
-        <p className="text-sm">
-          <span className="font-medium">Missing: </span>
-          {missing.map(missingText).join(", ")}
-        </p>
-      )}
+      {missing.length > 0 && <MissingToList missing={missing} />}
       {children}
       {actions && <div className="flex flex-wrap gap-2 pt-1">{actions}</div>}
     </article>

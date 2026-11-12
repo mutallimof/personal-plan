@@ -28,7 +28,6 @@ export function parseEvent(line: string): ChatEvent | null {
       cards: v["cards"] as ChatOutcome["cards"],
       cook: typeof v["cook"] === "string" ? v["cook"] : null,
       saved: Array.isArray(v["saved"]) ? (v["saved"] as ChatOutcome["saved"]) : [],
-      shopping: Array.isArray(v["shopping"]) ? (v["shopping"] as string[]) : [],
       requests: typeof v["requests"] === "number" ? v["requests"] : 0,
     };
   }

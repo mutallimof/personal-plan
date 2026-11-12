@@ -5,6 +5,7 @@ import {
   MAX_CARDS,
   MAX_SUMMARY_LINES,
   MAX_TURNS,
+  SYSTEM_PROMPT,
   chatSummary,
   cleanRecipes,
   cleanTurns,
@@ -126,23 +127,20 @@ describe("validateToolCall", () => {
     expect(r.ok && r.call.name === "save_recipe" && Object.keys(r.call.recipe)).not.toContain("protein");
   });
 
-  it("checks cook_recipe and add_to_shopping_list", () => {
+  it("checks cook_recipe", () => {
     expect(validateToolCall("cook_recipe", { recipe_id: "abc" })).toEqual({ ok: true, call: { name: "cook_recipe", recipeId: "abc" } });
     expect(validateToolCall("cook_recipe", {}).ok).toBe(false);
     expect(validateToolCall("cook_recipe", { recipe_id: 5 }).ok).toBe(false);
-    const list = validateToolCall("add_to_shopping_list", { items: [{ name: "Milk", quantity: 1, unit: "l" }, { name: "Salt" }] });
-    expect(list.ok && list.call.name === "add_to_shopping_list" && list.call.items).toHaveLength(2);
-    expect(validateToolCall("add_to_shopping_list", { items: [{ name: "" }] }).ok).toBe(false);
-    expect(validateToolCall("add_to_shopping_list", { items: [{ name: "Milk", unit: "cups" }] }).ok).toBe(false);
-    expect(validateToolCall("add_to_shopping_list", { items: "milk" }).ok).toBe(false);
   });
 
   it("rejects tools that do not exist, so the model cannot reach anything else", () => {
     for (const name of ["delete_item", "remove_pantry_item", "update_pantry", "", "__proto__"]) expect(validateToolCall(name, {}).ok).toBe(false);
   });
 
-  it("offers exactly the five tools, none of which removes anything from the pantry", () => {
-    expect(CHAT_TOOLS.map((t) => t.name)).toEqual(["search_pantry", "suggest_recipes", "save_recipe", "cook_recipe", "add_to_shopping_list"]);
+  it("offers exactly four tools: none removes anything from the pantry and none touches the shopping list", () => {
+    expect(CHAT_TOOLS.map((t) => t.name)).toEqual(["search_pantry", "suggest_recipes", "save_recipe", "cook_recipe"]);
+    expect(validateToolCall("add_to_shopping_list", { items: [{ name: "Milk" }] }).ok).toBe(false);
+    expect(SYSTEM_PROMPT).not.toMatch(/add_to_shopping_list/);
   });
 });
 

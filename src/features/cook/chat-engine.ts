@@ -11,7 +11,6 @@ import {
   validateToolCall,
   type ChatTurn,
   type SavedRecipe,
-  type ShoppingEntry,
   type SummaryLine,
   type ToolCallData,
 } from "./chat";
@@ -24,8 +23,6 @@ export type ChatDeps = {
   recipes: readonly SavedRecipe[];
   /** Saves a recipe to the book; returns its id. */
   saveRecipe: (recipe: AiRecipe) => Promise<string>;
-  /** Adds entries to the shopping list. */
-  addToShoppingList: (items: readonly ShoppingEntry[]) => Promise<void>;
   /** Whether this saved recipe exists for this person. */
   recipeExists: (id: string) => Promise<boolean>;
 };
@@ -37,7 +34,6 @@ export type ChatOutcome = {
   /** A saved recipe the person wants to cook: the screen opens the confirmation, nothing is removed here. */
   cook: string | null;
   saved: SavedRecipe[];
-  shopping: string[];
 };
 
 export const MAX_STEPS = 6;
@@ -56,7 +52,7 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[], onTe
     { role: "user", content: contextPrompt(deps.pantry, deps.recipes) },
     ...history.map((t): ChatMessage => ({ role: t.role, content: t.content })),
   ];
-  const out: ChatOutcome = { reply: "", cards: [], cook: null, saved: [], shopping: [] };
+  const out: ChatOutcome = { reply: "", cards: [], cook: null, saved: [] };
   let badSteps = 0;
   let gaveUp = false;
 
@@ -99,7 +95,6 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[], onTe
     else if (out.cards.length) out.reply = out.cards.length === 1 ? "Here is an idea." : "Here are some ideas.";
     else if (out.cook) out.reply = "Check the amounts, then cook.";
     else if (out.saved.length) out.reply = "Saved.";
-    else if (out.shopping.length) out.reply = "Added to your shopping list.";
     else out.reply = "I couldn't come up with an answer — try asking another way.";
   }
   return out;
@@ -123,11 +118,6 @@ async function execute(deps: ChatDeps, out: ChatOutcome, call: ToolCallData): Pr
       if (!known || !(await deps.recipeExists(call.recipeId))) return { error: "No saved recipe with that id. Save it first." };
       out.cook = call.recipeId;
       return { ok: true, note: "The person will check the amounts on screen and confirm." };
-    }
-    case "add_to_shopping_list": {
-      await deps.addToShoppingList(call.items);
-      out.shopping.push(...call.items.map((i) => i.name));
-      return { ok: true, added: call.items.length };
     }
   }
 }

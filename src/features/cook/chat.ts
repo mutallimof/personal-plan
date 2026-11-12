@@ -63,7 +63,8 @@ export function cleanRecipes(value: unknown): SavedRecipe[] {
 
 export const SYSTEM_PROMPT = [
   "You are a cooking helper inside a pantry app. Suggest simple home-cooking recipes from the stock you are given.",
-  "Use the tools: search_pantry to look something up, suggest_recipes to show 1 to 3 recipe cards, save_recipe only when the person asks to save, cook_recipe only when the person wants to cook a saved recipe now (they confirm on screen), add_to_shopping_list only when asked.",
+  "Use the tools: search_pantry to look something up, suggest_recipes to show 1 to 3 recipe cards, save_recipe only when the person asks to save, cook_recipe only when the person wants to cook a saved recipe now (they confirm on screen).",
+  "You cannot change the shopping list; the person keeps it by hand. If something is missing, just say what it is.",
   `Use only these units: ${UNITS.join(", ")}. Use the stock's ingredient names exactly when you use them. Basic staples (water, salt, pepper) may be added.`,
   "Never give calories or protein: the app computes them. Put recipes in suggest_recipes, not in the text; keep the text to one or two short sentences.",
 ].join(" ");
@@ -82,27 +83,11 @@ const searchArgs = z.object({ query: z.string().trim().max(80).optional() });
 const suggestArgs = z.object({ recipes: z.array(z.unknown()).min(1).max(10) });
 const saveArgs = z.object({ recipe: recipeSchema });
 const cookArgs = z.object({ recipe_id: z.string().trim().min(1).max(64) });
-const shopArgs = z.object({
-  items: z
-    .array(
-      z.object({
-        name: z.string().trim().min(1).max(120),
-        quantity: z.number().positive().max(100000).optional(),
-        unit: unit.optional(),
-      }),
-    )
-    .min(1)
-    .max(30),
-});
-
-export type ShoppingEntry = { name: string; quantity?: number | undefined; unit?: Unit | undefined };
-
 export type ToolCallData =
   | { name: "search_pantry"; query: string }
   | { name: "suggest_recipes"; recipes: AiRecipe[] }
   | { name: "save_recipe"; recipe: AiRecipe }
-  | { name: "cook_recipe"; recipeId: string }
-  | { name: "add_to_shopping_list"; items: ShoppingEntry[] };
+  | { name: "cook_recipe"; recipeId: string };
 
 export type Validated = { ok: true; call: ToolCallData } | { ok: false; error: string };
 
@@ -145,10 +130,6 @@ export function validateToolCall(name: string, args: Record<string, unknown>): V
     case "cook_recipe": {
       const r = cookArgs.safeParse(args);
       return r.success ? { ok: true, call: { name, recipeId: r.data.recipe_id } } : bad(why(r.error));
-    }
-    case "add_to_shopping_list": {
-      const r = shopArgs.safeParse(args);
-      return r.success ? { ok: true, call: { name, items: r.data.items } } : bad(why(r.error));
     }
     default:
       return bad(`Unknown tool "${name.slice(0, 40)}".`);
@@ -214,13 +195,5 @@ export const CHAT_TOOLS = [
     name: "cook_recipe",
     description: "Open the cooking confirmation for a saved recipe (by its id). The person confirms amounts there; nothing is removed before.",
     parameters: obj({ recipe_id: { type: "string" } }, ["recipe_id"]),
-  },
-  {
-    name: "add_to_shopping_list",
-    description: "Add things to the shopping list. Only when asked.",
-    parameters: obj(
-      { items: { type: "array", items: obj({ name: { type: "string" }, quantity: { type: "number" }, unit: { type: "string", enum: [...UNITS] } }, ["name"]) } },
-      ["items"],
-    ),
   },
 ].map((t) => ({ type: "function" as const, ...t }));

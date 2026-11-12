@@ -55,12 +55,6 @@ export const cookChat = createServerFn({ method: "POST" })
             pantry: chatSummary(items.data ?? []),
             recipes: cleanRecipes(recipes.data),
             saveRecipe,
-            async addToShoppingList(list) {
-              const res = await supabase
-                .from("shopping_list")
-                .insert(list.map((i) => ({ user_id: userId, name: i.name, quantity: i.quantity ?? null, unit: i.unit ?? null })));
-              if (res.error) throw new Error(res.error.message);
-            },
             async recipeExists(id) {
               const res = await supabase.from("recipes").select("id").eq("id", id).maybeSingle();
               return !res.error && !!res.data;

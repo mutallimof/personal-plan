@@ -8,6 +8,7 @@ import { Empty, Loading, QueryError } from "@/components/states";
 import { itemsQuery, settingsQuery } from "@/features/pantry/data";
 import { cook, nutritionQuery, recipesQuery, useInvalidateCook, type Recipe } from "./data";
 import { recipeNutrition, toNutritionRows } from "./nutrition";
+import { lineStatus } from "./can-cook";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeForm } from "./RecipeForm";
 import { RecipesEmpty } from "./RecipesEmpty";
@@ -101,12 +102,14 @@ export function RecipesTab() {
         <ul className="space-y-3">
           {shown.map((r) => {
             const list = toDrafts(grouped.get(r.id) ?? []);
+            const missing = list.map((n) => lineStatus(n, pantryItems)).filter((l) => l.state !== "ok");
             return (
               <li key={r.id}>
                 <RecipeCard
                   title={r.title}
                   servings={r.servings}
                   facts={recipeNutrition(list, rows, r.servings)}
+                  missing={missing}
                   actions={
                     <>
                       <Button variant="outline" className="h-11" onClick={() => edit(r)}>

@@ -15,6 +15,10 @@ Changes on branch `build-v1`. Behavior changes to existing features are marked *
 - **Behavior:** the default Gemini model is now `gemini-3.6-flash` (stable; `gemini-3.8-flash` stalled in a test).
 - The server log shows `AI provider error: model=... attempt=... kind=... status=...` and the provider's message, never the key.
 
+### Shopping list
+- **Behavior:** the shopping list is manual. The AI chat no longer has the `add_to_shopping_list` tool (a model that ignored "only when asked" is what filled the list with Lachsfilet, Dill, Zitronen, Schlagsahne, Mehl, Zucker, Backpulver and Puderzucker), and the "Add missing to list" button on recipe ideas, which added every missing ingredient with no duplicate check, is gone. Nothing writes to the list except the typed Add field and the button below.
+- **Behavior:** every recipe card (ideas, saved recipes, Can cook) shows its missing ingredients with checkboxes and an **Add selected to shopping list** button. On press the app re-reads the pantry and the list and skips what is in stock or already on the list (matched by normalized name and synonyms: Sahne = Schlagsahne, Zitrone = Zitronen), adds the same food once, and says what it skipped. Existing rows are not touched; see `MANUAL_STEPS.md` to clean up rows added earlier.
+
 ## Fixes round (branch `build-fixes`)
 ### Receipts
 - **Behavior:** the receipt parser was rewritten. Two-line items (name, then "2 x 1,29" or a weight line), sizes inside names ("1L", "250g", "6x0,33") and own-brand prefixes (Kaufland: K., KPur.H., KLC., KBB, ...; kept in `receipt-data.json`) are understood. A discount line now belongs to the previous product (price only). Deposit, bag, payment, loyalty and tax lines go to a collapsed **Ignored lines** list with **Restore**.
