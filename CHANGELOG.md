@@ -10,6 +10,11 @@ Changes on branch `build-v1`. Behavior changes to existing features are marked *
 ### Plant
 - **Behavior:** the plant stands on the top edge of the worktop (it used to sink 2 units into the slab) with a small contact shadow, and never overlaps the cooker, a cabinet, the hood or the window. Saved layouts are corrected once (layout `rev` 3): a plant that is not properly grounded moves along the counter to the nearest free spot.
 
+### AI chat errors
+- **Behavior:** a rejected request is no longer always reported as "I'm a bit busy". The real cause was HTTP 429 `quota limit: 0` (free tier has no allowance for `gemini-4-carbon`). Failures are now sorted: no quota, rate limit, overloaded (5xx), timeout, network, rejected key, unknown model. Busy, overloaded, timeout and network failures are retried up to 3 times with a growing wait (honoring `Retry-After`); no quota or an unknown model goes straight to a fallback model (`AI_FALLBACK_MODEL`, default `gemini-3.6-flash` for Gemini). If everything fails, the message names the model and the HTTP status and says what to change. The first answer is awaited at most 60 s (`AI_TIMEOUT_MS`), and a stream that goes quiet is cut off, so the chat can no longer spin forever.
+- **Behavior:** the default Gemini model is now `gemini-3.6-flash` (stable; `gemini-3.8-flash` stalled in a test).
+- The server log shows `AI provider error: model=... attempt=... kind=... status=...` and the provider's message, never the key.
+
 ## Fixes round (branch `build-fixes`)
 ### Receipts
 - **Behavior:** the receipt parser was rewritten. Two-line items (name, then "2 x 1,29" or a weight line), sizes inside names ("1L", "250g", "6x0,33") and own-brand prefixes (Kaufland: K., KPur.H., KLC., KBB, ...; kept in `receipt-data.json`) are understood. A discount line now belongs to the previous product (price only). Deposit, bag, payment, loyalty and tax lines go to a collapsed **Ignored lines** list with **Restore**.

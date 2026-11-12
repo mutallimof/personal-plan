@@ -41,6 +41,7 @@ Follow `DEPLOY.md`: pick Vercel or Cloudflare Pages, set the environment variabl
 1. Get a key (Google AI Studio for the default Gemini provider: https://aistudio.google.com/apikey -> Create API key).
 2. Put it in your local `.env` as `AI_API_KEY=...` (never commit it; `.env` is ignored), and in the host's environment variables when deployed.
 Without it the app works; chat and "Generate my plan" will say they are unavailable.
+3. **If the chat says "has no quota left" (HTTP 429):** your key has no allowance for the model in `AI_MODEL` (the free tier has a limit of 0 for the newest and Pro models, for example `gemini-4-carbon`). Either set `AI_MODEL=gemini-3.6-flash` (works on the free tier), or turn on billing for the key's project in Google AI Studio (Usage and billing) to use a stronger model. The chat already falls back to `AI_FALLBACK_MODEL` (default `gemini-3.6-flash` for Gemini) when the main model has no quota, and retries busy or overloaded answers up to 3 times; the server log shows `AI provider error: model=... kind=... status=...` (never the key).
 
 ## 5. After pulling this branch
 Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lovable packages removed; the lockfile is now `package-lock.json`).
