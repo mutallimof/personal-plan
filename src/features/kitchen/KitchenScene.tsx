@@ -38,6 +38,8 @@ export type SceneProps = {
   /** An item was dropped outside the open cabinet: pick another place. */
   onDropOutside: (item: PantryItem) => void;
   onAdd: (hotspot: Hotspot, row: Row) => void;
+  /** A shelf or drawer of the open cabinet was tapped. */
+  onOpenRow?: (hotspot: Hotspot, row: Row) => void;
 };
 
 const DRAG_PX = 6;
@@ -227,6 +229,7 @@ export function KitchenScene(p: SceneProps) {
                   draggingId={drag?.sprite.item.id ?? null}
                   handlers={zoomed === h.key ? handlers : undefined}
                   onAdd={(row) => p.onAdd(h, row)}
+                  {...(p.onOpenRow ? { onOpenRow: (row: Row) => p.onOpenRow?.(h, row) } : {})}
                 />
               )}
               <Door h={h} open={doorOpen} reduced={reduced} ms={ms} />

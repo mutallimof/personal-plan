@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Pencil, MoveRight, Trash2 } from "lucide-react";
 import { Loading, QueryError } from "@/components/states";
 import { itemsQuery, locationsQuery, pantry, useInvalidatePantry } from "@/features/pantry/data";
 import { aliasesQuery } from "@/features/pantry/dictionary-data";
@@ -11,7 +12,8 @@ import { aliasIconMap, iconForItem } from "@/features/pantry/icons/registry";
 import { ItemDialog } from "@/features/pantry/ItemDialog";
 import type { PantryItem } from "@/features/pantry/model";
 import { Choice, locationOptions } from "@/features/pantry/ui";
-import type { Row } from "./interior";
+import { badgeText, interiorRows, type Row } from "./interior";
+import { contentsOf } from "./contents";
 import type { Hotspot } from "./layout";
 import { layoutQuery } from "./layout-data";
 import { placeByName, searchItems, type SearchHit } from "./locate";
@@ -47,6 +49,7 @@ export function KitchenScreen({
   const aliasesQ = useQuery(aliasesQuery);
   const invalidate = useInvalidatePantry();
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [rowList, setRowList] = useState<{ hotspot: string; row: string } | null>(null);
   const aliasIcons = useMemo(() => aliasIconMap(aliasesQ.data ?? []), [aliasesQ.data]);
 
   useEffect(() => {
@@ -104,6 +107,14 @@ export function KitchenScreen({
     else onShowList();
   }
 
+  const listed = rowList
+    ? (() => {
+        const h = layout.hotspots.find((x) => x.key === rowList.hotspot);
+        const row = h ? interiorRows(h).find((r) => r.id === rowList.row) : undefined;
+        if (!h || !row) return null;
+        return { h, row, items: contentsOf(layout, items, places).get(h.key)?.get(row.id) ?? [] };
+      })()
+    : null;
   const moving = dialog?.kind === "move" ? dialog.item : null;
 
   return (
@@ -145,9 +156,8 @@ export function KitchenScreen({
         onSelectItem={(item) => setDialog({ kind: "edit", item })}
         onDropOnRow={dropOnRow}
         onDropOutside={(item) => setDialog({ kind: "move", item })}
-        onAdd={(_h, row) =>
-          setDialog({ kind: "add", locationId: placeByName(places, row.place)?.id ?? "" })
-        }
+        onOpenRow={(h, row) => setRowList({ hotspot: h.key, row: row.id })}
+        onAdd={(h, row) => setRowList({ hotspot: h.key, row: row.id })}
       />
       <p className="text-center text-xs text-muted-foreground">
         Icons:{" "}
@@ -162,6 +172,45 @@ export function KitchenScreen({
         , CC-BY 4.0
       </p>
 
+      {listed && !dialog && (
+        <Dialog open onOpenChange={(o) => !o && setRowList(null)}>
+          <DialogContent className="max-h-[85dvh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{listed.row.label ?? listed.h.name}</DialogTitle>
+            </DialogHeader>
+            {listed.items.length > 0 && (
+              <ul className="tile divide-y" aria-label="Items">
+                {listed.items.map((it) => (
+                  <li key={it.id} className="flex items-center gap-2 py-2 pl-3 pr-1">
+                    <ItemIcon icon={iconForItem(it, aliasIcons)} className="h-8 w-8 shrink-0" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{it.name}</span>
+                      <span className="block text-xs text-muted-foreground">{badgeText(it)}</span>
+                    </span>
+                    <Button type="button" variant="ghost" size="icon" className="h-11 w-11" aria-label={`Edit ${it.name}`} onClick={() => setDialog({ kind: "edit", item: it })}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-11 w-11" aria-label={`Move ${it.name}`} onClick={() => setDialog({ kind: "move", item: it })}>
+                      <MoveRight className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-11 w-11" aria-label={`Remove ${it.name}`} onClick={() => void run(() => pantry.removeItem(it.id), `Removed ${it.name}`)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button
+              className="h-12"
+              onClick={() =>
+                setDialog({ kind: "add", locationId: placeByName(places, listed.row.place)?.id ?? "" })
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" /> Add
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
       {dialog?.kind === "edit" && (
         <ItemDialog
           key={dialog.item.id}

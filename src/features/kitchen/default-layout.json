@@ -134,12 +134,6 @@
       "location": "Freezer",
       "compartments": [
         {
-          "key": "fz1",
-          "name": "Vegetables and fruit",
-          "kind": "shelf",
-          "location": "Frozen vegetables and fruit"
-        },
-        {
           "key": "fz2",
           "name": "Meat and fish",
           "kind": "drawer",
@@ -202,5 +196,5 @@
       "height": 50
     }
   ],
-  "rev": 3
+  "rev": 4
 }

@@ -74,10 +74,10 @@ async function legacyZones(): Promise<LegacyZone[]> {
 }
 
 /** Moves the items of removed places to sensible shelves. Places are never deleted. */
-async function moveItemsOut(removed: readonly string[]): Promise<void> {
+async function moveItemsOut(removed: readonly string[], stayInCabinet: readonly string[]): Promise<void> {
   const places = check(await supabase.from("pantry_locations").select("*")) ?? [];
   const items = check(await supabase.from("pantry_items").select("id,category,location_id")) ?? [];
-  for (const m of moveOutOfRemoved(items, places, removed))
+  for (const m of moveOutOfRemoved(items, places, removed, stayInCabinet))
     check(await supabase.from("pantry_items").update({ location_id: m.location_id, shelf: null }).eq("id", m.id));
 }
 
@@ -99,7 +99,7 @@ async function upgradeOnce(user_id: string, saved: Layout): Promise<Layout> {
   }
   const tidy = tidyLayout(layout);
   if (tidy.layout !== layout) {
-    if (tidy.removed.length) await moveItemsOut(tidy.removed);
+    if (tidy.removed.length) await moveItemsOut(tidy.removed, tidy.stayInCabinet);
     await saveLayout(tidy.layout);
     layout = tidy.layout;
   }

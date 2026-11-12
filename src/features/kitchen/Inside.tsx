@@ -128,6 +128,8 @@ type InteriorProps = {
   draggingId: string | null;
   handlers: SpriteHandlers | undefined;
   onAdd: (row: Row) => void;
+  /** A shelf or drawer was tapped (only when opened). */
+  onOpenRow?: (row: Row) => void;
 };
 
 const IDLE_LIMIT = 4;
@@ -146,6 +148,7 @@ export function Interior({
   draggingId,
   handlers,
   onAdd,
+  onOpenRow,
 }: InteriorProps) {
   const inner = cavity(h);
   const labelSizeAll = labelSizeFor(rows);
@@ -211,6 +214,22 @@ export function Interior({
                 {...OUTLINE}
               />
             ) : null}
+            {full && onOpenRow && (
+              <rect
+                data-row-hit={r.id}
+                x={r.rect.x}
+                y={r.rect.y}
+                width={r.rect.width}
+                height={r.rect.height}
+                fill="transparent"
+                role="button"
+                tabIndex={0}
+                aria-label={`Open ${r.label ?? h.name} list`}
+                style={{ cursor: "pointer" }}
+                onClick={() => onOpenRow(r)}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpenRow(r)}
+              />
+            )}
             {sprites.map((sp) => (
               <ProductSprite
                 key={sp.item.id}

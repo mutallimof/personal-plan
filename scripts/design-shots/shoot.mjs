@@ -53,6 +53,10 @@ const SHOTS = [
   { name: "x-gym-session", path: "/gym/session/session-0" },
   { name: "x-gym-workout", path: "/gym/workout/session-0" },
   { name: "x-gym-exercise", path: "/gym/exercise/ex-0" },
+  { name: "x-fridge-list", path: "/pantry?open=fridge", tapRow: "[data-more]" },
+  { name: "x-freezer", path: "/pantry?open=freezer" },
+  { name: "x-freezer-list", path: "/pantry?open=freezer", tapRow: "[data-more]" },
+  { name: "x-fridge-empty-list", path: "/pantry?open=fridge", tapRow: "[data-empty]" },
   { name: "x-languages", path: "/languages" },
 ];
 
@@ -185,6 +189,15 @@ try {
         }
         if (shot.click) {
           await clickText(page, "button", shot.click);
+          await wait(900);
+        }
+        if (shot.tapRow) {
+          const ok = await page.evaluate((sel) => {
+            const hit = document.querySelector(`[data-row]:has(${sel}) [data-row-hit]`) ?? document.querySelector("[data-row-hit]");
+            hit?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+            return !!hit;
+          }, shot.tapRow);
+          if (!ok) throw new Error("no row to tap");
           await wait(900);
         }
         if (shot.ask) {

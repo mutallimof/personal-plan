@@ -5,7 +5,7 @@ import { LOCATION_KINDS } from "@/features/pantry/model";
 export const LAYOUT_VERSION = 2;
 
 /** Revision of the built-in tidy-ups a saved layout has had (kept inside the file, so no database change is needed). */
-export const LAYOUT_REV = 3;
+export const LAYOUT_REV = 4;
 
 export const DOORS = [
   "hinged-left",

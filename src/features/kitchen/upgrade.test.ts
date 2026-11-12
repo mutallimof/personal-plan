@@ -87,11 +87,10 @@ describe("tidyLayout", () => {
     const { layout, removed } = tidyLayout(old);
     const freezer = layout.hotspots.find((h) => h.kind === "freezer")!;
     expect(freezer.compartments.map((c) => `${c.name}:${c.kind}`)).toEqual([
-      "Vegetables and fruit:shelf",
       "Meat and fish:drawer",
       "Ready meals:shelf",
     ]);
-    expect(removed).toEqual(["Top drawer", "Middle drawer", "Bottom drawer"]);
+    expect(removed).toEqual(["Top drawer", "Middle drawer", "Bottom drawer", "Frozen vegetables and fruit"]);
     expect(layout.rev).toBe(LAYOUT_REV);
     expect(readLayout(layout).errors).toEqual([]);
   });
@@ -100,6 +99,33 @@ describe("tidyLayout", () => {
     const once = tidyLayout(old).layout;
     expect(tidyLayout(once).layout).toBe(once);
     expect(tidyLayout(DEFAULT_LAYOUT).layout).toBe(DEFAULT_LAYOUT);
+  });
+
+  it("takes the Vegetables and fruit shelf out of the freezer once (rev 3 -> 4), and only there", () => {
+    const vf = { key: "vf", name: "Vegetables and fruit", kind: "shelf" as const, location: "Frozen vegetables and fruit" };
+    const saved: Layout = {
+      ...DEFAULT_LAYOUT,
+      rev: 3,
+      hotspots: DEFAULT_LAYOUT.hotspots.map((h) =>
+        h.kind === "freezer" ? { ...h, compartments: [vf, ...h.compartments] } : h.kind === "fridge" ? { ...h, compartments: [...h.compartments, { ...vf, key: "fv" }] } : h,
+      ),
+    };
+    const { layout, removed, stayInCabinet } = tidyLayout(saved);
+    expect(layout.hotspots.find((h) => h.kind === "freezer")!.compartments.map((c) => c.name)).toEqual(["Meat and fish", "Ready meals"]);
+    expect(layout.hotspots.find((h) => h.kind === "fridge")!.compartments.some((c) => c.key === "fv")).toBe(true);
+    expect(removed).toEqual(["Frozen vegetables and fruit"]);
+    expect(stayInCabinet).toEqual(removed);
+  });
+
+  it("moves frozen vegetables to the freezer's own place, not to the fridge's vegetable drawer", () => {
+    const places = [
+      loc("fz", "Freezer", null, []),
+      loc("vf", "Frozen vegetables and fruit", "fz", ["frozen"]),
+      loc("fr", "Fridge", null, []),
+      loc("vd", "Vegetable drawer", "fr", ["vegetables", "frozen"]),
+    ];
+    const items = [{ id: "1", category: "vegetables", location_id: "vf" }];
+    expect(moveOutOfRemoved(items, places, ["Frozen vegetables and fruit"], ["Frozen vegetables and fruit"])).toEqual([{ id: "1", location_id: "fz" }]);
   });
 
   it("moves items of removed drawers to a shelf of the same cabinet that accepts them", () => {
