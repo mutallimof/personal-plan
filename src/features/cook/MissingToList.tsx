@@ -65,7 +65,7 @@ export function MissingToList({ missing }: { missing: readonly LineStatus[] }) {
               <label className="flex min-h-11 items-center gap-3">
                 <input
                   type="checkbox"
-                  className="h-5 w-5 shrink-0 accent-primary"
+                  className="h-5 w-5 shrink-0"
                   checked={!listed && !unticked.has(l.need.name)}
                   disabled={listed}
                   onChange={() => toggle(l.need.name)}

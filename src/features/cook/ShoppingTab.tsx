@@ -47,21 +47,21 @@ export function ShoppingTab() {
       {!items.length ? (
         <Empty>Nothing to buy.</Empty>
       ) : (
-        <ul className="divide-y rounded-2xl bg-card">
+        <ul className="tile divide-y">
           {items.map((i) => (
-            <li key={i.id} className="flex min-h-12 items-center gap-3 px-4">
+            <li key={i.id} className="flex min-h-14 items-center gap-3 pl-4 pr-1.5">
               <input
                 type="checkbox"
-                className="h-5 w-5 accent-primary"
+                className="h-6 w-6"
                 aria-label={`Bought ${i.name}`}
                 checked={i.done}
                 onChange={(e) => void run(() => shopping.setDone(i.id, e.target.checked))}
               />
-              <span className={cn("min-w-0 flex-1 truncate text-sm", i.done && "text-muted-foreground line-through")}>
+              <span className={cn("min-w-0 flex-1 truncate text-[15px]", i.done && "text-muted-foreground line-through")}>
                 {i.name}
                 {i.quantity ? <span className="text-muted-foreground"> · {i.quantity} {i.unit ?? ""}</span> : null}
               </span>
-              <Button variant="ghost" size="icon" className="h-11 w-11" aria-label={`Remove ${i.name}`} onClick={() => void run(() => shopping.remove(i.id))}>
+              <Button variant="ghost" size="icon" className="h-11 w-11 text-muted-foreground" aria-label={`Remove ${i.name}`} onClick={() => void run(() => shopping.remove(i.id))}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </li>

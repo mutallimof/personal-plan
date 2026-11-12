@@ -89,6 +89,10 @@
   --elev-2: 0 2px 4px color-mix(in oklab, var(--shade) 6%, transparent), 0 8px 20px -6px color-mix(in oklab, var(--shade) 14%, transparent);
   --elev-3: 0 4px 8px color-mix(in oklab, var(--shade) 8%, transparent), 0 18px 40px -10px color-mix(in oklab, var(--shade) 26%, transparent);
 
+  /* the tick inside a checked box: dark on bright primaries, light on dark ones */
+  --tick-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310261c' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  --tick-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  --tick: var(--tick-dark);
   /* the selected pill of a segmented control: lighter than its track in both modes */
   --raised: var(--card);
   --card-foreground: var(--foreground);
@@ -184,6 +188,7 @@
   --heading-weight: 600;
   --heading-tracking: -0.02em;
   --radius: 0.75rem;
+  --tick: var(--tick-light);
 
   --background: oklch(0.968 0.013 80);
   --foreground: oklch(0.24 0.025 50);
@@ -218,6 +223,7 @@
   --foreground: oklch(0.94 0.016 80);
   --card: oklch(0.232 0.014 55);
   --popover: oklch(0.258 0.015 55);
+  --tick: var(--tick-dark);
   --raised: oklch(0.37 0.018 55);
   --primary: oklch(0.71 0.135 42);
   --primary-foreground: oklch(0.18 0.025 50);
@@ -250,6 +256,7 @@
   --heading-weight: 600;
   --heading-tracking: -0.03em;
   --radius: 0.5rem;
+  --tick: var(--tick-light);
 
   --background: oklch(0.972 0.007 250);
   --foreground: oklch(0.22 0.035 262);
@@ -284,6 +291,7 @@
   --foreground: oklch(0.95 0.008 250);
   --card: oklch(0.222 0.026 262);
   --popover: oklch(0.25 0.028 262);
+  --tick: var(--tick-dark);
   --raised: oklch(0.37 0.03 262);
   --primary: oklch(0.71 0.145 255);
   --primary-foreground: oklch(0.17 0.035 262);
@@ -340,8 +348,32 @@
   ::selection {
     background-color: var(--primary-soft);
   }
+  /* One checkbox everywhere: a rounded box that fills with the primary colour. */
   input[type="checkbox"] {
-    accent-color: var(--primary);
+    appearance: none;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 1.5px solid var(--input);
+    border-radius: 0.4375rem;
+    background: var(--card) center / 78% no-repeat;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-out-soft),
+      border-color var(--dur-fast) var(--ease-out-soft);
+  }
+  input[type="checkbox"]:checked {
+    border-color: var(--primary);
+    background-color: var(--primary);
+    background-image: var(--tick);
+  }
+  input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
   }
 }
 
