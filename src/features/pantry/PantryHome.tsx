@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChefHat, Plus, Receipt, Search, Settings } from "lucide-react";
+import { ChefHat, List, Plus, Receipt, Search, Settings, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CookPage } from "@/features/cook/CookPage";
@@ -13,6 +13,18 @@ import { PantrySheet } from "./PantrySheet";
 import { ReceiptPage } from "./ReceiptPage";
 import { SettingsSheet } from "./SettingsSheet";
 import type { PantrySearch, Sheet } from "./sheets";
+
+/** One of the four things you do from the kitchen: a big target with the icon above the word. */
+function Action({ icon: Icon, label, primary = false, onClick }: { icon: LucideIcon; label: string; primary?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="tile press flex min-h-[4.75rem] flex-col items-center justify-center gap-1.5 px-1 py-2.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <span className={primary ? "flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground" : "flex h-9 w-9 items-center justify-center rounded-full bg-secondary"}>
+        <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+      </span>
+      {label}
+    </button>
+  );
+}
 
 /** The Pantry screen: the kitchen with a few buttons. Everything else opens as a sheet over it. */
 export function PantryHome({ search }: { search: PantrySearch }) {
@@ -39,33 +51,25 @@ export function PantryHome({ search }: { search: PantrySearch }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="Search"
             placeholder="Search"
-            className="h-11 rounded-xl pl-9 text-base sm:text-sm"
+            className="h-12 rounded-full pl-11 text-base sm:text-sm"
             value={search.q ?? ""}
             onChange={(e) => void navigate({ search: { ...search, q: e.target.value || undefined }, replace: true })}
             onKeyDown={(e) => e.key === "Enter" && search.q && void openSheet("items")}
           />
         </div>
-        <Button variant="outline" size="icon" className="h-11 w-11 shrink-0" aria-label="Settings" onClick={() => void openSheet("settings")}>
+        <Button variant="outline" size="icon" className="h-12 w-12 shrink-0" aria-label="Settings" onClick={() => void openSheet("settings")}>
           <Settings className="h-5 w-5" />
         </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button className="h-11" onClick={() => void openSheet("receipt")}>
-          <Receipt className="mr-1 h-4 w-4" /> Add receipt
-        </Button>
-        <Button variant="outline" className="h-11" onClick={() => setAdding(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Add item
-        </Button>
-        <Button variant="outline" className="h-11" onClick={() => void openSheet("cook")}>
-          <ChefHat className="mr-1 h-4 w-4" /> Cook
-        </Button>
-        <Button variant="ghost" className="h-11 text-muted-foreground" onClick={() => void openSheet("items")}>
-          All items
-        </Button>
+      <div className="grid grid-cols-4 gap-2">
+        <Action primary icon={Receipt} label="Add receipt" onClick={() => void openSheet("receipt")} />
+        <Action icon={Plus} label="Add item" onClick={() => setAdding(true)} />
+        <Action icon={ChefHat} label="Cook" onClick={() => void openSheet("cook")} />
+        <Action icon={List} label="All items" onClick={() => void openSheet("items")} />
       </div>
 
       <KitchenScreen

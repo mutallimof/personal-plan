@@ -5,11 +5,14 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 export function PantrySheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="bottom" className="h-dvh w-full max-w-none overflow-y-auto border-0 p-0 sm:rounded-none" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-10 pt-5">
-          <SheetTitle className="pr-10 text-xl">{title}</SheetTitle>
+      {/* The title and the close button stay put; only the part below them scrolls. */}
+      <SheetContent side="bottom" className="flex h-dvh w-full max-w-none flex-col gap-0 border-0 p-0 sm:rounded-none" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <header className="mx-auto flex h-[4.25rem] w-full max-w-3xl shrink-0 items-center pl-4 pr-16">
+          <SheetTitle className="truncate text-2xl">{title}</SheetTitle>
           <SheetDescription className="sr-only">{title}</SheetDescription>
-          {children}
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-1">{children}</div>
         </div>
       </SheetContent>
     </Sheet>
