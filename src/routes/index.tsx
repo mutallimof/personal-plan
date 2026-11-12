@@ -27,7 +27,7 @@ function Index() {
   }, [navigate]);
 
   return (
-    <main className="relative flex min-h-dvh flex-col overflow-hidden px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-10">
+    <main className="relative flex min-h-dvh flex-col overflow-hidden px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[calc(2.5rem+env(safe-area-inset-top))]">
       {/* a low sun behind the sprout */}
       <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-22rem] h-[44rem] w-[44rem] -translate-x-1/2 rounded-full bg-primary-soft/45" />
       <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-12rem] h-[30rem] w-[30rem] -translate-x-1/2 rounded-full bg-primary-soft/70" />

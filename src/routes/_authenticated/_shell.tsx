@@ -83,7 +83,7 @@ function Shell() {
       </aside>
 
       <main className="min-w-0 flex-1 pb-[calc(var(--dock)+2.5rem+env(safe-area-inset-bottom))] md:pb-10">
-        <div className="mx-auto max-w-5xl px-4 pt-5 sm:px-8 sm:pt-8">
+        <div className="mx-auto max-w-5xl px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
           <Outlet />
         </div>
       </main>

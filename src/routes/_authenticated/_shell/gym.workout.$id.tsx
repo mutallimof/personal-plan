@@ -190,7 +190,7 @@ function WorkoutPage() {
         ))}
       </div>
 
-      <div className="fixed inset-x-3 bottom-[calc(var(--dock)+1.25rem+env(safe-area-inset-bottom))] z-20 rounded-full border bg-card/95 p-1.5 shadow-pop backdrop-blur md:sticky md:inset-x-auto md:bottom-4">
+      <div className="fixed inset-x-3 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4rem+0.75rem)] z-20 rounded-full border bg-card/95 p-1.5 shadow-pop backdrop-blur md:sticky md:inset-x-auto md:bottom-4">
         <div className="mx-auto flex max-w-5xl gap-2 md:px-0">
           <Button className="h-12 flex-1" disabled={saving || doneCount === 0} onClick={finish}>
             Finish workout

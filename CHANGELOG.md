@@ -6,6 +6,7 @@ Changes on branch `build-v1`. Behavior changes to existing features are marked *
 Looks only: no data, query or rule changed, no migration. The rules are in `docs/STYLE.md`.
 
 - **Behavior:** Workout: every exercise card has an info button that opens the how-to steps, images and muscle diagram in a sheet; the workout stays as it is.
+- **Behavior:** phones with a notch or status bar: pages start below it and the workout's Finish bar always sits a fixed gap above the dock, also with a home indicator (`viewport-fit=cover`, safe-area insets).
 - **Behavior:** sign-in has "Forgot password?": it emails a reset link (Supabase) that opens `/reset-password`, where the new password is set. The link returns to whatever address the app is open on.
 - **Behavior:** deleting a plan day asks in a dialog (was the browser's own confirm, which some phone browsers and installed apps hide, so the button seemed to do nothing). A delete that removes no row now shows an error instead of passing silently.
 - **Behavior:** in the fridge and freezer, tapping a shelf or drawer (also an "Empty" one) opens a list of all its items, including those hidden behind "+3", with quantity and Edit, Move, Remove and Add.

@@ -86,7 +86,7 @@ function Onboarding() {
   }
 
   return (
-    <main className="mx-auto max-w-lg space-y-8 px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-10">
+    <main className="mx-auto max-w-lg space-y-8 px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[calc(2.5rem+env(safe-area-inset-top))]">
       <Logo />
       <h1 className="text-4xl leading-none">Let's set up your plan</h1>
 
