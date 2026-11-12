@@ -185,6 +185,7 @@ describe("requests to the provider", () => {
     expect(err.message).toMatch(/HTTP 429/);
     expect(err.message).toMatch(/AI_MODEL/);
     expect(err.message).not.toMatch(/test-key/);
+    expect(err.message).toMatch(/fallback model "gemini-3.6-flash" failed too \(quota, HTTP 429\)/);
     expect(bodies).toHaveLength(2); // one try per model: a quota error is not retried
   });
 

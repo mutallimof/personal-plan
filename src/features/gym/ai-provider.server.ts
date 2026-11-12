@@ -245,6 +245,7 @@ async function send(messages: ChatMessage[], tools: ToolDef[] | undefined, strea
   const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const base = envMs("AI_RETRY_BASE_MS", 1000);
   let first: { failure: Failure; model: string } | null = null;
+  let tried: { failure: Failure; model: string } | null = null;
   for (const m of fallback ? [model, fallback] : [model]) {
     let last: Failure | null = null;
     for (let n = 1; n <= MAX_ATTEMPTS; n++) {
@@ -259,9 +260,11 @@ async function send(messages: ChatMessage[], tools: ToolDef[] | undefined, strea
       if (!RETRYABLE.has(last.kind) || n === MAX_ATTEMPTS) break;
       await sleep(Math.min(MAX_WAIT_MS, last.retryAfterMs ?? base * 2 ** (n - 1)) + Math.random() * base * 0.2);
     }
-    first ??= { failure: last!, model: m };
+    if (first) tried = { failure: last!, model: m };
+    else first = { failure: last!, model: m };
   }
-  throw new AiError(describeFailure(first!.failure, first!.model));
+  const fallbackNote = tried ? ` The fallback model "${tried.model}" failed too (${tried.failure.kind}${tried.failure.status ? `, HTTP ${tried.failure.status}` : ""}).` : "";
+  throw new AiError(describeFailure(first!.failure, first!.model) + fallbackNote);
 }
 
 function toReply(content: string | null | undefined, rawCalls: ToolCall[] | undefined): ModelReply {
