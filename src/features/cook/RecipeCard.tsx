@@ -26,15 +26,15 @@ type Props = {
 
 export function RecipeCard({ title, servings, facts, missing = [], expiring = false, actions, children, className }: Props) {
   return (
-    <article className={cn("space-y-2 rounded-2xl bg-card p-4", className)}>
+    <article className={cn("space-y-2 tile p-4", className)}>
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-medium">{title}</h3>
-        <span className="shrink-0 text-xs text-muted-foreground">
+        <h3 className="text-[17px] font-semibold leading-snug">{title}</h3>
+        <span className="shrink-0 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
           {servings} {servings === 1 ? "serving" : "servings"}
         </span>
       </div>
       <NutritionLine facts={facts} />
-      {expiring && <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Uses food that expires soon</span>}
+      {expiring && <span className="inline-block rounded-full bg-warning-soft px-2.5 py-0.5 text-xs font-semibold text-warning-ink">Uses food that expires soon</span>}
       {missing.length > 0 && <MissingToList missing={missing} />}
       {children}
       {actions && <div className="flex flex-wrap gap-2 pt-1">{actions}</div>}

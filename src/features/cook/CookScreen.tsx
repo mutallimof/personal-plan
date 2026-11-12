@@ -76,13 +76,13 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{recipe.title}</h2>
+        <h2 className="text-xl font-semibold">{recipe.title}</h2>
         <p className="text-sm text-muted-foreground">
           {formatAmounts(facts.perServing)} per portion ({approxLabel(facts.missing.length)})
         </p>
       </div>
 
-      <label className="flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-card px-4 text-sm">
+      <label className="tile flex items-center justify-between gap-3 py-2 pl-4 pr-2 text-sm font-medium">
         Servings
         <Input
           aria-label="Servings"
@@ -96,7 +96,7 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
         />
       </label>
 
-      <label className="flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-card px-4 text-sm">
+      <label className="tile flex items-center justify-between gap-3 py-2 pl-4 pr-2 text-sm font-medium">
         Portions I eat
         <Input
           aria-label="Portions I eat"
@@ -112,7 +112,7 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
 
       <ul className="space-y-2">
         {lines.map((l) => (
-          <li key={l.id} className={cn("space-y-2 rounded-2xl bg-card p-4", l.skip && "opacity-60")}>
+          <li key={l.id} className={cn("space-y-2 tile p-4", l.skip && "opacity-60")}>
             <div className="flex items-center justify-between gap-3">
               <span className="font-medium">{l.name}</span>
               <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -139,7 +139,7 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
         ))}
       </ul>
 
-      <Button className="h-12 w-full" disabled={busy || !validServings || !validPortions} onClick={confirm}>
+      <Button size="lg" className="w-full" disabled={busy || !validServings || !validPortions} onClick={confirm}>
         Cook
       </Button>
       <Button variant="ghost" className="h-11 w-full" disabled={busy} onClick={onCancel}>

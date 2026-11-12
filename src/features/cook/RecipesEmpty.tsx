@@ -40,7 +40,7 @@ export function RecipesEmpty({ onAdd, onOpenSettings, aiChat }: Props) {
   }
 
   return (
-    <div className="space-y-4 rounded-2xl bg-card p-6 text-center">
+    <div className="space-y-4 rounded-2xl border border-dashed border-input p-8 text-center">
       <p className="text-sm text-muted-foreground">No recipes yet.</p>
       <div className="flex flex-wrap justify-center gap-2">
         <Button className="h-11" onClick={onAdd}>
@@ -54,7 +54,7 @@ export function RecipesEmpty({ onAdd, onOpenSettings, aiChat }: Props) {
       {!aiChat && (
         <p className="text-xs text-muted-foreground">
           AI cooking chat is off.{" "}
-          <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={onOpenSettings}>
+          <button type="button" className="min-h-11 font-semibold text-primary-ink underline underline-offset-2" onClick={onOpenSettings}>
             Turn it on in Settings
           </button>
         </p>

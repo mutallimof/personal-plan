@@ -68,7 +68,7 @@ export function RecipeForm({ initial, recipeId, items, onSaved, onCancel }: Prop
   return (
     <div className="space-y-4">
       <Input aria-label="Recipe name" placeholder="Recipe name" className="h-12 text-base sm:text-sm" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <label className="flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-card px-4 text-sm">
+      <label className="flex min-h-11 items-center justify-between gap-3 tile px-4 text-sm">
         Servings
         <Input
           aria-label="Servings"
@@ -89,7 +89,7 @@ export function RecipeForm({ initial, recipeId, items, onSaved, onCancel }: Prop
       </datalist>
       <ul className="space-y-2">
         {rows.map((r, i) => (
-          <li key={i} className="space-y-2 rounded-2xl bg-card p-3">
+          <li key={i} className="space-y-2 tile p-3">
             <div className="flex gap-2">
               <Input
                 aria-label={`Ingredient ${i + 1}`}
@@ -138,7 +138,7 @@ export function RecipeForm({ initial, recipeId, items, onSaved, onCancel }: Prop
       <Textarea
         aria-label="Steps"
         placeholder="Steps, one per line"
-        className="min-h-32 rounded-2xl bg-card text-base sm:text-sm"
+        className="min-h-32 tile text-base sm:text-sm"
         value={stepsText}
         onChange={(e) => setStepsText(e.target.value)}
       />

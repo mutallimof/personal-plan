@@ -125,15 +125,15 @@ export function CanCookTab() {
 
       {meals.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Cooked recently</h2>
+          <h2 className="eyebrow px-1">Cooked recently</h2>
           {today.meals > 0 && (
-            <p className="rounded-2xl bg-card p-4 text-sm">
+            <p className="tile p-4 text-sm">
               Today: {formatAmounts(today)} ({approxLabel(today.missing)})
             </p>
           )}
           <ul className="space-y-2">
             {meals.slice(0, 8).map((m) => (
-              <li key={m.id} className="flex items-center justify-between gap-3 rounded-2xl bg-card p-4 text-sm">
+              <li key={m.id} className="flex items-center justify-between gap-3 tile p-4 text-sm">
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{m.title}</span>
                   <span className="text-xs text-muted-foreground">
