@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,16 +27,22 @@ function Index() {
   }, [navigate]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 text-center">
-      <div className="flex items-center gap-2">
-        <span className="h-3 w-3 rounded-full bg-primary" />
-        <span className="text-lg font-semibold tracking-tight">Lifeplan</span>
+    <main className="relative flex min-h-dvh flex-col overflow-hidden px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-10">
+      {/* a low sun behind the sprout */}
+      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-22rem] h-[44rem] w-[44rem] -translate-x-1/2 rounded-full bg-primary-soft/45" />
+      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-12rem] h-[30rem] w-[30rem] -translate-x-1/2 rounded-full bg-primary-soft/70" />
+
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-5 text-center">
+        <LogoMark animated className="h-24 w-24 rounded-[27%] shadow-float" />
+        <h1 className="animate-rise text-6xl font-extrabold leading-none [animation-delay:300ms]">Lifeplan</h1>
+        <p className="max-w-[17rem] animate-rise text-balance text-lg leading-snug text-muted-foreground [animation-delay:420ms]">Training, kitchen and meals in one plan.</p>
       </div>
-      <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">Your training, planned.</h1>
-      <p className="max-w-md text-muted-foreground">Sessions, weights and schedule — change anything by tapping or by asking.</p>
-      <Button asChild size="lg" className="h-12 rounded-full px-8">
-        <Link to="/auth">Get started</Link>
-      </Button>
+
+      <div className="relative mx-auto w-full max-w-sm animate-rise [animation-delay:540ms]">
+        <Button asChild size="lg" className="w-full">
+          <Link to="/auth">Get started</Link>
+        </Button>
+      </div>
     </main>
   );
 }

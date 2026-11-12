@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { gym } from "@/features/gym/data";
 import { generatePlan } from "@/features/gym/ai.functions";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   // Already set up? Skip straight to the app. New users (no profile or onboarded = false) stay here.
@@ -32,7 +33,7 @@ function Chips({ options, value, onChange }: { options: (string | number)[]; val
           key={o}
           onClick={() => onChange(o as never)}
           aria-pressed={value === o}
-          className={cn("h-11 rounded-full border px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", value === o ? "border-primary bg-accent text-accent-foreground" : "bg-background")}
+          className={cn("press h-11 rounded-full border px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", value === o ? "border-primary-ink bg-accent font-semibold text-accent-foreground" : "border-input bg-card")}
         >
           {o}
         </button>
@@ -85,12 +86,9 @@ function Onboarding() {
   }
 
   return (
-    <main className="mx-auto max-w-lg space-y-8 px-5 py-10">
-      <div className="flex items-center gap-2">
-        <span className="h-3 w-3 rounded-full bg-primary" />
-        <span className="font-semibold">Lifeplan</span>
-      </div>
-      <h1 className="text-3xl font-semibold tracking-tight">Let's set up your plan</h1>
+    <main className="mx-auto max-w-lg space-y-8 px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-10">
+      <Logo />
+      <h1 className="text-4xl leading-none">Let's set up your plan</h1>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="space-y-1.5 text-sm font-medium">
@@ -110,7 +108,7 @@ function Onboarding() {
         <p className="text-sm font-medium">Sessions per week</p>
         <div className="flex flex-wrap items-center gap-2">
           <Chips options={[3, 4, 5]} value={perWeek} onChange={setPerWeek} />
-          <button type="button" onClick={() => setPerWeek(0)} aria-pressed={perWeek === 0} className={cn("h-11 rounded-full border px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", perWeek === 0 ? "border-primary bg-accent text-accent-foreground" : "")}>
+          <button type="button" onClick={() => setPerWeek(0)} aria-pressed={perWeek === 0} className={cn("press h-11 rounded-full border px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", perWeek === 0 ? "border-primary-ink bg-accent font-semibold text-accent-foreground" : "border-input bg-card")}>
             More
           </button>
           {perWeek === 0 && <Input className="h-11 w-20" aria-label="Sessions per week" inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="6" />}
@@ -122,10 +120,10 @@ function Onboarding() {
       </section>
 
       <div className="space-y-3">
-        <Button className="h-12 w-full" disabled={!!busy} onClick={() => run("ai")}>
+        <Button size="lg" className="w-full" disabled={!!busy} onClick={() => run("ai")}>
           {busy === "ai" ? "Building your plan…" : "Generate my plan"}
         </Button>
-        <Button variant="secondary" className="h-12 w-full" disabled={!!busy} onClick={() => run("example")}>
+        <Button variant="outline" size="lg" className="w-full" disabled={!!busy} onClick={() => run("example")}>
           {busy === "example" ? "Loading…" : "Use the example plan"}
         </Button>
       </div>
