@@ -119,7 +119,7 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
 
   if (!settings.aiChat) {
     return (
-      <div className="space-y-3 rounded-2xl bg-card p-6 text-center">
+      <div className="space-y-3 tile p-6 text-center">
         <p className="text-sm text-muted-foreground">AI cooking chat is off.</p>
         <Button className="h-11" onClick={onOpenSettings}>
           Turn it on in Settings
@@ -129,11 +129,11 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-1 flex-col gap-4">
       {!messages.length && (
         <div className="space-y-2">
           {EXAMPLES.map((e) => (
-            <button key={e} type="button" className="flex min-h-11 w-full items-center rounded-2xl bg-card px-4 text-left text-sm" onClick={() => void send(e)}>
+            <button key={e} type="button" className="tile press flex min-h-13 w-full items-center gap-3 px-4 text-left text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => void send(e)}>
               {e}
             </button>
           ))}
@@ -143,17 +143,17 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
         {messages.map((m) => (
           <li key={m.id} className={m.role === "user" ? "flex justify-end" : "space-y-3"}>
             {m.role === "user" ? (
-              <p className="max-w-[85%] rounded-2xl bg-primary px-4 py-2 text-sm text-primary-foreground">{m.text}</p>
+              <p className="max-w-[85%] rounded-3xl rounded-br-lg bg-primary px-4 py-2.5 text-[15px] text-primary-foreground">{m.text}</p>
             ) : (
               <>
                 {m.streaming && !m.text ? (
-                  <p role="status" aria-label="Thinking" className="inline-flex items-center gap-1 rounded-2xl bg-card px-4 py-3" data-typing>
+                  <p role="status" aria-label="Thinking" className="inline-flex items-center gap-1 rounded-3xl rounded-bl-lg border bg-card px-4 py-3.5" data-typing>
                     {[0, 1, 2].map((i) => (
                       <span key={i} className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 motion-reduce:animate-none" style={{ animationDelay: `${i * 150}ms` }} />
                     ))}
                   </p>
                 ) : (
-                  <p role={m.error ? "alert" : undefined} aria-busy={m.streaming || undefined} className={m.error ? "rounded-2xl bg-card px-4 py-2 text-sm text-destructive" : "rounded-2xl bg-card px-4 py-2 text-sm"}>
+                  <p role={m.error ? "alert" : undefined} aria-busy={m.streaming || undefined} className={m.error ? "w-fit max-w-[92%] rounded-3xl rounded-bl-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-[15px] text-destructive" : "w-fit max-w-[92%] rounded-3xl rounded-bl-lg border bg-card px-4 py-2.5 text-[15px] leading-relaxed"}>
                     {m.text}
                   </p>
                 )}
@@ -165,15 +165,15 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
           </li>
         ))}
       </ul>
-      <div ref={end} />
+      <div ref={end} className="flex-1" />
       <form
-        className="sticky bottom-0 flex gap-2 bg-background pb-2 pt-1"
+        className="sticky bottom-[5rem] z-10 flex gap-2 rounded-full border bg-card p-1.5 shadow-pop"
         onSubmit={(e) => {
           e.preventDefault();
           void send(text);
         }}
       >
-        <Input aria-label="Ask what to cook" placeholder="What can I cook in 30 minutes?" className="h-11 text-base sm:text-sm" value={text} maxLength={1000} onChange={(e) => setText(e.target.value)} />
+        <Input aria-label="Ask what to cook" placeholder="What can I cook in 30 minutes?" className="h-11 rounded-full border-0 bg-transparent text-base focus-visible:ring-0 sm:text-sm" value={text} maxLength={1000} onChange={(e) => setText(e.target.value)} />
         <Button type="submit" size="icon" className="h-11 w-11 shrink-0" aria-label="Send" disabled={busy || !text.trim()}>
           <Send className="h-4 w-4" />
         </Button>
@@ -212,7 +212,7 @@ function IdeaCard({ recipe, items, nutrition, onCook }: CardProps) {
 
   return (
     <RecipeCard
-      className="bg-background ring-1 ring-border"
+      className="shadow-pop"
       title={recipe.title}
       servings={recipe.servings}
       facts={recipeNutrition(draft.ingredients, nutrition, recipe.servings)}

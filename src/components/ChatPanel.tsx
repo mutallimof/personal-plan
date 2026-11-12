@@ -98,7 +98,7 @@ export function ChatPanel() {
               submit();
             }}
           >
-            <div className="flex items-end gap-2 rounded-2xl bg-card p-2">
+            <div className="flex items-end gap-2 tile p-2">
               <textarea
                 ref={inputRef}
                 rows={1}
