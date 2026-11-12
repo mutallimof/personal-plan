@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BodyMap } from "@/features/gym/BodyMap";
-import { ExerciseImages } from "@/features/gym/ExerciseImages";
+import { ExerciseGuide } from "@/features/gym/ExerciseGuide";
 import { exercisesQuery, gym, planQuery, useInvalidateGym, type Exercise } from "@/features/gym/data";
 import { ProgressChart, ReadyBadge, isReady, useExerciseSessions } from "@/features/gym/progress-ui";
 import { Loading, QueryError } from "@/components/states";
@@ -195,15 +195,7 @@ function ExercisePage() {
             )}
           </div>
 
-          <ExerciseImages slug={exercise.slug} name={exercise.name} />
-
-          {exercise.steps.length > 0 && (
-            <ol className="list-decimal space-y-2 tile py-4 pl-9 pr-4 text-sm">
-              {exercise.steps.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ol>
-          )}
+          <ExerciseGuide exercise={exercise} />
         </div>
       </div>
 

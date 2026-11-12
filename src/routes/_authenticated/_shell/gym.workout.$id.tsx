@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Info } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { QueryError } from "@/components/states";
-import { gym, planQuery, useInvalidateGym } from "@/features/gym/data";
+import { BodyMap } from "@/features/gym/BodyMap";
+import { ExerciseGuide } from "@/features/gym/ExerciseGuide";
+import { exercisesQuery, gym, planQuery, useInvalidateGym } from "@/features/gym/data";
 import { weightUpdates, type WeightUpdate } from "@/features/gym/progress";
 import { draftFromPlan, setRowsFromDraft, type DraftExercise } from "@/features/gym/workout";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,8 @@ function WorkoutPage() {
   const invalidate = useInvalidateGym();
   const { data: sessions, isLoading, isError, refetch } = useQuery(planQuery);
   const session = sessions?.find((s) => s.id === id);
+  const { data: library } = useQuery(exercisesQuery);
+  const [info, setInfo] = useState<string | null>(null);
 
   const [state, setState] = useState<Saved | null>(null);
   const [saving, setSaving] = useState(false);
@@ -130,6 +134,7 @@ function WorkoutPage() {
     leave();
   }
 
+  const infoExercise = info ? library?.find((e) => e.id === info) : undefined;
   const names = new Map(state.draft.map((d) => [d.exerciseId, d.name]));
 
   return (
@@ -148,12 +153,23 @@ function WorkoutPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {state.draft.map((ex, ei) => (
           <section key={ex.itemId} className="space-y-3 tile p-4" aria-label={ex.name}>
-            <div>
-              <h2 className="font-medium">{ex.name}</h2>
-              <p className="text-xs text-muted-foreground">
-                {ex.sets.length} × {ex.plannedReps}
-                {ex.plannedWeight != null && ` · ${ex.plannedWeight} kg`}
-              </p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h2 className="font-medium">{ex.name}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {ex.sets.length} × {ex.plannedReps}
+                  {ex.plannedWeight != null && ` · ${ex.plannedWeight} kg`}
+                </p>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="-mr-2 -mt-2 shrink-0"
+                aria-label={`How to do ${ex.name}`}
+                onClick={() => setInfo(ex.exerciseId)}
+              >
+                <Info className="h-5 w-5" />
+              </Button>
             </div>
             <div className="grid grid-cols-[1.5rem_1fr_1fr_2.75rem] items-center gap-2 text-xs text-muted-foreground">
               <span />
@@ -191,6 +207,20 @@ function WorkoutPage() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={!!infoExercise} onOpenChange={(o) => !o && setInfo(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{infoExercise?.name}</DialogTitle>
+          </DialogHeader>
+          {infoExercise && (
+            <div className="space-y-5">
+              <BodyMap primary={infoExercise.primary_muscles} secondary={infoExercise.secondary_muscles} />
+              <ExerciseGuide exercise={infoExercise} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!offer}
