@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 export function PantrySheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="bottom" className="h-dvh w-full max-w-none overflow-y-auto p-0 sm:rounded-none">
+      <SheetContent side="bottom" className="h-dvh w-full max-w-none overflow-y-auto border-0 p-0 sm:rounded-none" onOpenAutoFocus={(e) => e.preventDefault()}>
         <div className="mx-auto w-full max-w-3xl space-y-5 px-4 pb-10 pt-5">
           <SheetTitle className="pr-10 text-xl">{title}</SheetTitle>
           <SheetDescription className="sr-only">{title}</SheetDescription>

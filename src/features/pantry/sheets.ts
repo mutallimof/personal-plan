@@ -2,7 +2,7 @@
 export const SHEETS = ["receipt", "cook", "items", "settings"] as const;
 export type Sheet = (typeof SHEETS)[number];
 
-export const SETTINGS_SECTIONS = ["dictionary", "categories", "nutrition", "ai", "layout"] as const;
+export const SETTINGS_SECTIONS = ["appearance", "dictionary", "categories", "nutrition", "ai", "layout"] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export type PantrySearch = {
