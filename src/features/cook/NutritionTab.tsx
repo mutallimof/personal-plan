@@ -29,7 +29,7 @@ export function NutritionTab() {
     <div className="space-y-6">
       <EatenSection />
       <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Foods</h2>
+      <h2 className="text-xl font-semibold">Foods</h2>
       <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -46,7 +46,7 @@ export function NutritionTab() {
         <ul className="space-y-2">
           {shown.map((r) => (
             <li key={r.id}>
-              <button type="button" className="w-full rounded-2xl bg-card p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setEditing(r)}>
+              <button type="button" className="tile press w-full p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setEditing(r)}>
                 <span className="flex items-baseline justify-between gap-3">
                   <span className="font-medium">{r.name}</span>
                   <span className="shrink-0 text-xs text-muted-foreground">{isBasis(r.basis) ? BASIS_LABEL[r.basis] : r.basis}</span>

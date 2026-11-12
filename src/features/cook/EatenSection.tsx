@@ -37,11 +37,11 @@ export function EatenSection() {
 
   return (
     <section className="space-y-4" aria-label="What I ate">
-      <h2 className="text-lg font-semibold">Eaten</h2>
+      <h2 className="text-xl font-semibold">Eaten</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl bg-card p-4">
-          <p className="text-sm text-muted-foreground">Today</p>
-          <p className="text-2xl font-semibold">{kcalText(today.kcal)}</p>
+        <div className="tile p-4">
+          <p className="eyebrow">Today</p>
+          <p className="font-heading text-3xl font-bold tabular-nums">{kcalText(today.kcal)}</p>
           {today.meals > 0 ? (
             <p className="text-sm text-muted-foreground">
               {totalsText({ ...today, kcal: today.kcal }).split(" · ").slice(1).join(" · ")} ({approxLabel(today.missing)})
@@ -50,9 +50,9 @@ export function EatenSection() {
             <p className="text-sm text-muted-foreground">Nothing logged yet. Cook a recipe to log it.</p>
           )}
         </div>
-        <div className="rounded-2xl bg-card p-4">
-          <p className="text-sm text-muted-foreground">Last 7 days</p>
-          <p className="text-2xl font-semibold">{kcalText(week.total.kcal)}</p>
+        <div className="tile p-4">
+          <p className="eyebrow">Last 7 days</p>
+          <p className="font-heading text-3xl font-bold tabular-nums">{kcalText(week.total.kcal)}</p>
           <p className="text-sm text-muted-foreground">
             {week.activeDays > 0
               ? `${totalsText(week.total).split(" · ").slice(1).join(" · ")} · about ${kcalText(week.averageKcal)} a day`
@@ -80,7 +80,7 @@ function WeekChart({ days }: { days: readonly DayBar[] }) {
   const shown = days[active] ?? days[days.length - 1];
 
   return (
-    <div className="space-y-2 rounded-2xl bg-card p-4">
+    <div className="space-y-2 tile p-4">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="group" aria-label="Energy eaten on each of the last 7 days">
         <line x1={0} x2={W} y1={BASE} y2={BASE} className="stroke-border" strokeWidth={1} />
         {days.map((d, i) => {
@@ -105,9 +105,9 @@ function WeekChart({ days }: { days: readonly DayBar[] }) {
               <rect data-hit x={i * slot} y={0} width={slot} height={H} fill="transparent" strokeWidth={1.5} rx={4} />
               {h > 0 ? (
                 <>
-                  <rect x={x} y={BASE - h} width={bar} height={h} rx={4} className={cn("fill-primary", !selected && "opacity-60")} />
+                  <rect x={x} y={BASE - h} width={bar} height={h} rx={6} className={selected ? "fill-primary" : "fill-primary-soft"} />
                   {/* square off the bottom so the bar sits flat on the baseline */}
-                  <rect x={x} y={BASE - Math.min(4, h)} width={bar} height={Math.min(4, h)} className={cn("fill-primary", !selected && "opacity-60")} />
+                  <rect x={x} y={BASE - Math.min(6, h)} width={bar} height={Math.min(6, h)} className={selected ? "fill-primary" : "fill-primary-soft"} />
                 </>
               ) : (
                 <rect x={x} y={BASE - 2} width={bar} height={2} className="fill-muted-foreground opacity-40" />
@@ -132,7 +132,7 @@ function WeekChart({ days }: { days: readonly DayBar[] }) {
       )}
       <details className="text-sm">
         <summary className="min-h-8 cursor-pointer text-muted-foreground">Table</summary>
-        <table className="mt-2 w-full text-left">
+        <table className="mt-2 w-full text-left tabular-nums">
           <thead className="text-xs text-muted-foreground">
             <tr>
               <th className="py-1 font-normal">Day</th>
@@ -178,12 +178,12 @@ function MealLog({ meals, now }: { meals: readonly CookedLog[]; now: Date }) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-muted-foreground">Logged meals</h3>
+      <h3 className="eyebrow px-1">Logged meals</h3>
       <ul className="space-y-2">
         {meals.map((m) => {
           const recent = canUndo(m, now);
           return (
-            <li key={m.id} className="flex items-center justify-between gap-3 rounded-2xl bg-card p-4 text-sm">
+            <li key={m.id} className="flex items-center justify-between gap-3 tile p-4 text-sm">
               <span className="min-w-0">
                 <span className="block truncate font-medium">{m.title}</span>
                 <span className="block text-xs text-muted-foreground">
