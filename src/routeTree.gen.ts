@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DesignRouteImport } from './routes/design'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedShellRouteImport } from './routes/_authenticated/_shell'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedShellGymRouteImport } from './routes/_authenticated/_shell/gym'
@@ -49,6 +50,11 @@ const AuthRoute = AuthRouteImport.update({
 const DesignRoute = DesignRouteImport.update({
   id: '/design',
   path: '/design',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedShellRoute = AuthenticatedShellRouteImport.update({
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/design': typeof DesignRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/gym': typeof AuthenticatedShellGymRouteWithChildren
   '/languages': typeof AuthenticatedShellLanguagesRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/design': typeof DesignRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/languages': typeof AuthenticatedShellLanguagesRoute
   '/profile': typeof AuthenticatedShellProfileRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/design': typeof DesignRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/_shell': typeof AuthenticatedShellRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/_shell/gym': typeof AuthenticatedShellGymRouteWithChildren
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/design'
+    | '/reset-password'
     | '/onboarding'
     | '/gym'
     | '/languages'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/design'
+    | '/reset-password'
     | '/onboarding'
     | '/languages'
     | '/profile'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/design'
+    | '/reset-password'
     | '/_authenticated/_shell'
     | '/_authenticated/onboarding'
     | '/_authenticated/_shell/gym'
@@ -297,6 +309,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DesignRoute: typeof DesignRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -327,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/design'
       fullPath: '/design'
       preLoaderRoute: typeof DesignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_shell': {
@@ -541,6 +561,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DesignRoute: DesignRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

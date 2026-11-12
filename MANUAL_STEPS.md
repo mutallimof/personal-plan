@@ -88,3 +88,10 @@ Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lova
 4. **Needs a category:** items whose old category could not be converted by name (old `produce` that is neither fruit nor vegetable) are listed under All items > Needs a category.
 5. **Kaufland abbreviations:** only seven are seeded (`src/features/pantry/receipt-data.json`). Lines the parser cannot read stay "Unknown" in the review; confirm them once and they go into your dictionary. To add more, send the receipt line and the product.
 6. **Screenshots and the overlap check:** `node scripts/kitchen-shots/shoot.mjs screenshots/kitchen` and `npx tsx scripts/kitchen-shots/layout-check.ts` (both need Microsoft Edge; set `EDGE_PATH` otherwise).
+
+## 11. Password reset (build-fixes)
+1. **Redirect URLs:** Supabase -> Authentication -> URL Configuration -> Redirect URLs. Make sure these are listed (the `**` entries cover `/reset-password`; add the exact ones if you prefer):
+   `http://localhost:5173/reset-password` (use the port `npm run dev` prints), `http://localhost:5173/**`, `https://personal-plan-nine.vercel.app/reset-password` and `https://personal-plan-nine.vercel.app/**`.
+   Site URL should be `https://personal-plan-nine.vercel.app`. If a link opens the wrong address, this list is why.
+2. **Email:** Supabase -> Authentication -> Email Templates -> Reset Password must use `{{ .ConfirmationURL }}` (the default does). The built-in mail sender is limited to a few emails an hour; for more, add your own SMTP in Authentication -> SMTP.
+3. **Try it:** sign in page -> Forgot password? -> your email -> open the link -> choose a new password.
