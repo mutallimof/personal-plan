@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { StrictMode, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { item } from "@/features/pantry/fixtures";
 import type { PantrySettings } from "@/features/pantry/data";
@@ -123,6 +123,13 @@ describe("the chat", () => {
     expect(screen.getByRole("button", { name: "Add selected to shopping list" })).toBeInTheDocument();
     expect(shopping.add).not.toHaveBeenCalled(); // nothing is added until the button is pressed
     expect(screen.getByText("30 min")).toBeInTheDocument();
+  });
+
+  it("shows the answer under StrictMode, which runs state updaters twice", async () => {
+    ask.mockResolvedValueOnce(ndjson(done({ reply: "Pasta." })));
+    render(wrap(<StrictMode><CookChat settings={settings({ aiChat: true })} items={[chicken]} nutrition={rows} onOpenSettings={vi.fn()} /></StrictMode>));
+    await send("hi");
+    expect(await screen.findByText("Pasta.")).toBeInTheDocument();
   });
 
   it("keeps the conversation for the next question but not error messages", async () => {

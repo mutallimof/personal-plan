@@ -57,8 +57,10 @@ export function CookChat({ settings, items, nutrition, onOpenSettings }: Props) 
     const clean = message.trim();
     if (!clean || busy) return;
     const history = messages.filter((m) => !m.error && !m.streaming).map((m) => ({ role: m.role, content: m.text }));
-    const answerId = next.current + 1;
-    setMessages((all) => [...all, { id: next.current++, role: "user", text: clean }, { id: next.current++, role: "assistant", text: "", streaming: true }]);
+    // Take the ids here, not inside the updater: React may run an updater twice (StrictMode in dev).
+    const userId = next.current++;
+    const answerId = next.current++;
+    setMessages((all) => [...all, { id: userId, role: "user", text: clean }, { id: answerId, role: "assistant", text: "", streaming: true }]);
     setText("");
     setBusy(true);
     const patch = (change: Partial<Message>) => setMessages((all) => all.map((m) => (m.id === answerId ? { ...m, ...change } : m)));
