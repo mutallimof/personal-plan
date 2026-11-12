@@ -33,7 +33,7 @@ export function CategoriesSetting() {
 
   return (
     <div className="space-y-4">
-      <ul className="divide-y rounded-2xl bg-card">
+      <ul className="tile divide-y">
         {options.map((o) => (
           <li key={o.value} className="flex min-h-14 items-center gap-2 px-4">
             {editing === o.value ? (

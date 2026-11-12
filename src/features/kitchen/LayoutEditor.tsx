@@ -85,7 +85,7 @@ function HotspotForm({
   const setComp = (i: number, patch: Partial<Compartment>) =>
     onChange({ compartments: h.compartments.map((c, k) => (k === i ? { ...c, ...patch } : c)) });
   return (
-    <div className="space-y-3 rounded-2xl bg-card p-4">
+    <div className="space-y-3 tile p-4">
       <datalist id="layout-places">
         {placeNames.map((n) => (
           <option key={n} value={n} />
@@ -302,7 +302,7 @@ export function LayoutEditor() {
         />
       </div>
 
-      <ul className="divide-y rounded-2xl bg-card">
+      <ul className="tile divide-y">
         {layout.hotspots.map((h) => (
           <li key={h.key}>
             <button
