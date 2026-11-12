@@ -7,7 +7,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { readLayout, type Layout } from "./layout";
 import { DEFAULT_LAYOUT, fromLegacyZones, type LegacyZone } from "./legacy";
 import { missingPlaces, type NewPlace } from "./places";
-import { upgradeLayout } from "./upgrade";
+import { moveOutOfRemoved, tidyColdStorage, upgradeLayout } from "./upgrade";
 
 async function uid() {
   const { data } = await supabase.auth.getUser();
@@ -73,13 +73,36 @@ async function legacyZones(): Promise<LegacyZone[]> {
   }));
 }
 
-/** Adds the default fridge and freezer compartments a saved layout lacks, once. Nothing is removed or moved. */
+/** Moves the items of removed places to sensible shelves. Places are never deleted. */
+async function moveItemsOut(removed: readonly string[]): Promise<void> {
+  const places = check(await supabase.from("pantry_locations").select("*")) ?? [];
+  const items = check(await supabase.from("pantry_items").select("id,category,location_id")) ?? [];
+  for (const m of moveOutOfRemoved(items, places, removed))
+    check(await supabase.from("pantry_items").update({ location_id: m.location_id, shelf: null }).eq("id", m.id));
+}
+
+/**
+ * Brings a saved layout up to date, each step once: the default fridge and freezer compartments it lacks (nothing
+ * removed), then the revision-2 tidy-up (no Top/Middle/Bottom drawers; only Meat and fish is a drawer), which also
+ * moves the items of the removed drawers to shelves that fit them.
+ */
 async function upgradeOnce(user_id: string, saved: Layout): Promise<Layout> {
+  let layout = saved;
   const settings = check(await supabase.from("pantry_settings").select("layout_upgraded").eq("user_id", user_id).maybeSingle());
-  if (settings?.layout_upgraded) return saved;
-  const { layout, added } = upgradeLayout(saved);
-  if (added.length) await saveLayout(layout);
-  check(await supabase.from("pantry_settings").upsert({ user_id, layout_upgraded: true }));
+  if (!settings?.layout_upgraded) {
+    const up = upgradeLayout(saved);
+    if (up.added.length) {
+      layout = up.layout;
+      await saveLayout(layout);
+    }
+    check(await supabase.from("pantry_settings").upsert({ user_id, layout_upgraded: true }));
+  }
+  const tidy = tidyColdStorage(layout);
+  if (tidy.layout !== layout) {
+    if (tidy.removed.length) await moveItemsOut(tidy.removed);
+    await saveLayout(tidy.layout);
+    layout = tidy.layout;
+  }
   return layout;
 }
 

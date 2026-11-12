@@ -1,7 +1,7 @@
 import type { KeyboardEvent, PointerEvent } from "react";
 import type { PantryItem } from "@/features/pantry/model";
 import { iconUrl } from "@/features/pantry/icons/registry";
-import { badgeText, BOARD, cavity, expiryDot, labelSizeFor, layOutRow, PAD, rowParts, type Row, type Sprite } from "./interior";
+import { badgeText, BOARD, cavity, expiryDot, labelSizeFor, layOutRow, LINE, PAD, rowParts, type Row, type Sprite } from "./interior";
 import type { Hotspot } from "./layout";
 
 const OUTLINE = { stroke: "var(--k-line)", strokeWidth: 0.25, strokeLinejoin: "round" } as const;
@@ -178,10 +178,10 @@ export function Interior({
       {rows.map((r) => {
         const items = contents.get(r.id) ?? [];
         const labeled = r.label !== null && (full || h.compartments.length > 0);
-        const { header, stand, labelSize } = rowParts(r.rect, labeled ? labelSizeAll : 0);
+        const { side, stand, labelSize, lines } = rowParts(r.rect, labeled ? labelSizeAll : 0, r.label ?? "");
         const { sprites, overflow, more } = layOutRow(items, stand, full ? Infinity : IDLE_LIMIT);
         const boardY = r.rect.y + r.rect.height - BOARD;
-        // the height between the header and the board, where products stand
+        // the height above the board, where products stand
         const zone = stand.height - BOARD;
         const fs = Math.min(2.4, Math.max(1.3, zone * 0.34));
         const button = Math.min(3, Math.max(1.3, zone / 2 - 0.5));
@@ -190,9 +190,9 @@ export function Interior({
           <g key={r.id} data-row={r.id}>
             {r.kind === "drawer" ? (
               <rect
-                x={r.rect.x + 0.4}
+                x={stand.x + 0.4}
                 y={stand.y}
-                width={r.rect.width - 0.8}
+                width={stand.width - 0.8}
                 height={zone}
                 rx={0.8}
                 fill="var(--k-glass)"
@@ -201,9 +201,9 @@ export function Interior({
               />
             ) : r.kind === "door" ? (
               <rect
-                x={r.rect.x + 0.4}
+                x={stand.x + 0.4}
                 y={stand.y}
-                width={r.rect.width - 0.8}
+                width={stand.width - 0.8}
                 height={zone}
                 rx={0.6}
                 fill="var(--k-inside-dark)"
@@ -246,25 +246,30 @@ export function Interior({
               fill="var(--k-wood)"
               {...OUTLINE}
             />
-            {header && (
+            {side && (
               <text
                 data-label
-                x={header.x}
-                y={header.y + header.height / 2}
+                x={side.x + side.width - PAD}
+                y={side.y + side.height / 2 - ((lines.length - 1) * labelSize * LINE) / 2}
                 fontSize={labelSize}
+                textAnchor="end"
                 dominantBaseline="central"
                 fill="var(--k-label)"
                 fontWeight={600}
                 style={{ pointerEvents: "none" }}
               >
-                {r.label}
+                {lines.map((line, i) => (
+                  <tspan key={i} x={side.x + side.width - PAD} dy={i === 0 ? 0 : labelSize * LINE}>
+                    {line}
+                  </tspan>
+                ))}
               </text>
             )}
             {full && items.length === 0 && zone >= MIN_EMPTY_ZONE && (
               <g>
                 <text
                   data-empty
-                  x={r.rect.x + PAD + 0.6}
+                  x={stand.x + PAD + 0.6}
                   y={midY}
                   fontSize={fs}
                   dominantBaseline="central"
@@ -283,20 +288,20 @@ export function Interior({
                   onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onAdd(r)}
                 >
                   <circle
-                    cx={r.rect.x + r.rect.width - PAD - button}
+                    cx={stand.x + stand.width - PAD - button}
                     cy={midY}
                     r={Math.min(button + 1.2, zone / 2 - 0.1)}
                     fill="transparent"
                   />
                   <circle
-                    cx={r.rect.x + r.rect.width - PAD - button}
+                    cx={stand.x + stand.width - PAD - button}
                     cy={midY}
                     r={button}
                     fill="var(--k-badge)"
                     {...OUTLINE}
                   />
                   <text
-                    x={r.rect.x + r.rect.width - PAD - button}
+                    x={stand.x + stand.width - PAD - button}
                     y={midY}
                     fontSize={button * 1.3}
                     textAnchor="middle"

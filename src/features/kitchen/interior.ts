@@ -145,20 +145,19 @@ export type Sprite = { item: PantryItem; x: number; y: number; size: number; sta
 export const PAD = 1;
 /** Space between the top of the product area and the tallest product. */
 const TOP_GAP = 0.6;
-const MIN_SPRITE = 2.2;
-/** Smallest label strip, for rows that are too short for anything else. */
-const MIN_HEADER = 0.9;
-/** Pictures never get smaller than this, and never taller than the room between the header and the board. */
+/** Pictures never get smaller than this, and never taller than the room between the top of the row and the board. */
 const TINY_SPRITE = 0.8;
 const MAX_SPRITE = 7.5;
 
 export type RowParts = {
-  /** Strip above the products that holds the label; none for plain shelves. */
-  header: Rect | null;
-  /** The area below the header: products stand on its bottom board. */
+  /** Column on the right of the row that holds its name; none for plain shelves. */
+  side: Rect | null;
+  /** The part of the row left of the name: products stand on its bottom board. */
   stand: Rect;
-  /** Font size of the label (0 when there is none). */
+  /** Font size of the name (0 when there is none). */
   labelSize: number;
+  /** The name, broken into lines that fit the column. */
+  lines: string[];
 };
 
 /** One label size for every row of a cabinet, so the labels look alike: it follows the shortest row, within limits. */
@@ -167,19 +166,53 @@ export function labelSizeFor(rows: readonly Pick<Row, "rect">[]): number {
   return Math.min(1.5, Math.max(1.2, shortest * 0.18));
 }
 
+/** Width of a letter as a share of the font size: generous, so a name never runs out of its column. */
+const CHAR = 0.62;
+/** Line height as a share of the font size. */
+export const LINE = 1.2;
+const MAX_LINES = 3;
+const MIN_LABEL = 0.9;
+
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/** Breaks a name into at most `MAX_LINES` lines of at most `chars` letters, at spaces. */
+export function wrapLabel(text: string, chars: number): string[] {
+  const lines: string[] = [];
+  let cur = "";
+  for (const word of text.trim().split(/\s+/).filter(Boolean)) {
+    if (cur && (cur + " " + word).length > chars) {
+      lines.push(cur);
+      cur = word;
+    } else cur = cur ? cur + " " + word : word;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
 /**
- * Splits a row into a header strip for its label and the area where products stand. The label never shares
- * space with the products or the board, so nothing drawn in one part can touch another.
+ * Splits a row into a column on the right for its name and the area where products stand. The name never
+ * shares space with the products, their quantity chips or the board, so nothing drawn in one part can touch
+ * another. The name shrinks (and wraps) until it fits its column.
  */
-export function rowParts(row: Rect, labelSize: number): RowParts {
-  if (labelSize <= 0) return { header: null, stand: row, labelSize: 0 };
-  // on a short row the label shrinks first, so the products keep room to stand under it
-  const height = Math.min(labelSize * 1.5, Math.max(MIN_HEADER, row.height - (BOARD + TOP_GAP + MIN_SPRITE)));
-  return {
-    header: { x: row.x + PAD, y: row.y, width: row.width - 2 * PAD, height },
-    stand: { x: row.x, y: row.y + height, width: row.width, height: row.height - height },
-    labelSize: height / 1.5,
-  };
+export function rowParts(row: Rect, labelSize: number, text = ""): RowParts {
+  if (labelSize <= 0) return { side: null, stand: row, labelSize: 0, lines: [] };
+  const width = clamp(row.width * 0.34, 7.5, 12);
+  const side: Rect = { x: row.x + row.width - width, y: row.y, width, height: row.height - BOARD };
+  const stand: Rect = { x: row.x, y: row.y, width: row.width - width, height: row.height };
+  const room = width - 2 * PAD;
+  let size = labelSize;
+  let lines = wrapLabel(text, Math.max(1, Math.floor(room / (size * CHAR))));
+  // shrink until the longest line fits the width and all lines fit the height
+  while (
+    size > MIN_LABEL &&
+    (lines.length > MAX_LINES ||
+      Math.max(0, ...lines.map((l) => l.length)) * size * CHAR > room ||
+      lines.length * size * LINE > side.height - 0.4)
+  ) {
+    size = Math.max(MIN_LABEL, size - 0.05);
+    lines = wrapLabel(text, Math.max(1, Math.floor(room / (size * CHAR))));
+  }
+  return { side, stand, labelSize: size, lines };
 }
 
 /** Height of a product picture on the standing area of a row, in room units: it always fits above the board. */

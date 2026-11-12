@@ -2,6 +2,11 @@
 
 Changes on branch `build-v1`. Behavior changes to existing features are marked **Behavior**.
 
+## Feedback round (branch `build-fixes`)
+### Fridge and freezer
+- **Behavior:** the compartment names are now on the right side of each row (wrapped and shrunk to fit their column), so they never overlap pictures, quantity chips or the Empty / + controls. Products stand in the part left of the name.
+- **Behavior:** the fridge and the freezer have one drawer, **Meat and fish**. Vegetables, Fruit, Vegetables and fruit, Ready meals and Other are open shelves where the items are visible. Saved layouts are tidied once (layout `rev` 2, stored inside the layout file, no migration): Top, Middle and Bottom drawer compartments are removed, other drawers become shelves, and items that were in the removed drawers move to a shelf of the same cabinet that accepts their category (else the cabinet's own place). Pantry places are never deleted.
+
 ## Fixes round (branch `build-fixes`)
 ### Receipts
 - **Behavior:** the receipt parser was rewritten. Two-line items (name, then "2 x 1,29" or a weight line), sizes inside names ("1L", "250g", "6x0,33") and own-brand prefixes (Kaufland: K., KPur.H., KLC., KBB, ...; kept in `receipt-data.json`) are understood. A discount line now belongs to the previous product (price only). Deposit, bag, payment, loyalty and tax lines go to a collapsed **Ignored lines** list with **Restore**.

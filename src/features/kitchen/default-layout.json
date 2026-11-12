@@ -136,7 +136,7 @@
         {
           "key": "fz1",
           "name": "Vegetables and fruit",
-          "kind": "drawer",
+          "kind": "shelf",
           "location": "Frozen vegetables and fruit"
         },
         {
@@ -148,7 +148,7 @@
         {
           "key": "fz3",
           "name": "Ready meals",
-          "kind": "drawer",
+          "kind": "shelf",
           "location": "Frozen ready meals"
         }
       ],
@@ -168,7 +168,7 @@
         {
           "key": "meat",
           "name": "Meat and fish",
-          "kind": "shelf",
+          "kind": "drawer",
           "location": "Meat and fish"
         },
         {
@@ -180,13 +180,13 @@
         {
           "key": "veg",
           "name": "Vegetables",
-          "kind": "drawer",
+          "kind": "shelf",
           "location": "Vegetable drawer"
         },
         {
           "key": "fruit",
           "name": "Fruit",
-          "kind": "drawer",
+          "kind": "shelf",
           "location": "Fruit drawer"
         },
         {
@@ -201,5 +201,6 @@
       "width": 32,
       "height": 50
     }
-  ]
+  ],
+  "rev": 2
 }

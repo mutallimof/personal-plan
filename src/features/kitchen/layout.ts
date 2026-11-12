@@ -4,6 +4,9 @@ import { LOCATION_KINDS } from "@/features/pantry/model";
 /** Version of the layout file format. See docs/kitchen-layout.md. */
 export const LAYOUT_VERSION = 2;
 
+/** Revision of the built-in tidy-ups a saved layout has had (kept inside the file, so no database change is needed). */
+export const LAYOUT_REV = 2;
+
 export const DOORS = [
   "hinged-left",
   "hinged-right",
@@ -84,6 +87,7 @@ const room = z.object({
 const layoutSchema = z
   .object({
     version: z.literal(LAYOUT_VERSION),
+    rev: z.number().int().min(0).default(0),
     room,
     areas: z.array(area).max(12).default([]),
     hotspots: z.array(hotspot).max(MAX_HOTSPOTS),

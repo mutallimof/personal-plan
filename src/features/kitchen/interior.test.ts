@@ -47,10 +47,10 @@ describe("interiorRows", () => {
       "Other",
     ]);
     expect(rows.map((r) => r.kind)).toEqual([
+      "drawer",
       "shelf",
       "shelf",
-      "drawer",
-      "drawer",
+      "shelf",
       "door",
       "shelf",
     ]);
@@ -58,8 +58,10 @@ describe("interiorRows", () => {
     expect(rows[2]!.place).toBe("Vegetable drawer");
   });
 
-  it("gives the freezer three drawers", () => {
-    expect(interiorRows(hotspot("freezer")).filter((r) => r.kind === "drawer")).toHaveLength(3);
+  it("gives the freezer one drawer (Meat and fish); Vegetables and fruit, Ready meals and Other are open shelves", () => {
+    const rows = interiorRows(hotspot("freezer"));
+    expect(rows.filter((r) => r.kind === "drawer").map((r) => r.label)).toEqual(["Meat and fish"]);
+    expect(rows.filter((r) => r.kind === "shelf").map((r) => r.label)).toEqual(["Vegetables and fruit", "Ready meals", "Other"]);
   });
 
   it("leaves out the loose row when the cabinet has no place of its own", () => {
@@ -173,20 +175,32 @@ describe("sprites", () => {
     }
   });
 
-  it("splits a row into a header for the label and a standing area below it", () => {
+  it("splits a row into a standing area on the left and a column for the name on the right", () => {
     const row = { x: 5, y: 10, width: 30, height: 9 };
     const none = rowParts(row, 0);
-    expect(none.header).toBeNull();
+    expect(none.side).toBeNull();
     expect(none.stand).toEqual(row);
-    const { header, stand, labelSize } = rowParts(row, 1.5);
-    expect(labelSize).toBe(1.5);
-    expect(header!.y).toBe(row.y);
-    expect(header!.y + header!.height).toBeLessThanOrEqual(stand.y + 1e-9);
-    expect(stand.y + stand.height).toBeCloseTo(row.y + row.height);
-    // the biggest product plus the board fits under the header
-    const { sprites } = layOutRow([item({ name: "A" })], stand);
-    expect(sprites[0]!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
+    const { side, stand, labelSize, lines } = rowParts(row, 1.5, "Meat and fish");
+    expect(lines.join(" ")).toBe("Meat and fish");
+    expect(labelSize).toBeLessThanOrEqual(1.5);
+    // the column is at the right edge, and the products stay left of it
+    expect(side!.x + side!.width).toBeCloseTo(row.x + row.width);
+    expect(stand.x + stand.width).toBeLessThanOrEqual(side!.x + 1e-9);
+    expect(stand.y).toBe(row.y);
+    expect(stand.height).toBe(row.height);
+    const { sprites } = layOutRow([item({ name: "A" }), item({ name: "B" }), item({ name: "C" }), item({ name: "D" })], stand);
+    for (const sp of sprites) expect(sp.x + sp.size).toBeLessThanOrEqual(side!.x + 1e-9);
     expect(sprites[0]!.y + sprites[0]!.size).toBeCloseTo(row.y + row.height - BOARD);
+  });
+
+  it("wraps and shrinks a long name until it fits its column", () => {
+    const row = { x: 0, y: 0, width: 29.6, height: 8.4 };
+    for (const name of ["Vegetables and fruit", "Drinks and sauces", "Dairy and eggs", "Ready meals", "Frozen vegetables and fruit"]) {
+      const { side, lines, labelSize } = rowParts(row, 1.3, name);
+      expect(lines.length).toBeLessThanOrEqual(3);
+      for (const l of lines) expect(l.length * labelSize * 0.62).toBeLessThanOrEqual(side!.width - 2 + 1e-9);
+      expect(lines.length * labelSize * 1.2).toBeLessThanOrEqual(side!.height);
+    }
   });
 
   it("uses one label size for a cabinet, following its shortest row", () => {
@@ -207,13 +221,13 @@ describe("a crowded cabinet: label, pictures and chips never share space", () =>
   for (const height of sweep) {
     it(`row height ${height}`, () => {
       const row = { x: 0, y: 10, width: 40, height };
-      const parts = rowParts(row, 1.2);
-      expect(parts.header).not.toBeNull();
-      const header = parts.header!;
-      // the label strip holds the label and sits above the standing area
-      expect(header.y + header.height).toBeLessThanOrEqual(parts.stand.y + 1e-9);
-      expect(parts.labelSize * 1.5).toBeLessThanOrEqual(header.height + 1e-9);
-      // pictures stand between the header and the board
+      const parts = rowParts(row, 1.2, "Vegetables and fruit");
+      expect(parts.side).not.toBeNull();
+      const side = parts.side!;
+      // the name sits in its own column, right of the standing area, and above the board
+      expect(parts.stand.x + parts.stand.width).toBeLessThanOrEqual(side.x + 1e-9);
+      expect(side.y + side.height).toBeLessThanOrEqual(row.y + row.height - BOARD + 1e-9);
+      // pictures stand left of the name and above the board
       const { sprites } = layOutRow([item({ name: "A", quantity: 500, unit: "g" }), item({ name: "B", quantity: 2, unit: "pieces" })], parts.stand);
       for (const s of sprites) {
         expect(s.y).toBeGreaterThanOrEqual(parts.stand.y - 1e-9);
