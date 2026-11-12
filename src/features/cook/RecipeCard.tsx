@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { LineStatus } from "./can-cook";
 import { MissingToList } from "./MissingToList";
-import { approxLabel, formatKcal, formatProtein, type RecipeNutrition } from "./nutrition";
+import { approxLabel, formatAmounts, type RecipeNutrition } from "./nutrition";
 
 export function NutritionLine({ facts }: { facts: RecipeNutrition }) {
   return (
     <p className="text-sm text-muted-foreground">
-      {formatKcal(facts.perServing.kcal)} · {formatProtein(facts.perServing.protein_g)} per serving ({approxLabel(facts.missing.length)})
+      {formatAmounts(facts.perServing)} per serving ({approxLabel(facts.missing.length)})
     </p>
   );
 }

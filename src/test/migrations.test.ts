@@ -347,3 +347,39 @@ describe("0011_ai_chat_shopping.sql", () => {
     await expect(db.query("insert into shopping_list (name) values ('')")).rejects.toThrow();
   });
 });
+
+describe("0012_nutrition_macros.sql", () => {
+  it("can be run again without error", async () => {
+    await db.exec("RESET ROLE");
+    await db.exec(sql("0012_nutrition_macros.sql"));
+    await db.exec(sql("0012_nutrition_macros.sql"));
+  });
+
+  it("leaves one cook_recipe (the old seven-argument version is gone) and the old call still works", async () => {
+    await db.exec("RESET ROLE");
+    const n = (await db.query<{ n: number }>("select count(*)::int as n from pg_proc where proname = 'cook_recipe'")).rows[0]?.n;
+    expect(n).toBe(1);
+    await as(ALICE);
+    const id = await cookRecipe([]);
+    const log = (await db.query<{ carbs_g: string | null; fat_g: string | null; portions: string | null }>("select carbs_g, fat_g, portions from cooked_log where id = $1", [id])).rows[0];
+    expect(log).toEqual({ carbs_g: null, fat_g: null, portions: null });
+  });
+
+  it("logs carbs, fat and the portions eaten", async () => {
+    await as(ALICE);
+    const res = await db.query<{ cook_recipe: string }>(
+      "select cook_recipe(null, 'Pasta', 4, 600, 22, 0, '[]'::jsonb, p_carbs_g => 90, p_fat_g => 14, p_portions => 1)",
+    );
+    const log = (await db.query("select kcal, protein_g, carbs_g, fat_g, portions from cooked_log where id = $1", [res.rows[0]?.cook_recipe])).rows[0];
+    expect(log).toEqual({ kcal: "600", protein_g: "22", carbs_g: "90", fat_g: "14", portions: "1" });
+  });
+
+  it("checks the new values and keeps nutrition rows private", async () => {
+    await as(ALICE);
+    await db.query("insert into ingredient_nutrition (name, basis, kcal, protein_g, carbs_g, fat_g) values ('Oats', '100g', 372, 13, 60, 7)");
+    await expect(db.query("insert into ingredient_nutrition (name, basis, kcal, protein_g, carbs_g) values ('Bad', '100g', 1, 1, -1)")).rejects.toThrow();
+    await expect(db.query("select cook_recipe(null, 'x', 1, 1, 1, 0, '[]'::jsonb, p_portions => 0)")).rejects.toThrow();
+    await as(BOB);
+    expect((await db.query("select * from ingredient_nutrition where name = 'Oats'")).rows).toHaveLength(0);
+  });
+});

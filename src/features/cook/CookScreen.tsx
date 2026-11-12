@@ -9,7 +9,7 @@ import type { PantryItem } from "@/features/pantry/model";
 import type { Need } from "./can-cook";
 import { changesFor, planLines, withAmount, type PlanLine } from "./cook-plan";
 import { cook, useInvalidateCook } from "./data";
-import { approxLabel, formatKcal, formatProtein, recipeNutrition, type NutritionRow } from "./nutrition";
+import { approxLabel, formatAmounts, recipeNutrition, scaleAmounts, type NutritionRow } from "./nutrition";
 import { scaleIngredients } from "./recipes";
 
 type Props = {
@@ -29,6 +29,10 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
   const count = Number(servings);
   const validServings = Number.isFinite(count) && count > 0;
   const factor = validServings ? count / recipe.servings : 1;
+  // how many portions you eat of what you cook; the log counts only these
+  const [eaten, setEaten] = useState("1");
+  const portions = Number(eaten);
+  const validPortions = Number.isFinite(portions) && portions > 0;
   const [lines, setLines] = useState<PlanLine[]>(() => planLines(needs, items, 1));
   const [busy, setBusy] = useState(false);
 
@@ -49,14 +53,15 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
   const update = (id: string, patch: (l: PlanLine) => PlanLine) => setLines((all) => all.map((l) => (l.id === id ? patch(l) : l)));
 
   async function confirm() {
-    if (!validServings) return;
+    if (!validServings || !validPortions) return;
     setBusy(true);
     try {
       const id = await cook.cookRecipe({
         recipeId: recipe.id,
         title: recipe.title,
         servings: count,
-        nutrition: facts.total,
+        nutrition: scaleAmounts(facts.perServing, portions),
+        portions,
         missing: facts.missing.length,
         changes,
       });
@@ -73,7 +78,7 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">{recipe.title}</h2>
         <p className="text-sm text-muted-foreground">
-          {formatKcal(facts.perServing.kcal)} · {formatProtein(facts.perServing.protein_g)} per serving ({approxLabel(facts.missing.length)})
+          {formatAmounts(facts.perServing)} per portion ({approxLabel(facts.missing.length)})
         </p>
       </div>
 
@@ -88,6 +93,20 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
           className="h-11 w-24 text-center text-base sm:text-sm"
           value={servings}
           onChange={(e) => changeServings(e.target.value)}
+        />
+      </label>
+
+      <label className="flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-card px-4 text-sm">
+        Portions I eat
+        <Input
+          aria-label="Portions I eat"
+          type="number"
+          min={0}
+          step="any"
+          inputMode="decimal"
+          className="h-11 w-24 text-center text-base sm:text-sm"
+          value={eaten}
+          onChange={(e) => setEaten(e.target.value)}
         />
       </label>
 
@@ -120,7 +139,7 @@ export function CookScreen({ recipe, needs, items, nutrition, onCooked, onCancel
         ))}
       </ul>
 
-      <Button className="h-12 w-full" disabled={busy || !validServings} onClick={confirm}>
+      <Button className="h-12 w-full" disabled={busy || !validServings || !validPortions} onClick={confirm}>
         Cook
       </Button>
       <Button variant="ghost" className="h-11 w-full" disabled={busy} onClick={onCancel}>

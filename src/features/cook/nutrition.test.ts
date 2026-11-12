@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { approxLabel, basisFor, formatKcal, formatProtein, ingredientNutrition, recipeNutrition, toNutritionRows, type NutritionRow } from "./nutrition";
+import { approxLabel, basisFor, formatAmounts, formatKcal, formatProtein, ingredientNutrition, recipeNutrition, toNutritionRows, type NutritionRow } from "./nutrition";
 
 const rows: NutritionRow[] = [
   { name: "Rice", basis: "100g", kcal: 360, protein_g: 7 },
@@ -21,8 +21,8 @@ describe("basisFor", () => {
 
 describe("ingredientNutrition", () => {
   it("scales per 100 g, also from kg", () => {
-    expect(ingredientNutrition({ name: "Rice", quantity: 200, unit: "g" }, rows)).toEqual({ kcal: 720, protein_g: 14 });
-    expect(ingredientNutrition({ name: "rice", quantity: 0.1, unit: "kg" }, rows)).toEqual({ kcal: 360, protein_g: 7 });
+    expect(ingredientNutrition({ name: "Rice", quantity: 200, unit: "g" }, rows)).toEqual({ kcal: 720, protein_g: 14, carbs_g: null, fat_g: null });
+    expect(ingredientNutrition({ name: "rice", quantity: 0.1, unit: "kg" }, rows)).toEqual({ kcal: 360, protein_g: 7, carbs_g: null, fat_g: null });
   });
 
   it("scales per 100 ml, also from litres", () => {
@@ -95,5 +95,41 @@ describe("toNutritionRows", () => {
       { name: "Odd", basis: "cup", kcal: 1, protein_g: 1 },
     ]);
     expect(out.map((r) => r.name)).toEqual(["Rice"]);
+  });
+});
+
+describe("carbs and fat", () => {
+  const withMacros: NutritionRow[] = [
+    { name: "Rice", basis: "100g", kcal: 360, protein_g: 7, carbs_g: 78, fat_g: 0.6 },
+    { name: "Oil", basis: "100ml", kcal: 880, protein_g: 0, carbs_g: 0, fat_g: 100 },
+    { name: "Salt", basis: "100g", kcal: 0, protein_g: 0 },
+  ];
+
+  it("come from the table row, scaled by the amount", () => {
+    expect(ingredientNutrition({ name: "Rice", quantity: 200, unit: "g" }, withMacros)).toEqual({ kcal: 720, protein_g: 14, carbs_g: 156, fat_g: 1.2 });
+  });
+
+  it("are summed per recipe and per serving when every found ingredient has them", () => {
+    const n = recipeNutrition([{ name: "Rice", quantity: 200, unit: "g" }, { name: "Oil", quantity: 20, unit: "ml" }], withMacros, 2);
+    expect(n.total).toEqual({ kcal: 896, protein_g: 14, carbs_g: 156, fat_g: 21.2 });
+    expect(n.perServing).toEqual({ kcal: 448, protein_g: 7, carbs_g: 78, fat_g: 10.6 });
+  });
+
+  it("are left out (null) rather than half-summed when one found ingredient has no carbs or fat", () => {
+    const n = recipeNutrition([{ name: "Rice", quantity: 200, unit: "g" }, { name: "Salt", quantity: 5, unit: "g" }], withMacros, 1);
+    expect(n.total.kcal).toBe(720);
+    expect(n.total.carbs_g).toBeNull();
+    expect(n.total.fat_g).toBeNull();
+  });
+
+  it("are null when nothing was found, and ingredients without a row still count as missing", () => {
+    const n = recipeNutrition([{ name: "Saffron", quantity: 1, unit: "g" }], withMacros, 1);
+    expect(n.total).toEqual({ kcal: 0, protein_g: 0, carbs_g: null, fat_g: null });
+    expect(n.missing).toEqual(["Saffron"]);
+  });
+
+  it("show in the text only when known", () => {
+    expect(formatAmounts({ kcal: 450.4, protein_g: 12.34, carbs_g: null, fat_g: null })).toBe("450 kcal · 12 g protein");
+    expect(formatAmounts({ kcal: 450, protein_g: 12, carbs_g: 55.5, fat_g: 8 })).toBe("450 kcal · 12 g protein · 56 g carbs · 8 g fat");
   });
 });

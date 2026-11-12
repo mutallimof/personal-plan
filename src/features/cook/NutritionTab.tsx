@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Empty, Loading, QueryError } from "@/components/states";
 import { asOptions, Choice } from "@/features/pantry/ui";
 import { cook, nutritionQuery, useInvalidateCook, type NutritionDbRow } from "./data";
+import { EatenSection } from "./EatenSection";
 import { ingredientKey } from "./names";
 import { BASIS_LABEL, isBasis, type NutritionBasis } from "./nutrition";
 
@@ -25,7 +26,10 @@ export function NutritionTab() {
   const shown = rows.data.filter((r) => !q || ingredientKey(r.name).includes(q));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <EatenSection />
+      <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Foods</h2>
       <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -49,6 +53,8 @@ export function NutritionTab() {
                 </span>
                 <span className="block text-sm text-muted-foreground">
                   {r.kcal} kcal · {r.protein_g} g protein
+                  {r.carbs_g != null ? ` · ${r.carbs_g} g carbs` : ""}
+                  {r.fat_g != null ? ` · ${r.fat_g} g fat` : ""}
                 </span>
               </button>
             </li>
@@ -57,6 +63,7 @@ export function NutritionTab() {
       )}
 
       {editing && <NutritionDialog row={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />}
+      </div>
     </div>
   );
 }
@@ -67,11 +74,18 @@ function NutritionDialog({ row, onClose }: { row?: NutritionDbRow | undefined; o
   const [basis, setBasis] = useState<string>(row?.basis ?? "100g");
   const [kcal, setKcal] = useState(row ? String(row.kcal) : "");
   const [protein, setProtein] = useState(row ? String(row.protein_g) : "");
+  const [carbs, setCarbs] = useState(row?.carbs_g != null ? String(row.carbs_g) : "");
+  const [fat, setFat] = useState(row?.fat_g != null ? String(row.fat_g) : "");
   const [busy, setBusy] = useState(false);
 
   const k = Number(kcal);
   const p = Number(protein);
-  const valid = name.trim().length > 0 && isBasis(basis) && kcal !== "" && protein !== "" && k >= 0 && p >= 0 && Number.isFinite(k) && Number.isFinite(p);
+  // carbs and fat are optional: empty means "not in the table"
+  const optional = (text: string) => (text.trim() === "" ? null : Number(text));
+  const c = optional(carbs);
+  const f = optional(fat);
+  const optionalOk = (v: number | null) => v === null || (Number.isFinite(v) && v >= 0);
+  const valid = name.trim().length > 0 && isBasis(basis) && kcal !== "" && protein !== "" && k >= 0 && p >= 0 && Number.isFinite(k) && Number.isFinite(p) && optionalOk(c) && optionalOk(f);
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -99,8 +113,12 @@ function NutritionDialog({ row, onClose }: { row?: NutritionDbRow | undefined; o
             <Input aria-label="kcal" placeholder="kcal" type="number" min={0} step="any" inputMode="decimal" className="h-11 text-base sm:text-sm" value={kcal} onChange={(e) => setKcal(e.target.value)} />
             <Input aria-label="Protein (g)" placeholder="Protein (g)" type="number" min={0} step="any" inputMode="decimal" className="h-11 text-base sm:text-sm" value={protein} onChange={(e) => setProtein(e.target.value)} />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input aria-label="Carbs (g), optional" placeholder="Carbs (g), optional" type="number" min={0} step="any" inputMode="decimal" className="h-11 text-base sm:text-sm" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
+            <Input aria-label="Fat (g), optional" placeholder="Fat (g), optional" type="number" min={0} step="any" inputMode="decimal" className="h-11 text-base sm:text-sm" value={fat} onChange={(e) => setFat(e.target.value)} />
+          </div>
           {row && row.source !== "own" && <p className="text-xs text-muted-foreground">{row.source}</p>}
-          <Button className="h-12 w-full" disabled={!valid || busy} onClick={() => void run(() => cook.saveNutrition({ name, basis, kcal: k, protein_g: p }, row?.id))}>
+          <Button className="h-12 w-full" disabled={!valid || busy} onClick={() => void run(() => cook.saveNutrition({ name, basis, kcal: k, protein_g: p, carbs_g: c, fat_g: f }, row?.id))}>
             Save
           </Button>
           {row && (

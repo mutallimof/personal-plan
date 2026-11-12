@@ -24,8 +24,9 @@ in order, once each. Every file is safe to run again.
 | `0009_kitchen_scene.sql` | `kitchen_layouts`; `icon` and `shelf` on `pantry_items`; `icon` on `product_aliases`; `undo_cook` now restores icon and shelf | The kitchen screen |
 | `0010_categories_places.sql` | `accepts` on `pantry_locations`; `pantry_categories`; `aliases_seed_version` and `layout_upgraded` on `pantry_settings`; converts the old categories `produce` and `meat` on items and dictionary entries | New categories, places that accept categories, receipt placement, Organize |
 | `0011_ai_chat_shopping.sql` | `ai_chat` and `ai_chat_requests` on `pantry_settings`; `shopping_list` | AI cooking chat, Shopping tab |
+| `0012_nutrition_macros.sql` | `carbs_g` and `fat_g` on `ingredient_nutrition` and `cooked_log`; `portions` on `cooked_log`; `cook_recipe` takes three more optional inputs (the old seven-argument version is dropped) | Logging carbs, fat and portions eaten; the Nutrition tab "Eaten" section |
 
-Run 0004 to 0011 the same way, in that order (0005 to 0011 add to tables made by 0004). Run 0010 and 0011 after pulling this branch: the receipt screen, Organize, Categories and the Cook > Ask AI and Shopping tabs need them (until then they show "Could not load this"). Run 0009 before opening the Pantry: the kitchen screen needs `kitchen_layouts` and the new columns (until then it shows "Could not load this"). The first time it opens, your old kitchen map (0007) is converted into the new layout; the old table stays untouched. After 0008, **Table Editor** should list the four new tables with the RLS badge, and **Database > Functions** should list `cook_recipe` and `undo_cook`. Until 0008 is run, the Cook tab shows "Could not load this"; cooking itself needs the two functions.
+Run 0004 to 0012 the same way, in that order (0005 to 0011 add to tables made by 0004). Run 0010 and 0011 after pulling this branch: the receipt screen, Organize, Categories and the Cook > Ask AI and Shopping tabs need them (until then they show "Could not load this"). Run 0009 before opening the Pantry: the kitchen screen needs `kitchen_layouts` and the new columns (until then it shows "Could not load this"). The first time it opens, your old kitchen map (0007) is converted into the new layout; the old table stays untouched. After 0008, **Table Editor** should list the four new tables with the RLS badge, and **Database > Functions** should list `cook_recipe` and `undo_cook`. Until 0008 is run, the Cook tab shows "Could not load this"; cooking itself needs the two functions.
 
 Until they are run, those screens show "Could not load this" or "Could not save the workout"; the rest of the app is unaffected.
 
@@ -47,6 +48,9 @@ Without it the app works; chat and "Generate my plan" will say they are unavaila
 The app never deletes them for you. To look at what is there, run in the Supabase SQL editor (read-only):
 `select name, quantity, unit, done, created_at from shopping_list order by created_at;`
 Remove what you do not want with the trash button in Cook > Shopping, or (only after you have checked the rows) delete in the Table Editor.
+
+## 4c. Carbs and fat in the nutrition table
+The built-in food table (USDA) holds energy and protein only, so carbs and fat show up only for foods where you fill them in (Cook > Nutrition > a food > Carbs, Fat). A recipe shows carbs and fat only when every ingredient that has a row also has them, and the Eaten section shows them only for meals logged with them. To fill the whole table from USDA, extend `scripts/nutrition-import` (it needs a free FoodData Central key); nothing is guessed in the meantime. Run `0012` before cooking a recipe: until then "Cook" fails with a database error.
 
 ## 5. After pulling this branch
 Run `npm install` (new packages: `@dnd-kit/sortable`, `@dnd-kit/utilities`; Lovable packages removed; the lockfile is now `package-lock.json`).

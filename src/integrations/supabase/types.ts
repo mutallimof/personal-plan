@@ -318,10 +318,13 @@ export type Database = {
       }
       cooked_log: {
         Row: {
+          carbs_g: number | null
           cooked_at: string
+          fat_g: number | null
           id: string
           kcal: number | null
           kcal_missing: number
+          portions: number | null
           protein_g: number | null
           recipe_id: string | null
           removed: Json
@@ -331,10 +334,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          carbs_g?: number | null
           cooked_at?: string
+          fat_g?: number | null
           id?: string
           kcal?: number | null
           kcal_missing?: number
+          portions?: number | null
           protein_g?: number | null
           recipe_id?: string | null
           removed?: Json
@@ -344,10 +350,13 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          carbs_g?: number | null
           cooked_at?: string
+          fat_g?: number | null
           id?: string
           kcal?: number | null
           kcal_missing?: number
+          portions?: number | null
           protein_g?: number | null
           recipe_id?: string | null
           removed?: Json
@@ -361,6 +370,8 @@ export type Database = {
       ingredient_nutrition: {
         Row: {
           basis: string
+          carbs_g: number | null
+          fat_g: number | null
           id: string
           kcal: number
           name: string
@@ -370,6 +381,8 @@ export type Database = {
         }
         Insert: {
           basis: string
+          carbs_g?: number | null
+          fat_g?: number | null
           id?: string
           kcal: number
           name: string
@@ -379,6 +392,8 @@ export type Database = {
         }
         Update: {
           basis?: string
+          carbs_g?: number | null
+          fat_g?: number | null
           id?: string
           kcal?: number
           name?: string
@@ -731,9 +746,12 @@ export type Database = {
     Functions: {
       cook_recipe: {
         Args: {
+          p_carbs_g?: number | null
           p_changes: Json
+          p_fat_g?: number | null
           p_kcal: number | null
           p_kcal_missing: number
+          p_portions?: number | null
           p_protein_g: number | null
           p_recipe_id: string | null
           p_servings: number

@@ -68,7 +68,26 @@ describe("CookScreen", () => {
       { id: "rice", name: "Rice", unit: "kg", before: 1, after: 0.6 },
       { id: "eggs", name: "Eggs", unit: "pieces", before: 6, after: 4 },
     ]);
+    // one portion eaten by default: (400 g rice + 2 eggs) / 2 servings
+    expect(args?.nutrition.kcal).toBeCloseTo(792);
+    expect(args?.portions).toBe(1);
+  });
+
+  it("logs what you eat: per portion times the portions entered", async () => {
+    setup();
+    fireEvent.change(screen.getByLabelText("Portions I eat"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cook" }));
+    await waitFor(() => expect(cookRecipe).toHaveBeenCalled());
+    const args = cookRecipe.mock.calls[0]?.[0];
+    expect(args?.portions).toBe(2);
     expect(args?.nutrition.kcal).toBeCloseTo(1584);
+    expect(args?.nutrition.carbs_g).toBeNull(); // the invented table has no carbs
+  });
+
+  it("will not cook with no portions to eat", () => {
+    setup();
+    fireEvent.change(screen.getByLabelText("Portions I eat"), { target: { value: "0" } });
+    expect(screen.getByRole("button", { name: "Cook" })).toBeDisabled();
   });
 
   it("lets you correct the amount", async () => {

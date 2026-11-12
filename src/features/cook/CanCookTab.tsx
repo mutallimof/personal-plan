@@ -8,7 +8,7 @@ import { rankRecipes, type Need } from "./can-cook";
 import { CookScreen } from "./CookScreen";
 import { activeMeals, canUndo, todayTotals } from "./cooked";
 import { cook, cookedQuery, nutritionQuery, recipesQuery, useInvalidateCook } from "./data";
-import { approxLabel, formatKcal, formatProtein, recipeNutrition, toNutritionRows } from "./nutrition";
+import { approxLabel, formatAmounts, recipeNutrition, toNutritionRows } from "./nutrition";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeForm } from "./RecipeForm";
 import { RecipesEmpty } from "./RecipesEmpty";
@@ -128,7 +128,7 @@ export function CanCookTab() {
           <h2 className="text-sm font-medium text-muted-foreground">Cooked recently</h2>
           {today.meals > 0 && (
             <p className="rounded-2xl bg-card p-4 text-sm">
-              Today: {formatKcal(today.kcal)} · {formatProtein(today.protein_g)} ({approxLabel(today.missing)})
+              Today: {formatAmounts(today)} ({approxLabel(today.missing)})
             </p>
           )}
           <ul className="space-y-2">

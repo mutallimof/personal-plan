@@ -70,7 +70,7 @@ export function useInvalidateCook() {
   };
 }
 
-export type NutritionInput = { name: string; basis: string; kcal: number; protein_g: number };
+export type NutritionInput = { name: string; basis: string; kcal: number; protein_g: number; carbs_g?: number | null; fat_g?: number | null };
 
 export const cook = {
   /** Creates (no id) or updates a recipe with its ingredients. Returns the recipe id. */
@@ -108,7 +108,7 @@ export const cook = {
 
   /** Adds a nutrition row, or changes the one with the same name and basis. */
   async saveNutrition(input: NutritionInput, id?: string): Promise<void> {
-    const fields = { name: input.name.trim(), basis: input.basis, kcal: input.kcal, protein_g: input.protein_g };
+    const fields = { name: input.name.trim(), basis: input.basis, kcal: input.kcal, protein_g: input.protein_g, carbs_g: input.carbs_g ?? null, fat_g: input.fat_g ?? null };
     if (id) check(await supabase.from("ingredient_nutrition").update({ ...fields, source: "own" }).eq("id", id));
     else check(await supabase.from("ingredient_nutrition").insert({ ...fields, source: "own" }));
   },
@@ -127,7 +127,10 @@ export const cook = {
     recipeId: string | null;
     title: string;
     servings: number;
+    /** What was eaten (per portion times portions), from the nutrition table only. */
     nutrition: Amounts;
+    /** How many portions were eaten. */
+    portions: number;
     missing: number;
     changes: readonly Change[];
   }): Promise<string> {
@@ -138,6 +141,9 @@ export const cook = {
         p_servings: args.servings,
         p_kcal: Math.round(args.nutrition.kcal),
         p_protein_g: Math.round(args.nutrition.protein_g * 10) / 10,
+        p_carbs_g: args.nutrition.carbs_g === null ? null : Math.round(args.nutrition.carbs_g * 10) / 10,
+        p_fat_g: args.nutrition.fat_g === null ? null : Math.round(args.nutrition.fat_g * 10) / 10,
+        p_portions: args.portions,
         p_kcal_missing: args.missing,
         p_changes: args.changes.map((c) => ({ id: c.id, after: c.after })),
       }),
@@ -148,6 +154,11 @@ export const cook = {
 
   async undoCook(logId: string): Promise<void> {
     check(await supabase.rpc("undo_cook", { p_log_id: logId }));
+  },
+
+  /** Takes a meal out of the nutrition log without touching the pantry (for meals too old to undo). */
+  async removeFromLog(logId: string): Promise<void> {
+    check(await supabase.from("cooked_log").update({ undone_at: new Date().toISOString() }).eq("id", logId).is("undone_at", null));
   },
 };
 
