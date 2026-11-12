@@ -2,6 +2,19 @@
 
 Changes on branch `build-v1`. Behavior changes to existing features are marked **Behavior**.
 
+## Redesign (branch `redesign`)
+Looks only: no data, query or rule changed, no migration. The rules are in `docs/STYLE.md`.
+
+- **Behavior:** new look everywhere ("Garden": warm paper, forest ink, one green; Bricolage Grotesque headings, Figtree text). Two more themes with the same layout, **Clay** and **Tide**, and **System / Light / Dark**, are in **Pantry > Settings > Appearance**. The choice is stored on the device (`localStorage`), not in the account. Dark mode is new; before, the app was always light.
+- **Behavior:** new logo (a sprout), favicon and app icons. The service worker cache is now `v2` so installed apps pick up the new icons.
+- **Behavior:** the opening screen shows the logo, the name and "Training, kitchen and meals in one plan." (was "Your training, planned." with a sentence under it). A splash with the logo shows while the app checks the session.
+- **Behavior:** on phones the navigation is a floating dock; the chat button and the workout's Finish bar sit above it.
+- **Behavior:** Pantry: the four actions (Add receipt, Add item, Cook, All items) are equal tiles in one row. Sheets keep their title and close button in place while the content scrolls.
+- **Behavior:** Cook: the five tabs are at the bottom of the sheet with icons; the chat field sits just above them.
+- **Behavior:** dialogs open from the bottom on phones. Buttons and inputs are 44 px high on desktop too (were 36 px).
+- Checkboxes, charts and the muscle diagram take their colours from the theme.
+- `/design` (development only) shows every token and shared component; `node scripts/design-shots/shoot.mjs` takes screenshots of the real app with invented data.
+
 ## Feedback round (branch `build-fixes`)
 ### Fridge and freezer
 - **Behavior:** the compartment names are now on the right side of each row (wrapped and shrunk to fit their column), so they never overlap pictures, quantity chips or the Empty / + controls. Products stand in the part left of the name.

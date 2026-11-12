@@ -3,7 +3,7 @@
 // Starts `vite dev` against a Supabase address that does not exist, signs a pretend user in through localStorage and
 // answers every database request from fixtures.mjs inside the browser. No real account, key or network is used.
 // Needs Microsoft Edge (set EDGE_PATH to override the default Windows location).
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import puppeteer from "puppeteer-core";
 import { chatStream, tables, user } from "./fixtures.mjs";
@@ -38,6 +38,22 @@ const SHOTS = [
   { name: "10-profile", path: "/profile" },
   { name: "11-sign-in", path: "/auth", signedOut: true },
   { name: "design-sheet", path: "/design", full: true },
+  // more screens, for checking the rest of the app (pass --only x- to take just these)
+  { name: "x-items", path: "/pantry?sheet=items" },
+  { name: "x-add-item", path: "/pantry", click: "Add item" },
+  { name: "x-receipt", path: "/pantry?sheet=receipt" },
+  { name: "x-recipes", path: "/pantry?sheet=cook", tab: "Recipes" },
+  { name: "x-cook-this", path: "/pantry?sheet=cook", click: "Cook this" },
+  { name: "x-settings-ai", path: "/pantry?sheet=settings&section=ai" },
+  { name: "x-settings-dictionary", path: "/pantry?sheet=settings&section=dictionary" },
+  { name: "x-settings-layout", path: "/pantry?sheet=settings&section=layout" },
+  { name: "x-gym-week", path: "/gym/week" },
+  { name: "x-gym-month", path: "/gym/month" },
+  { name: "x-gym-library", path: "/gym/library" },
+  { name: "x-gym-session", path: "/gym/session/session-0" },
+  { name: "x-gym-workout", path: "/gym/workout/session-0" },
+  { name: "x-gym-exercise", path: "/gym/exercise/ex-0" },
+  { name: "x-languages", path: "/languages" },
 ];
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -65,6 +81,12 @@ function answer(req) {
   if (req.method() !== "GET") return one ? json({ id: "new" }, 201) : json([], 201);
   const rows = tables[table] ?? [];
   return one ? json(rows[0] ?? null) : json(rows);
+}
+
+// An earlier run that was cut off can leave its server behind; screenshots of that stale server would be wrong.
+if (await fetch(APP).then(() => true, () => false)) {
+  console.error(`Something is already listening on port ${PORT}. Stop it first.`);
+  process.exit(1);
 }
 
 const env = { ...process.env, VITE_SUPABASE_URL: DB, VITE_SUPABASE_PUBLISHABLE_KEY: "preview", SUPABASE_URL: DB, SUPABASE_PUBLISHABLE_KEY: "preview" };
@@ -102,10 +124,27 @@ let failed = 0;
 const browser = await puppeteer.launch({ executablePath: edge, headless: true });
 try {
   await waitForServer();
+  const wanted = SHOTS.filter((shot) => (only ? only.some((o) => shot.name.includes(o)) : !shot.name.startsWith("x-")));
+  // Warm-up: the dev server bundles some dependencies the first time a page asks for them and that first load fails.
+  // Open every page until none of them fails (at most four rounds), and throw the results away.
+  for (let round = 0, broken = true; broken && round < 4; round++) {
+    broken = false;
+    for (const path of new Set(wanted.map((s) => s.path.split("?")[0]))) {
+      const page = await browser.newPage();
+    await page.evaluateOnNewDocument((s) => localStorage.setItem("sb-localhost-auth-token", JSON.stringify(s)), session);
+    await page.setCacheEnabled(false); // a cached copy of a re-bundled dependency breaks the next page
+        await page.setRequestInterception(true);
+    page.on("request", (req) => (req.url().startsWith(DB) ? void req.respond(answer(req)) : void req.continue()));
+      await page.goto(APP + path, { waitUntil: "networkidle0", timeout: 90_000 }).catch(() => {});
+      await wait(1000);
+      if (await page.evaluate(() => document.body.innerText.includes("didn't load")).catch(() => true)) broken = true;
+      await page.close();
+    }
+    if (broken) await wait(6000);
+  }
   const size = desktop ? { label: "1280", width: 1280, height: 800, mobile: false } : { label: "375", width: 375, height: 812, mobile: true };
   for (const mode of ["light", "dark"]) {
-    for (const shot of SHOTS) {
-      if (only && !only.some((o) => shot.name.includes(o))) continue;
+    for (const shot of wanted) {
       const page = await browser.newPage();
       try {
         await page.setViewport({ width: size.width, height: size.height, isMobile: size.mobile, hasTouch: size.mobile, deviceScaleFactor: 2 });
@@ -119,24 +158,39 @@ try {
           shot.signedOut ? null : session,
           { theme, mode },
         );
+        await page.setCacheEnabled(false); // a cached copy of a re-bundled dependency breaks the next page
         await page.setRequestInterception(true);
         page.on("request", (req) => {
           const url = req.url();
           if (url.startsWith(DB)) return void req.respond(answer(req));
           if (url.includes("/_serverFn/") && req.method() === "POST" && shot.ask)
-            return void req.respond({ status: 200, headers: { "content-type": "application/x-ndjson; charset=utf-8", "x-tss-raw": "true" }, body: chatStream });
+            return void req.respond({ status: 200, headers: { "content-type": "application/x-ndjson; charset=utf-8", "x-tss-raw": "true" }, body: chatStream }).catch((e) => console.warn("respond failed", e.message));
           void req.continue();
         });
         page.on("pageerror", (e) => console.warn(`  [${shot.name}] page error: ${e.message}`));
+        if (process.env.SHOTS_DEBUG) {
+          page.on("console", (m) => console.warn(`  [${shot.name}] console: ${m.text().slice(0, 400)}`));
+          page.on("request", (r) => r.method() === "POST" && console.warn(`  [${shot.name}] POST ${r.url().slice(0, 120)}`));
+        }
         await page.goto(APP + shot.path, { waitUntil: "networkidle0", timeout: 90_000 });
+        // the dev server sometimes re-bundles a dependency on first use and the page has to load again
+        for (let i = 0; i < 3 && (await page.evaluate(() => document.body.innerText.includes("This page didn't load"))); i++) {
+          await wait(2500);
+          await page.reload({ waitUntil: "networkidle0", timeout: 90_000 });
+        }
         await wait(1200);
         if (shot.tab) {
           await clickText(page, '[role="tab"]', shot.tab);
           await wait(900);
         }
+        if (shot.click) {
+          await clickText(page, "button", shot.click);
+          await wait(900);
+        }
         if (shot.ask) {
           await page.type('input[aria-label="Ask what to cook"]', shot.ask);
           await page.keyboard.press("Enter");
+          // in dev the answer may never show: React StrictMode runs the id counter in CookChat twice, so the reply finds no message
           await wait(1500);
         }
         await page.evaluate(() => document.fonts.ready);
@@ -153,7 +207,12 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
-  spawn("taskkill", ["/pid", String(server.pid), "/T", "/F"], { shell: true, stdio: "ignore" });
+  // the server runs under a shell, so the whole process tree has to go (and before this script exits)
+  try {
+    if (process.platform === "win32") execSync(`taskkill /pid ${server.pid} /T /F`, { stdio: "ignore" });
+    else server.kill();
+  } catch {
+    /* already gone */
+  }
 }
 process.exitCode = failed ? 1 : 0;

@@ -37,7 +37,7 @@ Do `MANUAL_STEPS.md` step 1 first (the two SQL files), then `npm run dev` and si
 - [ ] On phone, **Sign out** is at the bottom of the Profile page.
 
 ## Phone / PWA (needs the deployed https build, see `DEPLOY.md`)
-- [ ] The browser offers **Install app** / **Add to Home Screen**; the icon is a green dumbbell tile; it opens full screen.
+- [ ] The browser offers **Install app** / **Add to Home Screen**; the icon is a green tile with a dark sprout; it opens full screen.
 - [ ] Open the Plan page once online. Turn on airplane mode, reopen the app: the plan still shows (last loaded copy). Other pages show "Could not load this".
 - [ ] At 375 px wide, no page scrolls sideways; the bottom bar has Gym, Languages, Pantry, Profile.
 - [ ] Keyboard: Tab through the Plan page; every control shows a dark green focus ring.
