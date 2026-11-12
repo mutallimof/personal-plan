@@ -76,6 +76,8 @@ export function upgradeLayout(layout: Layout): { layout: Layout; added: string[]
 
 /** Compartments named by position, left over from the first flat map: they say nothing about what goes in them. */
 const BY_POSITION = /^(top|middle|bottom) drawer$/i;
+const isFrozenVeg = (c: Pick<Compartment, "name" | "location">) =>
+  c.name.trim().toLowerCase() === "vegetables and fruit" || (c.location ?? "").trim().toLowerCase() === "frozen vegetables and fruit";
 const isMeatAndFish = (c: Pick<Compartment, "name">) => c.name.trim().toLowerCase() === "meat and fish";
 
 /**
@@ -83,17 +85,32 @@ const isMeatAndFish = (c: Pick<Compartment, "name">) => c.name.trim().toLowerCas
  * - revision 2: in the fridge and the freezer the Top, Middle and Bottom drawers are removed, Meat and fish is the
  *   only drawer, and every other drawer becomes an open shelf. The pantry places of removed compartments are
  *   returned in `removed` so their items can be moved;
- * - revision 3: plants are put on the worktop (see `groundPlants`).
+ * - revision 3: plants are put on the worktop (see `groundPlants`);
+ * - revision 4: the freezer has no "Vegetables and fruit" shelf any more; its place is returned in `removed` and in
+ *   `stayInCabinet`, so its items go to another shelf of the freezer, never to the fridge.
  * A layout that already has the current revision comes back as the very same object.
  */
-export function tidyLayout(layout: Layout): { layout: Layout; removed: string[] } {
-  if (layout.rev >= LAYOUT_REV) return { layout, removed: [] };
+export function tidyLayout(layout: Layout): { layout: Layout; removed: string[]; stayInCabinet: string[] } {
+  if (layout.rev >= LAYOUT_REV) return { layout, removed: [], stayInCabinet: [] };
   const removed: string[] = [];
+  const stayInCabinet: string[] = [];
   const cold = layout.rev < 2;
   const hotspots = layout.hotspots.map((h) => {
-    if (!cold || (h.kind !== "fridge" && h.kind !== "freezer")) return h;
+    if (h.kind !== "fridge" && h.kind !== "freezer") return h;
+    if (!cold && layout.rev >= 4) return h;
     const compartments: Compartment[] = [];
     for (const c of h.compartments) {
+      if (h.kind === "freezer" && isFrozenVeg(c)) {
+        if (c.location) {
+          removed.push(c.location);
+          stayInCabinet.push(c.location);
+        }
+        continue;
+      }
+      if (!cold) {
+        compartments.push(c);
+        continue;
+      }
       if (BY_POSITION.test(c.name.trim()) || BY_POSITION.test((c.location ?? "").trim())) {
         if (c.location) removed.push(c.location);
         continue;
@@ -103,7 +120,7 @@ export function tidyLayout(layout: Layout): { layout: Layout; removed: string[] 
     return { ...h, compartments };
   });
   const next = { ...layout, hotspots };
-  return { layout: { ...next, rev: LAYOUT_REV, decor: groundPlants(next).decor }, removed };
+  return { layout: { ...next, rev: LAYOUT_REV, decor: groundPlants(next).decor }, removed, stayInCabinet };
 }
 
 const lower = (s: string) => s.trim().toLowerCase();
@@ -116,6 +133,7 @@ export function moveOutOfRemoved(
   items: readonly Pick<PantryItem, "id" | "category" | "location_id">[],
   locations: readonly PantryLocation[],
   removed: readonly string[],
+  stayInCabinet: readonly string[] = [],
 ): { id: string; location_id: string }[] {
   const gone = locations.filter((l) => removed.some((r) => lower(r) === lower(l.name)));
   const goneIds = new Set(gone.map((l) => l.id));
@@ -126,8 +144,9 @@ export function moveOutOfRemoved(
     if (!from) continue;
     const accepting = placesAccepting(keep, item.category);
     const parent = keep.find((l) => l.id === from.parent_id);
-    const target =
-      accepting.find((l) => from.parent_id && l.parent_id === from.parent_id) ?? accepting[0] ?? parent;
+    const sameCabinet = accepting.find((l) => from.parent_id && l.parent_id === from.parent_id);
+    const local = stayInCabinet.some((r) => lower(r) === lower(from.name));
+    const target = sameCabinet ?? (local ? undefined : accepting[0]) ?? parent;
     if (target) out.push({ id: item.id, location_id: target.id });
   }
   return out;

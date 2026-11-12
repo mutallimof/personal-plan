@@ -58,10 +58,10 @@ describe("interiorRows", () => {
     expect(rows[2]!.place).toBe("Vegetable drawer");
   });
 
-  it("gives the freezer one drawer (Meat and fish); Vegetables and fruit, Ready meals and Other are open shelves", () => {
+  it("gives the freezer one drawer (Meat and fish); Ready meals and Other are open shelves", () => {
     const rows = interiorRows(hotspot("freezer"));
     expect(rows.filter((r) => r.kind === "drawer").map((r) => r.label)).toEqual(["Meat and fish"]);
-    expect(rows.filter((r) => r.kind === "shelf").map((r) => r.label)).toEqual(["Vegetables and fruit", "Ready meals", "Other"]);
+    expect(rows.filter((r) => r.kind === "shelf").map((r) => r.label)).toEqual(["Ready meals", "Other"]);
   });
 
   it("leaves out the loose row when the cabinet has no place of its own", () => {

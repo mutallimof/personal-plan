@@ -91,7 +91,7 @@ describe("missingPlaces", () => {
     ].map((name) => loc({ name }));
     const names = missingPlaces(DEFAULT_LAYOUT, have).map((p) => p.name);
     expect(names).toContain("Meat and fish");
-    expect(names).toContain("Frozen vegetables and fruit");
+    expect(names).toContain("Frozen ready meals");
     expect(names).toContain("Base cabinet");
     expect(names).not.toContain("Fridge");
     expect(names).not.toContain("Vegetable drawer");
