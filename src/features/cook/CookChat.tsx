@@ -15,6 +15,7 @@ import { CookScreen } from "./CookScreen";
 import { cook, recipesQuery, useInvalidateCook } from "./data";
 import { recipeNutrition, type NutritionRow } from "./nutrition";
 import { RecipeCard } from "./RecipeCard";
+import { isStaple } from "./suggestions";
 import { groupByRecipe, toDrafts } from "./recipes";
 
 type Message = { id: number; role: "user" | "assistant"; text: string; cards?: AiRecipe[]; error?: boolean; streaming?: boolean };
@@ -188,7 +189,8 @@ function IdeaCard({ recipe, items, nutrition, onCook }: CardProps) {
   const invalidate = useInvalidateCook();
   const draft = useMemo(() => aiDraft(recipe, items), [recipe, items]);
   const lines = useMemo(() => draft.ingredients.map((i) => lineStatus(i, items)), [draft, items]);
-  const missing = lines.filter((l) => l.state !== "ok");
+  // water, salt and pepper are assumed to be at home (the same rule the check in suggestions.ts uses)
+  const missing = lines.filter((l) => l.state !== "ok" && !isStaple(l.need.name));
   const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

@@ -171,15 +171,72 @@ describe("runChat", () => {
     });
   });
 
-  it("limits the cards to three and does not repeat a title", async () => {
-    const many = Array.from({ length: 3 }, (_, i) => ({ ...recipe, title: `R${i}` }));
+  it("shows at most five cards and does not repeat a title", async () => {
+    const many = Array.from({ length: 4 }, (_, i) => ({ ...recipe, title: `R${i}` }));
     const { deps } = setup([
       toolReply(call("suggest_recipes", { recipes: many }, "a")),
-      toolReply(call("suggest_recipes", { recipes: [recipe, many[0]] }, "b")),
+      toolReply(call("suggest_recipes", { recipes: [recipe, many[0], { ...recipe, title: "R5" }, { ...recipe, title: "R6" }] }, "b")),
       textReply("x"),
     ]);
     const out = await runChat(deps, ask);
-    expect(out.cards.map((c) => c.title)).toEqual(["R0", "R1", "R2"]);
+    expect(out.cards.map((c) => c.title)).toEqual(["R0", "R1", "R2", "R3", "Chicken and potatoes"]);
+  });
+
+  // the rule from suggestions.ts, end to end: the stock is 500 g chicken breast
+  const fine = (n: number) => ({ ...recipe, title: `Fine ${n}` }); // 400 g chicken: cookable
+  const needs = (n: number, ...extra: string[]) => ({ ...recipe, title: `Needs ${n}`, ingredients: [...recipe.ingredients, ...extra.map((name) => ({ name, quantity: 1, unit: "pieces" as const }))] });
+
+  it("sends a set with too few cookable recipes back to the model, and shows the corrected set", async () => {
+    const bad = [fine(1), needs(1, "Lemon"), needs(2, "Dill"), needs(3, "Cream"), needs(4, "Leek")];
+    const { deps, seen } = setup([
+      toolReply(call("suggest_recipes", { recipes: bad }, "a")),
+      toolReply(call("suggest_recipes", { recipes: [fine(2), fine(3)] }, "b")),
+      textReply("Here you go"),
+    ]);
+    const out = await runChat(deps, ask);
+    const first = toolResults(seen[1] ?? [])[0];
+    expect(first).toHaveProperty("error");
+    expect(String(first?.["error"])).toMatch(/Only 1 of the 5 recipes can be cooked/);
+    expect(out.cards.map((c) => c.title)).toEqual(["Fine 1", "Fine 2", "Fine 3", "Needs 1", "Needs 2"]);
+    expect(out.reply).toBe("Here you go");
+  });
+
+  it("applies the rule even when the model never fixes it, and tells the person", async () => {
+    const bad = [fine(1), needs(1, "Lemon"), needs(2, "Dill"), needs(3, "Cream"), needs(4, "Leek")];
+    const { deps } = setup([
+      toolReply(call("suggest_recipes", { recipes: bad }, "a")),
+      toolReply(call("suggest_recipes", { recipes: bad }, "b")),
+      toolReply(call("suggest_recipes", { recipes: bad }, "c")),
+      textReply("Here are some ideas."),
+    ]);
+    const out = await runChat(deps, ask);
+    // one cookable, and at most two that need products: never four that do
+    expect(out.cards.map((c) => c.title)).toEqual(["Fine 1", "Needs 1", "Needs 2"]);
+    expect(out.reply).toMatch(/Only 1 of these is cookable/);
+  });
+
+  it("drops a recipe that misses more than two products", async () => {
+    const set = [fine(1), fine(2), fine(3), needs(1, "A1", "A2", "A3"), needs(2, "Lemon")];
+    const { deps } = setup([toolReply(call("suggest_recipes", { recipes: set }, "a")), textReply("ok")]);
+    const out = await runChat(deps, ask);
+    expect(out.cards.map((c) => c.title)).toEqual(["Fine 1", "Fine 2", "Fine 3", "Needs 2"]);
+  });
+
+  it("checks against the whole stock, not only the part the model was shown", async () => {
+    const set = [fine(1), fine(2), fine(3), needs(1, "Lemon"), needs(2, "Dill")];
+    const { deps } = setup([toolReply(call("suggest_recipes", { recipes: set }, "a")), textReply("ok")], {
+      pantry: [],
+      stock: [{ name: "Chicken breast", quantity: 500, unit: "g" }],
+    });
+    const out = await runChat(deps, ask);
+    expect(out.cards).toHaveLength(5);
+  });
+
+  it("applies the rule to recipes found in a plain text reply too", async () => {
+    const json = JSON.stringify({ recipes: [fine(1), fine(2), fine(3), needs(1, "A1", "A2", "A3"), needs(2, "Lemon")] });
+    const { deps } = setup([textReply(json)]);
+    const out = await runChat(deps, ask);
+    expect(out.cards.map((c) => c.title)).toEqual(["Fine 1", "Fine 2", "Fine 3", "Needs 2"]);
   });
 
   it("lets provider errors through for the caller to show", async () => {

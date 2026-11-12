@@ -54,7 +54,9 @@ export function MissingToList({ missing }: { missing: readonly LineStatus[] }) {
   if (!missing.length) return null;
   return (
     <div className="space-y-1 text-sm">
-      <p className="font-medium">Missing</p>
+      <p className="font-medium">
+        Missing {missing.length} {missing.length === 1 ? "ingredient" : "ingredients"}
+      </p>
       <ul>
         {missing.map((l) => {
           const listed = onList(l);

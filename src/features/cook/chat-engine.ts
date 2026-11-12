@@ -2,7 +2,6 @@ import type { ChatMessage, ModelReply, ToolDef } from "@/features/gym/ai-provide
 import type { AiRecipe } from "./ai-recipes";
 import {
   CHAT_TOOLS,
-  MAX_CARDS,
   SYSTEM_PROMPT,
   contextPrompt,
   parseArguments,
@@ -14,12 +13,15 @@ import {
   type SummaryLine,
   type ToolCallData,
 } from "./chat";
+import { feedbackFor, selectSuggestions, shortfallNote, type Selection, type StockLine } from "./suggestions";
 
 /** Everything the engine needs from outside, so it can be tested without a model or a database. */
 export type ChatDeps = {
   /** Asks the model. `onText` gets the answer text piece by piece when the provider streams it. */
   complete: (messages: ChatMessage[], tools: ToolDef[], onText?: (delta: string) => void) => Promise<ModelReply>;
   pantry: readonly SummaryLine[];
+  /** The whole stock, for checking which ideas are cookable (the model only sees `pantry`, which can be cut short). Defaults to `pantry`. */
+  stock?: readonly StockLine[];
   recipes: readonly SavedRecipe[];
   /** Saves a recipe to the book; returns its id. */
   saveRecipe: (recipe: AiRecipe) => Promise<string>;
@@ -37,6 +39,13 @@ export type ChatOutcome = {
 };
 
 export const MAX_STEPS = 6;
+/** Times a set of ideas that breaks the rule (see `suggestions.ts`) is sent back to the model to be replaced. */
+export const MAX_SUGGEST_RETRIES = 2;
+/** Most distinct ideas kept while the check picks the ones that fit. */
+const MAX_CANDIDATES = 14;
+
+/** What the engine keeps between tool calls of one turn. */
+type Turn = { candidates: AiRecipe[]; retries: number; selection: Selection | null };
 /** Steps with a malformed or invalid tool call after which the turn ends. */
 export const MAX_BAD_STEPS = 3;
 
@@ -53,6 +62,7 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[], onTe
     ...history.map((t): ChatMessage => ({ role: t.role, content: t.content })),
   ];
   const out: ChatOutcome = { reply: "", cards: [], cook: null, saved: [] };
+  const turn: Turn = { candidates: [], retries: 0, selection: null };
   let badSteps = 0;
   let gaveUp = false;
 
@@ -73,7 +83,7 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[], onTe
         result = { error: checked ? checked.error : "Arguments were not a valid JSON object. Call the tool again with valid JSON." };
       } else {
         try {
-          result = await execute(deps, out, checked.call);
+          result = await execute(deps, out, turn, checked.call);
         } catch (e) {
           console.error(e);
           result = { error: "That did not work." };
@@ -88,7 +98,14 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[], onTe
     }
   }
 
-  if (!out.cards.length) out.cards = recipesFromText(out.reply);
+  // a reply that ignored the tools but contains recipes counts as a proposal too
+  if (!turn.candidates.length) for (const r of recipesFromText(out.reply)) addCandidate(turn, r);
+  if (turn.candidates.length) {
+    // the rule is applied here, whatever the model did: see `selectSuggestions`
+    const sel = selectSuggestions(turn.candidates, deps.stock ?? deps.pantry);
+    out.cards = sel.cards;
+    turn.selection = sel;
+  }
   if (out.cards.length && /^\s*[`{]/.test(out.reply)) out.reply = ""; // the reply was only the JSON
   if (!out.reply) {
     if (gaveUp && !out.cards.length && !out.cook) out.reply = "I couldn't understand the AI's answer — please try again.";
@@ -97,16 +114,28 @@ export async function runChat(deps: ChatDeps, history: readonly ChatTurn[], onTe
     else if (out.saved.length) out.reply = "Saved.";
     else out.reply = "I couldn't come up with an answer — try asking another way.";
   }
+  if (turn.selection && out.cards.length && !turn.selection.satisfied) out.reply = `${out.reply} ${shortfallNote(turn.selection)}`.trim();
   return out;
 }
 
-async function execute(deps: ChatDeps, out: ChatOutcome, call: ToolCallData): Promise<unknown> {
+function addCandidate(turn: Turn, r: AiRecipe): void {
+  if (turn.candidates.length < MAX_CANDIDATES && !turn.candidates.some((c) => c.title.trim().toLowerCase() === r.title.trim().toLowerCase())) turn.candidates.push(r);
+}
+
+async function execute(deps: ChatDeps, out: ChatOutcome, turn: Turn, call: ToolCallData): Promise<unknown> {
   switch (call.name) {
     case "search_pantry":
       return { items: searchSummary(deps.pantry, call.query) };
     case "suggest_recipes": {
-      for (const r of call.recipes) if (out.cards.length < MAX_CARDS && !out.cards.some((c) => c.title === r.title)) out.cards.push(r);
-      return { ok: true, shown: call.recipes.length };
+      for (const r of call.recipes) addCandidate(turn, r);
+      const sel = selectSuggestions(turn.candidates, deps.stock ?? deps.pantry);
+      out.cards = sel.cards;
+      if (!sel.satisfied && turn.retries < MAX_SUGGEST_RETRIES) {
+        // not enough cookable ideas: send them back with what is wrong, so the model can replace them
+        turn.retries++;
+        return { error: feedbackFor(sel, turn.candidates.length) };
+      }
+      return { ok: true, shown: sel.cards.length, cookable: sel.cookable, need_products: sel.near };
     }
     case "save_recipe": {
       const id = await deps.saveRecipe(call.recipe);

@@ -3,6 +3,7 @@ import { item } from "@/features/pantry/fixtures";
 import {
   CHAT_TOOLS,
   MAX_CARDS,
+  MAX_PROPOSED,
   MAX_SUMMARY_LINES,
   MAX_TURNS,
   SYSTEM_PROMPT,
@@ -99,11 +100,12 @@ describe("validateToolCall", () => {
     expect(validateToolCall("search_pantry", { query: 5 }).ok).toBe(false);
   });
 
-  it("accepts valid recipes in suggest_recipes, drops invalid ones and keeps at most three", () => {
-    const r = validateToolCall("suggest_recipes", {
-      recipes: [recipe, { title: "No ingredients", servings: 2, ingredients: [], steps: ["x"] }, recipe, recipe, recipe],
-    });
-    expect(r.ok && r.call.name === "suggest_recipes" && r.call.recipes).toHaveLength(MAX_CARDS);
+  it("accepts valid recipes in suggest_recipes, drops invalid ones and reads at most MAX_PROPOSED", () => {
+    const few = validateToolCall("suggest_recipes", { recipes: [recipe, { title: "No ingredients", servings: 2, ingredients: [], steps: ["x"] }, recipe] });
+    expect(few.ok && few.call.name === "suggest_recipes" && few.call.recipes).toHaveLength(2);
+    const many = validateToolCall("suggest_recipes", { recipes: Array.from({ length: 10 }, () => recipe) });
+    expect(many.ok && many.call.name === "suggest_recipes" && many.call.recipes).toHaveLength(MAX_PROPOSED);
+    expect(MAX_CARDS).toBe(5);
   });
 
   it("rejects suggest_recipes when nothing is usable", () => {

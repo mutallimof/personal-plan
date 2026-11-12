@@ -53,6 +53,7 @@ export const cookChat = createServerFn({ method: "POST" })
           {
             complete: (messages, tools, onText) => completeStream(messages, tools, onText ?? (() => {})),
             pantry: chatSummary(items.data ?? []),
+            stock: chatSummary(items.data ?? [], Infinity),
             recipes: cleanRecipes(recipes.data),
             saveRecipe,
             async recipeExists(id) {

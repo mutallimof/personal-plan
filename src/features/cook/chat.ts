@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { UNITS, type PantryItem, type Unit } from "@/features/pantry/model";
 import { recipeSchema, type AiRecipe } from "./ai-recipes";
+import { MAX_MISSING_PRODUCTS, MAX_NEAR, MIN_COOKABLE, SUGGESTION_COUNT } from "./suggestions";
 import { ingredientKey, ingredientTokens, sameIngredient } from "./names";
 
 /** Most pantry lines, saved-recipe titles and chat turns that ever go into one request. */
@@ -8,7 +9,10 @@ export const MAX_SUMMARY_LINES = 80;
 export const MAX_RECIPE_TITLES = 40;
 export const MAX_TURNS = 10;
 export const MAX_TURN_CHARS = 1000;
-export const MAX_CARDS = 3;
+/** Recipe cards shown at once: the AI proposes this many (see `suggestions.ts` for the rule they must follow). */
+export const MAX_CARDS = SUGGESTION_COUNT;
+/** Most recipes read from one answer: a few more than are shown, so the check can pick the ones that fit the stock. */
+export const MAX_PROPOSED = 8;
 
 /** One pantry entry as the model sees it: name, quantity, unit. Nothing else about an item ever leaves the device. */
 export type SummaryLine = { name: string; quantity: number; unit: Unit };
@@ -17,7 +21,7 @@ export type SummaryLine = { name: string; quantity: number; unit: Unit };
  * The compact stock list for the chat: name, quantity and unit, merged per name and unit. No expiry dates, places,
  * notes, ids or anything about the person. Items that are used up are left out.
  */
-export function chatSummary(items: readonly Pick<PantryItem, "name" | "quantity" | "unit">[]): SummaryLine[] {
+export function chatSummary(items: readonly Pick<PantryItem, "name" | "quantity" | "unit">[], limit = MAX_SUMMARY_LINES): SummaryLine[] {
   const merged = new Map<string, SummaryLine>();
   for (const i of items) {
     if (!(i.quantity > 0) || !UNITS.includes(i.unit as Unit) || !i.name.trim()) continue;
@@ -26,7 +30,7 @@ export function chatSummary(items: readonly Pick<PantryItem, "name" | "quantity"
     if (line) line.quantity = Math.round((line.quantity + i.quantity) * 1000) / 1000;
     else merged.set(key, { name: i.name.trim().slice(0, 80), quantity: Math.round(i.quantity * 1000) / 1000, unit: i.unit as Unit });
   }
-  return [...merged.values()].slice(0, MAX_SUMMARY_LINES);
+  return [...merged.values()].slice(0, limit);
 }
 
 export type SavedRecipe = { id: string; title: string };
@@ -63,9 +67,10 @@ export function cleanRecipes(value: unknown): SavedRecipe[] {
 
 export const SYSTEM_PROMPT = [
   "You are a cooking helper inside a pantry app. Suggest simple home-cooking recipes from the stock you are given.",
-  "Use the tools: search_pantry to look something up, suggest_recipes to show 1 to 3 recipe cards, save_recipe only when the person asks to save, cook_recipe only when the person wants to cook a saved recipe now (they confirm on screen).",
+  "Use the tools: search_pantry to look something up, suggest_recipes to show 5 recipe cards in one call, save_recipe only when the person asks to save, cook_recipe only when the person wants to cook a saved recipe now (they confirm on screen).",
   "You cannot change the shopping list; the person keeps it by hand. If something is missing, just say what it is.",
   `Use only these units: ${UNITS.join(", ")}. Use the stock's ingredient names exactly when you use them. Basic staples (water, salt, pepper) may be added.`,
+  `When asked for ideas, send exactly ${SUGGESTION_COUNT} recipes in ONE suggest_recipes call: at least ${MIN_COOKABLE} must be cookable with the stock alone (use the stock's names, never more than the stock has; water, salt and pepper may be added), and at most ${MAX_NEAR} may need up to ${MAX_MISSING_PRODUCTS} products that are not in stock. The app checks this and sends recipes back that do not fit.`,
   "Never give calories or protein: the app computes them. Put recipes in suggest_recipes, not in the text; keep the text to one or two short sentences.",
 ].join(" ");
 
@@ -119,7 +124,7 @@ export function validateToolCall(name: string, args: Record<string, unknown>): V
       for (const entry of r.data.recipes) {
         const one = recipeSchema.safeParse(entry);
         if (one.success) recipes.push(one.data);
-        if (recipes.length === MAX_CARDS) break;
+        if (recipes.length === MAX_PROPOSED) break;
       }
       return recipes.length ? { ok: true, call: { name, recipes } } : bad("None of the recipes had a title, servings, ingredients with name, quantity and unit, and steps.");
     }
@@ -155,7 +160,7 @@ export function recipesFromText(text: string): AiRecipe[] {
     for (const entry of list) {
       const r = recipeSchema.safeParse(entry);
       if (r.success) out.push(r.data);
-      if (out.length === MAX_CARDS) break;
+      if (out.length === MAX_PROPOSED) break;
     }
     return out;
   } catch {
@@ -187,7 +192,7 @@ export const CHAT_TOOLS = [
   },
   {
     name: "suggest_recipes",
-    description: "Show 1 to 3 recipe ideas as cards. Do not include calories or protein.",
+    description: "Show recipe ideas as cards: send 5 in one call (at least 3 must be cookable with the stock, at most 2 may need up to 2 products that are not in stock). Do not include calories or protein.",
     parameters: obj({ recipes: { type: "array", items: recipeShape } }, ["recipes"]),
   },
   { name: "save_recipe", description: "Save a recipe to the person's recipe book. Only when they ask.", parameters: obj({ recipe: recipeShape }, ["recipe"]) },
