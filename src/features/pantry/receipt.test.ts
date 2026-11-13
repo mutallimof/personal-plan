@@ -17,11 +17,12 @@ describe("parseGenericReceipt", () => {
   });
 
   it("reads plain prices", () => {
-    expect(lines[0]).toMatchObject({ quantity: 1, unit: null, unit_price: null, total_price: 0.99 });
+    // The size in the name ("1L") is read into the amount.
+    expect(lines[0]).toMatchObject({ quantity: 1, unit: "l", unit_price: null, total_price: 0.99 });
   });
 
   it("reads a weight line under the item", () => {
-    expect(lines[2]).toMatchObject({ raw_text: "BANANEN", quantity: 0.946, unit: "kg", unit_price: 1.99, total_price: 1.89 });
+    expect(lines[2]).toMatchObject({ raw_text: "BANANEN", quantity: 946, unit: "g", unit_price: 1.99, total_price: 1.89 });
   });
 
   it("reads a count line under the item", () => {
@@ -96,7 +97,7 @@ describe("parseReceipt", () => {
 
   it("uses a store parser when one is registered", () => {
     STORE_PARSERS.set("rewe", {
-      parse: () => [{ lineNo: 0, raw_text: "ONLY", quantity: 1, unit: null, unit_price: null, total_price: 1 }],
+      parse: () => ({ lines: [{ lineNo: 0, raw_text: "ONLY", quantity: 1, unit: null, unit_price: null, total_price: 1 }], ignored: [] }),
     });
     expect(parseReceipt(SYNTHETIC_RECEIPT).lines.map((l) => l.raw_text)).toEqual(["ONLY"]);
     expect(parseReceipt("BUTTER 2,19 B").lines).toHaveLength(1);

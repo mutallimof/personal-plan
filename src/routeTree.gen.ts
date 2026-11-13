@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DesignRouteImport } from './routes/design'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedShellRouteImport } from './routes/_authenticated/_shell'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedShellGymRouteImport } from './routes/_authenticated/_shell/gym'
@@ -23,6 +25,7 @@ import { Route as AuthenticatedShellGymLibraryRouteImport } from './routes/_auth
 import { Route as AuthenticatedShellGymMonthRouteImport } from './routes/_authenticated/_shell/gym.month'
 import { Route as AuthenticatedShellGymWeekRouteImport } from './routes/_authenticated/_shell/gym.week'
 import { Route as AuthenticatedShellPantryIndexRouteImport } from './routes/_authenticated/_shell/pantry.index'
+import { Route as AuthenticatedShellPantryCookRouteImport } from './routes/_authenticated/_shell/pantry.cook'
 import { Route as AuthenticatedShellPantryDictionaryRouteImport } from './routes/_authenticated/_shell/pantry.dictionary'
 import { Route as AuthenticatedShellPantryKitchenRouteImport } from './routes/_authenticated/_shell/pantry.kitchen'
 import { Route as AuthenticatedShellPantryReceiptRouteImport } from './routes/_authenticated/_shell/pantry.receipt'
@@ -42,6 +45,16 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DesignRoute = DesignRouteImport.update({
+  id: '/design',
+  path: '/design',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedShellRoute = AuthenticatedShellRouteImport.update({
@@ -106,6 +119,12 @@ const AuthenticatedShellPantryIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedShellPantryRoute,
   } as any)
+const AuthenticatedShellPantryCookRoute =
+  AuthenticatedShellPantryCookRouteImport.update({
+    id: '/cook',
+    path: '/cook',
+    getParentRoute: () => AuthenticatedShellPantryRoute,
+  } as any)
 const AuthenticatedShellPantryDictionaryRoute =
   AuthenticatedShellPantryDictionaryRouteImport.update({
     id: '/dictionary',
@@ -146,6 +165,8 @@ const AuthenticatedShellGymWorkoutIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/design': typeof DesignRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/gym': typeof AuthenticatedShellGymRouteWithChildren
   '/languages': typeof AuthenticatedShellLanguagesRoute
@@ -154,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/gym/library': typeof AuthenticatedShellGymLibraryRoute
   '/gym/month': typeof AuthenticatedShellGymMonthRoute
   '/gym/week': typeof AuthenticatedShellGymWeekRoute
+  '/pantry/cook': typeof AuthenticatedShellPantryCookRoute
   '/pantry/dictionary': typeof AuthenticatedShellPantryDictionaryRoute
   '/pantry/kitchen': typeof AuthenticatedShellPantryKitchenRoute
   '/pantry/receipt': typeof AuthenticatedShellPantryReceiptRoute
@@ -166,12 +188,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/design': typeof DesignRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/languages': typeof AuthenticatedShellLanguagesRoute
   '/profile': typeof AuthenticatedShellProfileRoute
   '/gym/library': typeof AuthenticatedShellGymLibraryRoute
   '/gym/month': typeof AuthenticatedShellGymMonthRoute
   '/gym/week': typeof AuthenticatedShellGymWeekRoute
+  '/pantry/cook': typeof AuthenticatedShellPantryCookRoute
   '/pantry/dictionary': typeof AuthenticatedShellPantryDictionaryRoute
   '/pantry/kitchen': typeof AuthenticatedShellPantryKitchenRoute
   '/pantry/receipt': typeof AuthenticatedShellPantryReceiptRoute
@@ -186,6 +211,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/design': typeof DesignRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/_shell': typeof AuthenticatedShellRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/_shell/gym': typeof AuthenticatedShellGymRouteWithChildren
@@ -195,6 +222,7 @@ export interface FileRoutesById {
   '/_authenticated/_shell/gym/library': typeof AuthenticatedShellGymLibraryRoute
   '/_authenticated/_shell/gym/month': typeof AuthenticatedShellGymMonthRoute
   '/_authenticated/_shell/gym/week': typeof AuthenticatedShellGymWeekRoute
+  '/_authenticated/_shell/pantry/cook': typeof AuthenticatedShellPantryCookRoute
   '/_authenticated/_shell/pantry/dictionary': typeof AuthenticatedShellPantryDictionaryRoute
   '/_authenticated/_shell/pantry/kitchen': typeof AuthenticatedShellPantryKitchenRoute
   '/_authenticated/_shell/pantry/receipt': typeof AuthenticatedShellPantryReceiptRoute
@@ -209,6 +237,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/design'
+    | '/reset-password'
     | '/onboarding'
     | '/gym'
     | '/languages'
@@ -217,6 +247,7 @@ export interface FileRouteTypes {
     | '/gym/library'
     | '/gym/month'
     | '/gym/week'
+    | '/pantry/cook'
     | '/pantry/dictionary'
     | '/pantry/kitchen'
     | '/pantry/receipt'
@@ -229,12 +260,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/design'
+    | '/reset-password'
     | '/onboarding'
     | '/languages'
     | '/profile'
     | '/gym/library'
     | '/gym/month'
     | '/gym/week'
+    | '/pantry/cook'
     | '/pantry/dictionary'
     | '/pantry/kitchen'
     | '/pantry/receipt'
@@ -248,6 +282,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/design'
+    | '/reset-password'
     | '/_authenticated/_shell'
     | '/_authenticated/onboarding'
     | '/_authenticated/_shell/gym'
@@ -257,6 +293,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_shell/gym/library'
     | '/_authenticated/_shell/gym/month'
     | '/_authenticated/_shell/gym/week'
+    | '/_authenticated/_shell/pantry/cook'
     | '/_authenticated/_shell/pantry/dictionary'
     | '/_authenticated/_shell/pantry/kitchen'
     | '/_authenticated/_shell/pantry/receipt'
@@ -271,6 +308,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  DesignRoute: typeof DesignRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -294,6 +333,20 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design': {
+      id: '/design'
+      path: '/design'
+      fullPath: '/design'
+      preLoaderRoute: typeof DesignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_shell': {
@@ -373,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShellPantryIndexRouteImport
       parentRoute: typeof AuthenticatedShellPantryRoute
     }
+    '/_authenticated/_shell/pantry/cook': {
+      id: '/_authenticated/_shell/pantry/cook'
+      path: '/cook'
+      fullPath: '/pantry/cook'
+      preLoaderRoute: typeof AuthenticatedShellPantryCookRouteImport
+      parentRoute: typeof AuthenticatedShellPantryRoute
+    }
     '/_authenticated/_shell/pantry/dictionary': {
       id: '/_authenticated/_shell/pantry/dictionary'
       path: '/dictionary'
@@ -444,6 +504,7 @@ const AuthenticatedShellGymRouteWithChildren =
   )
 
 interface AuthenticatedShellPantryRouteChildren {
+  AuthenticatedShellPantryCookRoute: typeof AuthenticatedShellPantryCookRoute
   AuthenticatedShellPantryDictionaryRoute: typeof AuthenticatedShellPantryDictionaryRoute
   AuthenticatedShellPantryKitchenRoute: typeof AuthenticatedShellPantryKitchenRoute
   AuthenticatedShellPantryReceiptRoute: typeof AuthenticatedShellPantryReceiptRoute
@@ -452,6 +513,7 @@ interface AuthenticatedShellPantryRouteChildren {
 
 const AuthenticatedShellPantryRouteChildren: AuthenticatedShellPantryRouteChildren =
   {
+    AuthenticatedShellPantryCookRoute: AuthenticatedShellPantryCookRoute,
     AuthenticatedShellPantryDictionaryRoute:
       AuthenticatedShellPantryDictionaryRoute,
     AuthenticatedShellPantryKitchenRoute: AuthenticatedShellPantryKitchenRoute,
@@ -498,6 +560,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  DesignRoute: DesignRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

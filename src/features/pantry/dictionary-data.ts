@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { planAliasWrites, type Alias, type AliasDraft } from "./aliases";
-import { STARTER_ALIASES } from "./starter-aliases";
+import { SEED_VERSION, seedsSince } from "./starter-aliases";
 
 async function uid() {
   const { data } = await supabase.auth.getUser();
@@ -29,18 +29,22 @@ export async function writeAliases(drafts: readonly AliasDraft[]): Promise<{ add
   return { added: inserts.length, updated: updates.length };
 }
 
-/** Fills the starter dictionary the first time, never again (so entries you delete stay deleted). */
+/**
+ * Fills the starter dictionary, and later additions (store entries), once per version: a person who deleted an
+ * entry does not get it back. `aliases_seeded` (version 1) is kept for databases from before 0010.
+ */
 async function ensureStarterAliases(): Promise<void> {
   const user_id = await uid();
-  const settings = check(await supabase.from("pantry_settings").select("aliases_seeded").eq("user_id", user_id).maybeSingle());
-  if (settings?.aliases_seeded) return;
+  const settings = check(await supabase.from("pantry_settings").select("aliases_seeded,aliases_seed_version").eq("user_id", user_id).maybeSingle());
+  const seeded = Math.max(settings?.aliases_seed_version ?? 0, settings?.aliases_seeded ? 1 : 0);
+  if (seeded >= SEED_VERSION) return;
   const existing = check(await supabase.from("product_aliases").select("*")) ?? [];
   // Only the inserts: entries you already have are left as they are.
-  const { inserts } = planAliasWrites(existing, STARTER_ALIASES);
+  const { inserts } = planAliasWrites(existing, seedsSince(seeded));
   for (let i = 0; i < inserts.length; i += CHUNK) {
     check(await supabase.from("product_aliases").insert(inserts.slice(i, i + CHUNK).map((d) => ({ ...d, user_id }))));
   }
-  check(await supabase.from("pantry_settings").upsert({ user_id, aliases_seeded: true }));
+  check(await supabase.from("pantry_settings").upsert({ user_id, aliases_seeded: true, aliases_seed_version: SEED_VERSION }));
 }
 
 export const aliasesQuery = queryOptions({

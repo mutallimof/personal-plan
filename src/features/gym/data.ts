@@ -145,7 +145,9 @@ export const gym = {
     check(await supabase.from("sessions").update({ name }).eq("id", id));
   },
   async deleteSession(id: string) {
-    check(await supabase.from("sessions").delete().eq("id", id));
+    // select the deleted row: a delete that matches nothing (not yours, already gone) is not an error to the database
+    const rows = check(await supabase.from("sessions").delete().eq("id", id).select("id"));
+    if (!rows?.length) throw new Error("Could not delete this day. Reload and try again.");
   },
   async schedule(sessionId: string, date: string) {
     const user_id = await uid();

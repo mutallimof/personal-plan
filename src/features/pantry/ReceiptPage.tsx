@@ -5,26 +5,26 @@ import { Camera, FileText, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Loading, QueryError } from "@/components/states";
 import { suggestProducts } from "./ai.functions";
-import { pantry, locationsQuery, settingsQuery, useInvalidatePantry } from "./data";
+import { pantry, locationsQuery, settingsQuery, useCategoryOptions, useInvalidatePantry } from "./data";
 import { aliasesQuery, writeAliases } from "./dictionary-data";
 import { cleanStore } from "./aliases";
 import { confidenceByLine, ocrText, recognize, type OcrProgress } from "./ocr";
-import { preparePhoto } from "./photo";
-import { parseReceipt } from "./receipt";
+import { parseReceipt, type IgnoredLine } from "./receipt";
 import { readReceiptFile } from "./receipt-input";
-import { aliasesToLearn, buildReview, itemsToSave, withSuggestions, type ReviewLine } from "./review";
+import { aliasesToLearn, buildReview, itemsToSave, restoreLine, withSuggestions, type ReviewLine } from "./review";
+import { PhotoStep } from "./PhotoStep";
 import { ReviewScreen } from "./ReviewScreen";
 
-type Review = { store: string; lines: ReviewLine[] };
+type Review = { store: string; lines: ReviewLine[]; ignored: IgnoredLine[] };
 
 export function ReceiptPage() {
   const aliases = useQuery(aliasesQuery);
   const locations = useQuery(locationsQuery);
   const settings = useQuery(settingsQuery);
+  const categories = useCategoryOptions();
   const suggest = useServerFn(suggestProducts);
   const invalidate = useInvalidatePantry();
   const [pasted, setPasted] = useState("");
@@ -32,8 +32,7 @@ export function ReceiptPage() {
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(0);
   const [progress, setProgress] = useState<OcrProgress | null>(null);
-  const [blackWhite, setBlackWhite] = useState(false);
-  const photoRef = useRef<HTMLInputElement>(null);
+  const [photoOpen, setPhotoOpen] = useState(false);
   const pdfRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -53,13 +52,13 @@ export function ReceiptPage() {
 
   /** Receipt text from any source goes through here. */
   function startReview(text: string, confidence?: ReadonlyMap<number, number>) {
-    const { store, lines } = parseReceipt(text);
+    const { store, lines, ignored } = parseReceipt(text);
     if (!lines.length) {
       toast.error("No items found in that receipt.");
       return;
     }
     const built = buildReview(lines, dictionary, store, places, confidence);
-    setReview({ store: store ?? "", lines: built });
+    setReview({ store: store ?? "", lines: built, ignored });
     if (settings.data?.aiCheck) void askAi(built);
   }
 
@@ -80,15 +79,6 @@ export function ReceiptPage() {
     }
   }
 
-  async function onAiToggle(on: boolean) {
-    try {
-      await pantry.setAiCheck(on);
-      await invalidate();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save");
-    }
-  }
-
   async function onFile(file: File | undefined) {
     if (!file) return;
     setBusy(true);
@@ -101,16 +91,15 @@ export function ReceiptPage() {
     }
   }
 
-  async function onPhoto(file: File | undefined) {
-    if (!file) return;
+  async function onPhoto(image: HTMLCanvasElement) {
     setBusy(true);
     setProgress({ label: "Preparing photo", progress: 0 });
     try {
-      const canvas = await preparePhoto(file, { threshold: blackWhite });
-      const lines = await recognize(canvas, setProgress);
+      const lines = await recognize(image, setProgress);
       const text = ocrText(lines);
       setPasted(text);
       startReview(text, confidenceByLine(lines));
+      setPhotoOpen(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not read that photo.");
     } finally {
@@ -163,7 +152,32 @@ export function ReceiptPage() {
         onBack={() => setReview(null)}
         saving={busy}
         checking={checking}
+        categories={categories}
+        ignored={review.ignored}
+        onRestore={(g) => {
+          const line = restoreLine(g, dictionary, cleanStore(review.store), places);
+          if (line) setReview({ ...review, lines: [line, ...review.lines], ignored: review.ignored.filter((x) => x !== g) });
+        }}
       />
+    );
+  }
+
+  const progressBar = progress && (
+    <div role="status" className="space-y-2 tile p-4 text-sm">
+      <div className="flex justify-between">
+        <span>{progress.label}</span>
+        <span className="tabular-nums text-muted-foreground">{Math.round(progress.progress * 100)}%</span>
+      </div>
+      <Progress value={progress.progress * 100} />
+    </div>
+  );
+
+  if (photoOpen) {
+    return (
+      <div className="space-y-4">
+        <PhotoStep onRead={(image) => void onPhoto(image)} onCancel={() => setPhotoOpen(false)} busy={busy} />
+        {progressBar}
+      </div>
     );
   }
 
@@ -172,14 +186,14 @@ export function ReceiptPage() {
       <Textarea
         aria-label="Receipt text"
         placeholder="Paste the receipt text"
-        className="min-h-40 rounded-2xl bg-card text-base sm:text-sm"
+        className="min-h-40 tile text-base sm:text-sm"
         value={pasted}
         onChange={(e) => setPasted(e.target.value)}
       />
       <Button className="h-12 w-full" disabled={busy || !pasted.trim()} onClick={() => startReview(pasted)}>
         Read receipt
       </Button>
-      <Button variant="outline" className="h-12 w-full" disabled={busy} onClick={() => photoRef.current?.click()}>
+      <Button variant="outline" className="h-12 w-full" disabled={busy} onClick={() => setPhotoOpen(true)}>
         <Camera className="mr-1 h-4 w-4" /> Photo of a receipt
       </Button>
       <div className="grid grid-cols-2 gap-2">
@@ -190,39 +204,6 @@ export function ReceiptPage() {
           <Upload className="mr-1 h-4 w-4" /> Text or HTML
         </Button>
       </div>
-      <label className="flex min-h-11 items-center justify-between rounded-2xl bg-card px-4 text-sm">
-        Black and white
-        <Switch checked={blackWhite} onCheckedChange={setBlackWhite} disabled={busy} aria-label="Black and white" />
-      </label>
-      <div className="rounded-2xl bg-card px-4 py-2 text-sm">
-        <label className="flex min-h-11 items-center justify-between">
-          AI check for unknown lines
-          <Switch checked={settings.data?.aiCheck ?? false} onCheckedChange={onAiToggle} disabled={!settings.data} aria-label="AI check for unknown lines" />
-        </label>
-        {(settings.data?.aiCheck || (settings.data?.aiLinesSent ?? 0) > 0) && (
-          <p className="pb-2 text-xs text-muted-foreground">{settings.data?.aiLinesSent ?? 0} lines sent so far</p>
-        )}
-      </div>
-      {progress && (
-        <div role="status" className="space-y-2 rounded-2xl bg-card p-4 text-sm">
-          <div className="flex justify-between">
-            <span>{progress.label}</span>
-            <span className="tabular-nums text-muted-foreground">{Math.round(progress.progress * 100)}%</span>
-          </div>
-          <Progress value={progress.progress * 100} />
-        </div>
-      )}
-      <input
-        ref={photoRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        aria-label="Photo file"
-        onChange={(e) => {
-          void onPhoto(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
       <input
         ref={pdfRef}
         type="file"

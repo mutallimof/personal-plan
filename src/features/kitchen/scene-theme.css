@@ -1,0 +1,92 @@
+/*
+ * Colours of the kitchen illustration, all in one place.
+ * Art direction: flat and calm. Cream cabinet fronts, warm wood worktop and shelves, soft sage wall tiles,
+ * small terracotta and brass accents, a faint diagonal beam of sun. Thin darker outlines, no heavy gradients.
+ * Dark mode (the .dark class) keeps the same warm family at lower brightness.
+ */
+.kitchen-scene {
+  --k-wall: #dce7d8;
+  --k-wall-line: #c4d3bf;
+  --k-ceiling: #eef3ea;
+  --k-cabinet: #f7f2e8;
+  --k-cabinet-panel: #efe7d6;
+  --k-line: #8b7b66;
+  --k-wood: #cfa56d;
+  --k-wood-dark: #a9804c;
+  --k-worktop: #d9b27a;
+  --k-inside: #ebe2d0;
+  --k-inside-dark: #d9ccb4;
+  --k-brass: #c9a24b;
+  --k-terracotta: #c8643f;
+  --k-leaf: #6f9b62;
+  --k-glass: #c3dfe2;
+  --k-floor: #c3ad8b;
+  --k-plinth: #6f6252;
+  --k-fridge: #eef1ef;
+  --k-fridge-in: #f6faf9;
+  --k-freezer-in: #e3eef4;
+  --k-appliance: #dcdedb;
+  --k-hob: #4c4a47;
+  --k-oven-glass: #3b4247;
+  --k-label: #6a5b46;
+  --k-sun: #fff4cf;
+  --k-sun-opacity: 0.22;
+  --k-shadow: rgb(60 45 25 / 0.18);
+  --k-highlight: var(--primary, #22c55e);
+  --k-soon: #f59e0b;
+  --k-expired: #dc2626;
+  --k-badge: #fffdf7;
+  --k-badge-text: #4a3f30;
+}
+
+.dark .kitchen-scene {
+  --k-wall: #2b362c;
+  --k-wall-line: #223024;
+  --k-ceiling: #232c24;
+  --k-cabinet: #5a5346;
+  --k-cabinet-panel: #4f493d;
+  --k-line: #1c1912;
+  --k-wood: #8d6a3f;
+  --k-wood-dark: #6c4f2c;
+  --k-worktop: #94724a;
+  --k-inside: #332d23;
+  --k-inside-dark: #28231a;
+  --k-brass: #b8923f;
+  --k-terracotta: #b0583a;
+  --k-leaf: #5a8450;
+  --k-glass: #4b6469;
+  --k-floor: #3d3427;
+  --k-plinth: #1d1912;
+  --k-fridge: #5d625f;
+  --k-fridge-in: #3f4645;
+  --k-freezer-in: #34444d;
+  --k-appliance: #666a66;
+  --k-hob: #1e1d1b;
+  --k-oven-glass: #15191c;
+  --k-label: #d6c8ad;
+  --k-sun: #ffe9a8;
+  --k-sun-opacity: 0.07;
+  --k-shadow: rgb(0 0 0 / 0.35);
+  --k-badge: #2b261d;
+  --k-badge-text: #f3e9d4;
+}
+
+@keyframes kitchen-pulse {
+  0%,
+  100% {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.25;
+  }
+}
+
+.kitchen-scene .k-pulse {
+  animation: kitchen-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kitchen-scene .k-pulse {
+    animation: none;
+  }
+}

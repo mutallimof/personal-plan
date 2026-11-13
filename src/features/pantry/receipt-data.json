@@ -1,0 +1,23 @@
+{
+  "note": "Per-store data for the receipt parser and dictionary. Only entries whose meaning is certain are listed; everything else stays unknown so it can be confirmed on the review screen.",
+  "stores": {
+    "kaufland": {
+      "prefixes": ["KPur.H.", "K.H-", "KLC.", "KBB", "K."],
+      "ignore": [
+        { "text": "OuG Beutel", "reason": "bag" },
+        { "text": "Pfandartikel", "reason": "deposit" },
+        { "text": "Artikelrabatt", "reason": "discount" },
+        { "text": "Kaufland Card", "reason": "loyalty" }
+      ],
+      "aliases": [
+        { "raw_text": "Rhönsp.Miwa Natur.", "product_name": "Mineral water", "category": "drinks", "place": "shelf", "unit": "l", "quantity": 1 },
+        { "raw_text": "Weih.Butter", "product_name": "Butter", "category": "dairy", "place": "fridge", "unit": "g", "quantity": 250 },
+        { "raw_text": "K.H-Milch", "product_name": "Milk (UHT)", "category": "dairy", "place": "shelf", "unit": "l", "quantity": 1 },
+        { "raw_text": "K.Saure Sahne", "product_name": "Sour cream", "category": "dairy", "place": "fridge", "unit": "pack", "quantity": 1 },
+        { "raw_text": "K.H-Schlagsahne", "product_name": "Whipping cream", "category": "dairy", "place": "fridge", "unit": "pack", "quantity": 1 },
+        { "raw_text": "KPur.H.Brustfilet", "product_name": "Chicken breast fillet", "category": "poultry", "place": "fridge", "unit": "g", "quantity": 500 },
+        { "raw_text": "Toipa", "product_name": "Toilet paper", "category": "household", "place": "cupboard", "unit": "pack", "quantity": 1 }
+      ]
+    }
+  }
+}

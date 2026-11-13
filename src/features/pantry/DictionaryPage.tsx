@@ -8,20 +8,28 @@ import { Input } from "@/components/ui/input";
 import { Empty, Loading, QueryError } from "@/components/states";
 import { toDraft, exportAliases, parseAliasFile, type Alias } from "./aliases";
 import { aliasesQuery, dictionary, writeAliases } from "./dictionary-data";
-import { useInvalidatePantry } from "./data";
+import { useCategoryOptions, useInvalidatePantry } from "./data";
 import { normalizeReceiptText } from "./normalize";
-import { CATEGORIES, LOCATION_KINDS, UNITS } from "./model";
+import { LOCATION_KINDS, UNITS } from "./model";
+import { IconPicker } from "./icons/IconPicker";
+import { ItemIcon } from "./icons/ItemIcon";
+import { resolveIcon } from "./icons/registry";
 import { asOptions, Choice } from "./ui";
 
 function AliasDialog({ alias, onClose }: { alias?: Alias | undefined; onClose: () => void }) {
   const invalidate = useInvalidatePantry();
+  const categories = useCategoryOptions();
   const [raw, setRaw] = useState(alias?.raw_text ?? "");
   const [store, setStore] = useState(alias?.store ?? "");
   const [name, setName] = useState(alias?.product_name ?? "");
   const [category, setCategory] = useState(alias?.category ?? "other");
   const [kind, setKind] = useState(alias?.default_location_kind ?? "");
   const [unit, setUnit] = useState(alias?.default_unit ?? "pieces");
-  const [qty, setQty] = useState(alias?.default_quantity != null ? String(alias.default_quantity) : "");
+  const [qty, setQty] = useState(
+    alias?.default_quantity != null ? String(alias.default_quantity) : "",
+  );
+  const [icon, setIcon] = useState<string | null>(alias?.icon ?? null);
+  const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const draft = toDraft({
@@ -32,6 +40,7 @@ function AliasDialog({ alias, onClose }: { alias?: Alias | undefined; onClose: (
     default_location_kind: kind || null,
     default_unit: unit,
     default_quantity: qty.trim() === "" ? null : Number(qty),
+    icon,
   });
 
   async function save() {
@@ -69,49 +78,93 @@ function AliasDialog({ alias, onClose }: { alias?: Alias | undefined; onClose: (
         <DialogHeader>
           <DialogTitle>{alias ? "Edit entry" : "Add entry"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <label className={label}>
-            Receipt text
-            <Input className={input} value={raw} onChange={(e) => setRaw(e.target.value)} autoFocus={!alias} />
-          </label>
-          <label className={label}>
-            Product
-            <Input className={input} value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
+        {picking ? (
+          <IconPicker value={icon} onPick={setIcon} onDone={() => setPicking(false)} />
+        ) : (
+          <div className="space-y-4">
             <label className={label}>
-              Category
-              <Choice label="Category" value={category} onChange={setCategory} options={asOptions(CATEGORIES)} />
+              Receipt text
+              <Input
+                className={input}
+                value={raw}
+                onChange={(e) => setRaw(e.target.value)}
+                autoFocus={!alias}
+              />
             </label>
+            <div className="flex items-end gap-3">
+              <button
+                type="button"
+                aria-label="Change icon"
+                onClick={() => setPicking(true)}
+                className="flex h-14 w-14 shrink-0 items-center justify-center tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ItemIcon icon={resolveIcon({ icon, name, category })} className="h-10 w-10" />
+              </button>
+              <label className={`${label} min-w-0 flex-1`}>
+                Product
+                <Input className={input} value={name} onChange={(e) => setName(e.target.value)} />
+              </label>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={label}>
+                Category
+                <Choice
+                  label="Category"
+                  value={category}
+                  onChange={setCategory}
+                  options={categories}
+                />
+              </label>
+              <label className={label}>
+                Usual place
+                <Choice
+                  label="Usual place"
+                  value={kind}
+                  onChange={setKind}
+                  options={asOptions(LOCATION_KINDS)}
+                  empty="Any"
+                />
+              </label>
+              <label className={label}>
+                Unit
+                <Choice label="Unit" value={unit} onChange={setUnit} options={asOptions(UNITS)} />
+              </label>
+              <label className={label}>
+                Quantity
+                <Input
+                  className={input}
+                  type="number"
+                  min={0}
+                  step="any"
+                  inputMode="decimal"
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value)}
+                />
+              </label>
+            </div>
             <label className={label}>
-              Usual place
-              <Choice label="Usual place" value={kind} onChange={setKind} options={asOptions(LOCATION_KINDS)} empty="Any" />
+              Store (optional)
+              <Input className={input} value={store} onChange={(e) => setStore(e.target.value)} />
             </label>
-            <label className={label}>
-              Unit
-              <Choice label="Unit" value={unit} onChange={setUnit} options={asOptions(UNITS)} />
-            </label>
-            <label className={label}>
-              Quantity
-              <Input className={input} type="number" min={0} step="any" inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} />
-            </label>
-          </div>
-          <label className={label}>
-            Store (optional)
-            <Input className={input} value={store} onChange={(e) => setStore(e.target.value)} />
-          </label>
-          {typeof draft === "string" && raw + name !== "" && <p className="text-xs text-destructive">{draft}</p>}
-          <div className="flex gap-2">
-            {alias && (
-              <Button variant="outline" className="h-12" disabled={busy} onClick={remove}>
-                Delete
-              </Button>
+            {typeof draft === "string" && raw + name !== "" && (
+              <p className="text-xs text-destructive">{draft}</p>
             )}
-            <Button className="h-12 flex-1" disabled={busy || typeof draft === "string"} onClick={save}>
-              Save
-            </Button>
+            <div className="flex gap-2">
+              {alias && (
+                <Button variant="outline" className="h-12" disabled={busy} onClick={remove}>
+                  Delete
+                </Button>
+              )}
+              <Button
+                className="h-12 flex-1"
+                disabled={busy || typeof draft === "string"}
+                onClick={save}
+              >
+                Save
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -150,7 +203,9 @@ export function DictionaryPage() {
   }
 
   function onExport() {
-    const url = URL.createObjectURL(new Blob([exportAliases(data ?? [])], { type: "application/json" }));
+    const url = URL.createObjectURL(
+      new Blob([exportAliases(data ?? [])], { type: "application/json" }),
+    );
     const a = document.createElement("a");
     a.href = url;
     a.download = "pantry-dictionary.json";
@@ -203,11 +258,17 @@ export function DictionaryPage() {
       {shown.length === 0 ? (
         <Empty>{query ? "Nothing matches." : "The dictionary is empty."}</Empty>
       ) : (
-        <ul className="divide-y rounded-2xl bg-card">
+        <ul className="tile divide-y">
           {shown.map((a) => (
             <li key={a.id}>
-              <button type="button" onClick={() => setDialog({ alias: a })} className="flex min-h-14 w-full flex-col justify-center px-4 py-2 text-left">
-                <span className="truncate font-mono text-xs text-muted-foreground">{a.raw_text}</span>
+              <button
+                type="button"
+                onClick={() => setDialog({ alias: a })}
+                className="flex min-h-14 w-full flex-col justify-center px-4 py-2 text-left"
+              >
+                <span className="truncate font-mono text-xs text-muted-foreground">
+                  {a.raw_text}
+                </span>
                 <span className="truncate text-sm font-medium">
                   {a.product_name}
                   <span className="font-normal text-muted-foreground">
@@ -222,7 +283,13 @@ export function DictionaryPage() {
         </ul>
       )}
 
-      {dialog && <AliasDialog key={dialog.alias?.id ?? "new"} alias={dialog.alias} onClose={() => setDialog(null)} />}
+      {dialog && (
+        <AliasDialog
+          key={dialog.alias?.id ?? "new"}
+          alias={dialog.alias}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </div>
   );
 }

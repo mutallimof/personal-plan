@@ -1,12 +1,14 @@
 import type { Alias, AliasDraft } from "./aliases";
+import { isIconKey } from "./icons/registry";
 import type { NewItem } from "./data";
-import { firstOfKind } from "./locations";
+import { defaultAmount, isNonFood, kindForCategory, legacyCategory } from "./categories";
+import { accepts, pickPlace } from "./locations";
 import { draftFromCorrection } from "./learn";
-import { matchAlias } from "./match";
-import { CATEGORY_KIND, isCategory, isLocationKind, isUnit, type Category, type LocationKind, type PantryLocation, type Unit } from "./model";
+import { matchAlias, type Match } from "./match";
+import { isCategory, isLocationKind, isUnit, type Category, type LocationKind, type PantryLocation, type Unit } from "./model";
 import { displayName, normalizeReceiptText } from "./normalize";
 import type { Suggestion } from "./ai-suggest";
-import type { ParsedLine } from "./receipt";
+import type { IgnoredLine, ParsedLine } from "./receipt";
 import { roundQty } from "./items";
 import { LOW_CONFIDENCE } from "./ocr";
 
@@ -26,6 +28,10 @@ export type ReviewLine = {
   /** Matched lines start confirmed, unless OCR was unsure of them. The others stay highlighted until confirmed, edited or skipped. */
   confirmed: boolean;
   skip: boolean;
+  /** Left out because it is not food. The person can switch "Track anyway" on. */
+  autoSkip: boolean;
+  /** Price after discounts, shown on the line. */
+  price: number | null;
   /** Changed by hand (or confirmed as a correction), so it is written back to the dictionary. */
   edited: boolean;
   /** A guess from the optional AI check. Only used when the person accepts it. */
@@ -35,28 +41,53 @@ export type ReviewLine = {
   unit: Unit;
   category: Category;
   locationId: string | null;
+  /** Picture from the matched dictionary entry; the saved item keeps it. */
+  icon: string | null;
 };
 
-type Fields = Pick<ReviewLine, "name" | "quantity" | "unit" | "category" | "locationId">;
-
-/** First place of the wanted kind, else the usual kind for the category, else none. */
-function placeFor(locations: readonly PantryLocation[], wanted: string | null | undefined, category: Category): string | null {
-  const preferred = isLocationKind(wanted) ? firstOfKind(locations, wanted) : undefined;
-  return (preferred ?? firstOfKind(locations, CATEGORY_KIND[category]))?.id ?? null;
-}
+type Fields = Pick<ReviewLine, "name" | "quantity" | "unit" | "category" | "locationId" | "icon">;
 
 function fieldsFor(line: ParsedLine, alias: Alias | null, locations: readonly PantryLocation[]): Fields {
-  const category = alias && isCategory(alias.category) ? alias.category : "other";
-  const weighed = line.unit !== null;
-  const aliasUnit = alias && isUnit(alias.default_unit) ? alias.default_unit : "pieces";
+  const text = line.text ?? line.raw_text;
+  const category = alias && isCategory(alias.category) ? legacyCategory(alias.category) : (line.guess ?? "other");
+  const name = alias?.product_name ?? (displayName(text) || text);
+  let unit: Unit;
+  let quantity: number;
+  if (line.unit !== null) {
+    // A printed weight, size or piece count wins over the dictionary default.
+    unit = line.unit;
+    quantity = line.quantity;
+  } else if (alias) {
+    unit = isUnit(alias.default_unit) ? alias.default_unit : "pieces";
+    quantity = roundQty((alias.default_quantity ?? 1) * line.quantity);
+  } else {
+    const d = defaultAmount(name, category);
+    unit = d.unit;
+    quantity = roundQty(d.quantity * line.quantity);
+  }
+  const wanted = alias && isLocationKind(alias.default_location_kind) ? alias.default_location_kind : null;
   return {
-    name: alias?.product_name ?? (displayName(line.raw_text) || line.raw_text),
-    // A printed weight wins over the dictionary default; otherwise the default is per item bought.
-    unit: line.unit ?? aliasUnit,
-    quantity: weighed ? line.quantity : roundQty((alias?.default_quantity ?? 1) * line.quantity),
+    name,
+    unit,
+    quantity,
     category,
-    locationId: placeFor(locations, alias?.default_location_kind, category),
+    locationId: pickPlace(locations, category, wanted, kindForCategory(category))?.id ?? null,
+    icon: alias && isIconKey(alias.icon) ? alias.icon : null,
   };
+}
+
+/**
+ * Dictionary match for a parsed line: the text as printed first (so entries written for a store's own-brand
+ * names still match), then the text without prefix and size. An exact match from either wins.
+ */
+export function matchLine(aliases: readonly Alias[], p: ParsedLine, store: string | null): Match {
+  const first = matchAlias(aliases, p.raw_text, store);
+  if (first.kind === "exact" || !p.text || p.text === p.raw_text) return first;
+  const second = matchAlias(aliases, p.text, store);
+  if (second.kind === "exact") return second;
+  if (first.kind === "none") return second;
+  if (second.kind === "none") return first;
+  return first.score >= second.score ? first : second;
 }
 
 /** The OCR was unsure about this line, so its text (and with it the match) may be wrong. */
@@ -74,9 +105,11 @@ export function buildReview(
   confidence: ReadonlyMap<number, number> = new Map(),
 ): ReviewLine[] {
   const lines = parsed.map((p): ReviewLine => {
-    const m = matchAlias(aliases, p.raw_text, store);
+    const m = matchLine(aliases, p, store);
     const alias = m.kind === "none" ? null : m.alias;
     const conf = confidence.get(p.lineNo) ?? null;
+    const fields = fieldsFor(p, alias, locations);
+    const nonFood = isNonFood(fields.category);
     return {
       id: String(p.lineNo),
       rawText: p.raw_text,
@@ -85,10 +118,12 @@ export function buildReview(
       status: m.kind === "exact" ? "matched" : m.kind === "uncertain" ? "uncertain" : "unknown",
       confidence: conf,
       confirmed: m.kind === "exact" && !isLowConfidence({ confidence: conf }),
-      skip: false,
+      skip: nonFood,
+      autoSkip: nonFood,
+      price: p.total_price,
       edited: false,
       suggestion: null,
-      ...fieldsFor(p, alias, locations),
+      ...fields,
     };
   });
   const rank = (l: ReviewLine) => (l.status === "unknown" ? 0 : l.status === "uncertain" ? 1 : l.confirmed ? 3 : 2);
@@ -99,8 +134,35 @@ export function buildReview(
 }
 
 /** Changes fields by hand. Editing counts as confirming. */
-export function editLine(l: ReviewLine, patch: Partial<Fields>): ReviewLine {
-  return { ...l, ...patch, edited: true, confirmed: true };
+export function editLine(l: ReviewLine, patch: Partial<Fields>, locations?: readonly PantryLocation[]): ReviewLine {
+  // A different name is a different product, so the matched entry's picture no longer fits.
+  const renamed = patch.name !== undefined && patch.name !== l.name;
+  const next: ReviewLine = { ...l, ...(renamed ? { icon: null } : {}), ...patch, edited: true, confirmed: true };
+  if (patch.category !== undefined && patch.category !== l.category) {
+    // Another category: leave "not food" behind, and move to a place that takes the new category.
+    if (l.autoSkip && !isNonFood(patch.category)) {
+      next.skip = false;
+      next.autoSkip = false;
+    }
+    if (patch.locationId === undefined && locations) {
+      const here = locations.find((p) => p.id === l.locationId);
+      if (!here || !accepts(here, patch.category)) next.locationId = pickPlace(locations, patch.category, null, kindForCategory(patch.category))?.id ?? null;
+    }
+  }
+  return next;
+}
+
+/** A line that was left out of the review, put back as a product to be reviewed. */
+export function restoreLine(
+  ignored: IgnoredLine,
+  aliases: readonly Alias[],
+  store: string | null,
+  locations: readonly PantryLocation[],
+): ReviewLine | null {
+  if (!ignored.restore) return null;
+  const [line] = buildReview([ignored.restore], aliases, store, locations);
+  // The person asked for it, so it is tracked and still has to be confirmed.
+  return line ? { ...line, skip: false, autoSkip: false, confirmed: false } : null;
 }
 
 /** Attaches AI suggestions to the unknown lines they answer. Nothing else about the lines changes. */
@@ -116,12 +178,12 @@ export function withSuggestions(lines: readonly ReviewLine[], suggestions: reado
 export function applySuggestion(l: ReviewLine, locations: readonly PantryLocation[]): ReviewLine {
   const s = l.suggestion;
   if (!s) return l;
-  return { ...editLine(l, { name: s.name, category: s.category, locationId: placeFor(locations, s.kind, s.category) }), suggestion: null };
+  return { ...editLine(l, { name: s.name, category: s.category, locationId: pickPlace(locations, s.category, s.kind, kindForCategory(s.category))?.id ?? null }), suggestion: null };
 }
 
 export const confirmLine = (l: ReviewLine): ReviewLine => ({ ...l, confirmed: true });
 
-export const toggleSkip = (l: ReviewLine): ReviewLine => ({ ...l, skip: !l.skip });
+export const toggleSkip = (l: ReviewLine): ReviewLine => ({ ...l, skip: !l.skip, autoSkip: false });
 
 /** Lines still waiting for a person to confirm, edit or skip them. */
 export const unresolvedCount = (lines: readonly ReviewLine[]) => lines.filter((l) => !l.skip && !l.confirmed).length;
@@ -148,6 +210,7 @@ export function itemsToSave(lines: readonly ReviewLine[]): NewItem[] {
       unit: l.unit,
       category: l.category,
       location_id: l.locationId,
+      icon: l.icon,
     }));
 }
 

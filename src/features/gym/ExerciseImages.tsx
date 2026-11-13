@@ -46,7 +46,7 @@ export function ExerciseImages({ slug, name }: { slug: string | null | undefined
 
   if (reduced) {
     return (
-      <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card p-3">
+      <div className="grid grid-cols-2 gap-2 tile p-3">
         {urls.map((u, i) => (
           <div key={u} className={frame}>
             <img
@@ -64,7 +64,7 @@ export function ExerciseImages({ slug, name }: { slug: string | null | undefined
   }
 
   return (
-    <div className="rounded-2xl bg-card p-3">
+    <div className="tile p-3">
       <div className={frame}>
         {urls.map((u, i) => (
           <img

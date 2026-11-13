@@ -1,0 +1,200 @@
+{
+  "version": 2,
+  "room": {
+    "width": 160,
+    "height": 100,
+    "worktopY": 60,
+    "floorY": 92
+  },
+  "areas": [
+    {
+      "name": "Shelves",
+      "x": 0,
+      "width": 80
+    },
+    {
+      "name": "Cooker",
+      "x": 56,
+      "width": 80
+    },
+    {
+      "name": "Fridge",
+      "x": 80,
+      "width": 80
+    }
+  ],
+  "decor": [
+    {
+      "type": "hood",
+      "x": 86,
+      "y": 6,
+      "width": 26,
+      "height": 16
+    },
+    {
+      "type": "cooker",
+      "x": 80,
+      "y": 58,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "type": "plant",
+      "x": 9,
+      "y": 44,
+      "width": 8,
+      "height": 14
+    }
+  ],
+  "hotspots": [
+    {
+      "key": "base-left",
+      "name": "Base cabinet",
+      "kind": "cupboard",
+      "door": "double",
+      "shelves": 2,
+      "location": "Base cabinet",
+      "compartments": [],
+      "x": 6,
+      "y": 75,
+      "width": 34,
+      "height": 16
+    },
+    {
+      "key": "base-sink",
+      "name": "Under the sink",
+      "kind": "cupboard",
+      "door": "hinged-left",
+      "shelves": 2,
+      "location": "Under the sink",
+      "compartments": [],
+      "x": 43,
+      "y": 63,
+      "width": 34,
+      "height": 28
+    },
+    {
+      "key": "drawers",
+      "name": "Drawers",
+      "kind": "drawer",
+      "door": "drawer",
+      "shelves": 1,
+      "location": "Kitchen drawers",
+      "compartments": [],
+      "x": 6,
+      "y": 63,
+      "width": 34,
+      "height": 11
+    },
+    {
+      "key": "wall-shelf",
+      "name": "Open shelf",
+      "kind": "shelf",
+      "door": "open-shelf",
+      "shelves": 2,
+      "location": "Dry-goods shelf",
+      "compartments": [],
+      "x": 6,
+      "y": 12,
+      "width": 38,
+      "height": 28
+    },
+    {
+      "key": "glass-cabinet",
+      "name": "Glass cabinet",
+      "kind": "cupboard",
+      "door": "glass",
+      "shelves": 2,
+      "location": "Glass cabinet",
+      "compartments": [],
+      "x": 48,
+      "y": 10,
+      "width": 26,
+      "height": 32
+    },
+    {
+      "key": "spice-rail",
+      "name": "Spice shelf",
+      "kind": "shelf",
+      "door": "open-shelf",
+      "shelves": 1,
+      "location": "Spice shelf",
+      "compartments": [],
+      "x": 84,
+      "y": 28,
+      "width": 28,
+      "height": 14
+    },
+    {
+      "key": "freezer",
+      "name": "Freezer",
+      "kind": "freezer",
+      "door": "hinged-right",
+      "shelves": 3,
+      "location": "Freezer",
+      "compartments": [
+        {
+          "key": "fz2",
+          "name": "Meat and fish",
+          "kind": "drawer",
+          "location": "Frozen meat and fish"
+        },
+        {
+          "key": "fz3",
+          "name": "Ready meals",
+          "kind": "shelf",
+          "location": "Frozen ready meals"
+        }
+      ],
+      "x": 122,
+      "y": 8,
+      "width": 32,
+      "height": 30
+    },
+    {
+      "key": "fridge",
+      "name": "Fridge",
+      "kind": "fridge",
+      "door": "hinged-right",
+      "shelves": 4,
+      "location": "Fridge",
+      "compartments": [
+        {
+          "key": "meat",
+          "name": "Meat and fish",
+          "kind": "drawer",
+          "location": "Meat and fish"
+        },
+        {
+          "key": "dairy",
+          "name": "Dairy and eggs",
+          "kind": "shelf",
+          "location": "Dairy and eggs"
+        },
+        {
+          "key": "veg",
+          "name": "Vegetables",
+          "kind": "shelf",
+          "location": "Vegetable drawer"
+        },
+        {
+          "key": "fruit",
+          "name": "Fruit",
+          "kind": "shelf",
+          "location": "Fruit drawer"
+        },
+        {
+          "key": "drinks",
+          "name": "Drinks and sauces",
+          "kind": "door",
+          "location": "Drinks and sauces"
+        }
+      ],
+      "x": 122,
+      "y": 40,
+      "width": 32,
+      "height": 50
+    }
+  ],
+  "rev": 4
+}

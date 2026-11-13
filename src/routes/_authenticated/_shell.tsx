@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { planQuery, profileQuery, type Session } from "@/features/gym/data";
 import { clearPlanCache, readPlanCache, writePlanCache } from "@/lib/plan-cache";
 import { ChatPanel } from "@/components/ChatPanel";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/_authenticated/_shell")({
   component: Shell,
@@ -61,44 +62,45 @@ function Shell() {
   }
 
   return (
-    <div className="min-h-screen md:flex">
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r bg-sidebar p-4 md:flex">
-        <div className="mb-8 flex items-center gap-2 px-2">
-          <span className="h-3 w-3 rounded-full bg-primary" />
-          <span className="font-semibold">Lifeplan</span>
-        </div>
+    <div className="min-h-dvh md:flex">
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-sidebar p-4 md:flex">
+        <Logo className="mb-8 px-2 pt-2" />
         <nav className="flex flex-col gap-1">
           {NAV.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
               to={to}
-              className="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:bg-secondary"
-              activeProps={{ className: "bg-accent text-accent-foreground" }}
+              className="flex h-12 items-center gap-3 rounded-full px-4 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              activeProps={{ className: "bg-accent text-accent-foreground hover:bg-accent" }}
             >
               <Icon className="h-5 w-5" /> {label}
             </Link>
           ))}
         </nav>
-        <button onClick={signOut} className="mt-auto flex h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground hover:bg-secondary">
+        <button onClick={signOut} className="mt-auto flex h-12 items-center gap-3 rounded-full px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <LogOut className="h-5 w-5" /> Sign out
         </button>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-28 md:pb-10">
-        <div className="mx-auto max-w-5xl px-4 pt-5 sm:px-8 sm:pt-8">
+      <main className="min-w-0 flex-1 pb-[calc(var(--dock)+2.5rem+env(safe-area-inset-bottom))] md:pb-10">
+        <div className="mx-auto max-w-5xl px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
           <Outlet />
         </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
+      {/* The dock: floats over the page, one thumb reaches all four. */}
+      <nav aria-label="Main" className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mx-auto grid h-16 max-w-md grid-cols-4 rounded-full border bg-card/95 px-1.5 shadow-pop backdrop-blur md:hidden">
         {NAV.map(({ to, label, icon: Icon }) => (
           <Link
             key={to}
             to={to}
-            className="flex h-16 flex-col items-center justify-center gap-1 text-xs text-muted-foreground"
-            activeProps={{ className: "text-primary-ink" }}
+            className="group flex flex-col items-center justify-center gap-0.5 rounded-full text-[11px] font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            activeProps={{ className: "font-semibold text-foreground" }}
           >
-            <Icon className="h-5 w-5" /> {label}
+            <span className="flex h-8 w-14 items-center justify-center rounded-full transition-colors duration-200 ease-out-soft group-active:scale-95 group-aria-[current=page]:bg-primary group-aria-[current=page]:text-primary-foreground">
+              <Icon className="h-5 w-5 group-aria-[current=page]:stroke-[2.4]" />
+            </span>
+            {label}
           </Link>
         ))}
       </nav>

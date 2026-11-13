@@ -1,6 +1,6 @@
 # OCR evaluation
 
-Measures how well the receipt reader works on your own photos, with the same preprocessing and OCR settings as the app.
+Measures how well the receipt reader works on your own photos, with the same photo helper and OCR settings as the app. Every photo is read twice: **original** (only resized) and **helper** (crop to the paper, straighten, contrast), so you can see whether the helper really helps on your receipts.
 Everything runs on your machine. Your photos never leave it and are ignored by git.
 
 ## Run it
@@ -29,7 +29,7 @@ Everything runs on your machine. Your photos never leave it and are ignored by g
 
    ```sh
    npm run ocr:eval                      # every image in samples/
-   npm run ocr:eval -- --threshold       # try black-and-white preprocessing
+   npm run ocr:eval -- --threshold       # the helper also reduces to black and white
    npm run ocr:eval -- --verbose         # also list the lines that were read exactly
    npm run ocr:eval -- some/other/folder
    ```
@@ -55,4 +55,8 @@ rewe-2026-03-12.jpg
 - **products found**: product names the parser finds in your expected lines that also appear in the OCR text. This is the number that matters for the pantry, because a wrong price does not matter but a wrong name does.
 - **extra lines read**: lines OCR produced that match none of your expected lines (noise, or lines you left out).
 
-Compare runs with and without `--threshold` on the same photos to see which setting suits your receipts.
+The first line under each photo shows what the photo checks measured (brightness, sharpness, or the problem found),
+and whether the helper cropped and by how much it turned the image. Each photo is then scored twice, and the end shows
+both totals and the difference. If the helper does not help on your photos, the last line says so; in the app, the
+*Use original* switch on the preview screen reads the untouched photo. Compare runs with and without `--threshold` to
+see whether black and white suits your receipts.

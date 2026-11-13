@@ -60,21 +60,41 @@ export function otsuThreshold(gray: Uint8ClampedArray): number {
   return best;
 }
 
-/** Pure black and white: pixels at or below the threshold become black. */
-export function binarize(gray: Uint8ClampedArray, threshold: number): Uint8ClampedArray {
-  return gray.map((v) => (v <= threshold ? 0 : 255));
+/**
+ * Black and white with a threshold that follows the local brightness (mean of the surrounding window), so a shadow
+ * across the paper does not turn into a black block. A pixel becomes black when it is clearly darker than its
+ * surroundings (by `bias` grey levels).
+ */
+export function adaptiveThreshold(gray: Uint8ClampedArray, width: number, height: number, window = 31, bias = 12): Uint8ClampedArray {
+  // Summed-area table: the sum over any rectangle in four lookups.
+  const stride = width + 1;
+  const sums = new Float64Array(stride * (height + 1));
+  for (let y = 0; y < height; y++) {
+    let row = 0;
+    for (let x = 0; x < width; x++) {
+      row += gray[y * width + x] ?? 0;
+      sums[(y + 1) * stride + x + 1] = (sums[y * stride + x + 1] ?? 0) + row;
+    }
+  }
+  const half = Math.floor(window / 2);
+  const out = new Uint8ClampedArray(gray.length);
+  for (let y = 0; y < height; y++) {
+    const y0 = Math.max(0, y - half);
+    const y1 = Math.min(height, y + half + 1);
+    for (let x = 0; x < width; x++) {
+      const x0 = Math.max(0, x - half);
+      const x1 = Math.min(width, x + half + 1);
+      const total = (sums[y1 * stride + x1] ?? 0) - (sums[y0 * stride + x1] ?? 0) - (sums[y1 * stride + x0] ?? 0) + (sums[y0 * stride + x0] ?? 0);
+      const mean = total / ((y1 - y0) * (x1 - x0));
+      out[y * width + x] = (gray[y * width + x] ?? 0) < mean - bias ? 0 : 255;
+    }
+  }
+  return out;
 }
 
-export type PrepOptions = {
-  /** Reduce to pure black and white. Helps clean prints, can destroy faint thermal text. */
-  threshold: boolean;
-};
-
-/** Grayscale, contrast stretch and optional threshold. Returns RGBA pixels (grey in all three channels). */
-export function enhance(rgba: Uint8ClampedArray, { threshold }: PrepOptions): Uint8ClampedArray {
-  let gray = stretchContrast(toGray(rgba));
-  if (threshold) gray = binarize(gray, otsuThreshold(gray));
-  const out = new Uint8ClampedArray(rgba.length);
+/** Grey values to RGBA pixels (grey in all three channels, opaque), for canvases and PNG files. */
+export function grayToRgba(gray: Uint8ClampedArray): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(gray.length * 4);
   for (let p = 0, i = 0; p < gray.length; p++, i += 4) {
     const v = gray[p] ?? 0;
     out[i] = v;

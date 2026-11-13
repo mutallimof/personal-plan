@@ -111,7 +111,7 @@ describe("buildReview", () => {
       ["matched", "Eggs"],
       ["matched", "Spaghetti"],
     ]);
-    expect(lines[0]).toMatchObject({ quantity: 0.946, unit: "kg", weighed: true });
+    expect(lines[0]).toMatchObject({ quantity: 946, unit: "g", weighed: true });
     expect(lines[1]).toMatchObject({ quantity: 3, unit: "pieces" });
   });
 });
@@ -250,7 +250,7 @@ describe("saving rules", () => {
 
   it("saves every line that is not skipped", () => {
     const items = itemsToSave([editLine(unknown, { name: " Zzz ", quantity: 3 }), toggleSkip(matched)]);
-    expect(items).toEqual([{ name: "Zzz", quantity: 3, unit: "pieces", category: "other", location_id: "shelf" }]);
+    expect(items).toEqual([{ name: "Zzz", quantity: 3, unit: "pieces", category: "other", location_id: "shelf", icon: null }]);
   });
 });
 

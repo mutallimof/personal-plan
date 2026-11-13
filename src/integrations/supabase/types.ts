@@ -81,6 +81,7 @@ export type Database = {
           default_location_kind: string | null
           default_quantity: number | null
           default_unit: string
+          icon: string | null
           id: string
           product_name: string
           raw_text: string
@@ -93,6 +94,7 @@ export type Database = {
           default_location_kind?: string | null
           default_quantity?: number | null
           default_unit?: string
+          icon?: string | null
           id?: string
           product_name: string
           raw_text: string
@@ -105,6 +107,7 @@ export type Database = {
           default_location_kind?: string | null
           default_quantity?: number | null
           default_unit?: string
+          icon?: string | null
           id?: string
           product_name?: string
           raw_text?: string
@@ -143,6 +146,69 @@ export type Database = {
           onboarded?: boolean
           sessions_per_week?: number | null
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      recipes: {
+        Row: {
+          created_at: string
+          id: string
+          servings: number
+          source: string
+          steps: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          servings?: number
+          source?: string
+          steps?: string
+          title: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          servings?: number
+          source?: string
+          steps?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          id: string
+          name: string
+          pantry_item_id: string | null
+          position: number
+          quantity: number
+          recipe_id: string
+          unit: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          pantry_item_id?: string | null
+          position?: number
+          quantity?: number
+          recipe_id: string
+          unit?: string
+          user_id?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          pantry_item_id?: string | null
+          position?: number
+          quantity?: number
+          recipe_id?: string
+          unit?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -250,6 +316,111 @@ export type Database = {
         }
         Relationships: []
       }
+      cooked_log: {
+        Row: {
+          carbs_g: number | null
+          cooked_at: string
+          fat_g: number | null
+          id: string
+          kcal: number | null
+          kcal_missing: number
+          portions: number | null
+          protein_g: number | null
+          recipe_id: string | null
+          removed: Json
+          servings: number
+          title: string
+          undone_at: string | null
+          user_id: string
+        }
+        Insert: {
+          carbs_g?: number | null
+          cooked_at?: string
+          fat_g?: number | null
+          id?: string
+          kcal?: number | null
+          kcal_missing?: number
+          portions?: number | null
+          protein_g?: number | null
+          recipe_id?: string | null
+          removed?: Json
+          servings: number
+          title: string
+          undone_at?: string | null
+          user_id?: string
+        }
+        Update: {
+          carbs_g?: number | null
+          cooked_at?: string
+          fat_g?: number | null
+          id?: string
+          kcal?: number | null
+          kcal_missing?: number
+          portions?: number | null
+          protein_g?: number | null
+          recipe_id?: string | null
+          removed?: Json
+          servings?: number
+          title?: string
+          undone_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ingredient_nutrition: {
+        Row: {
+          basis: string
+          carbs_g: number | null
+          fat_g: number | null
+          id: string
+          kcal: number
+          name: string
+          protein_g: number
+          source: string
+          user_id: string
+        }
+        Insert: {
+          basis: string
+          carbs_g?: number | null
+          fat_g?: number | null
+          id?: string
+          kcal: number
+          name: string
+          protein_g: number
+          source?: string
+          user_id?: string
+        }
+        Update: {
+          basis?: string
+          carbs_g?: number | null
+          fat_g?: number | null
+          id?: string
+          kcal?: number
+          name?: string
+          protein_g?: number
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kitchen_layouts: {
+        Row: {
+          layout: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          layout: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          layout?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kitchen_zones: {
         Row: {
           created_at: string
@@ -300,11 +471,13 @@ export type Database = {
           added_at: string
           category: string
           expires_on: string | null
+          icon: string | null
           id: string
           location_id: string | null
           name: string
           note: string | null
           quantity: number
+          shelf: number | null
           unit: string
           user_id: string
         }
@@ -312,11 +485,13 @@ export type Database = {
           added_at?: string
           category?: string
           expires_on?: string | null
+          icon?: string | null
           id?: string
           location_id?: string | null
           name: string
           note?: string | null
           quantity?: number
+          shelf?: number | null
           unit?: string
           user_id?: string
         }
@@ -324,18 +499,42 @@ export type Database = {
           added_at?: string
           category?: string
           expires_on?: string | null
+          icon?: string | null
           id?: string
           location_id?: string | null
           name?: string
           note?: string | null
           quantity?: number
+          shelf?: number | null
           unit?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pantry_categories: {
+        Row: {
+          created_at: string
+          key: string
+          label: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          label: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          label?: string
           user_id?: string
         }
         Relationships: []
       }
       pantry_locations: {
         Row: {
+          accepts: string[]
           created_at: string
           id: string
           kind: string
@@ -345,6 +544,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accepts?: string[]
           created_at?: string
           id?: string
           kind?: string
@@ -354,6 +554,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          accepts?: string[]
           created_at?: string
           id?: string
           kind?: string
@@ -368,25 +569,76 @@ export type Database = {
         Row: {
           ai_check: boolean
           ai_lines_sent: number
+          ai_recipe_requests: number
+          ai_recipes: boolean
+          ai_chat: boolean
+          ai_chat_requests: number
+          aliases_seed_version: number
           aliases_seeded: boolean
+          layout_upgraded: boolean
           kitchen_seeded: boolean
           locations_seeded: boolean
+          nutrition_seeded: boolean
           user_id: string
         }
         Insert: {
           ai_check?: boolean
           ai_lines_sent?: number
+          ai_recipe_requests?: number
+          ai_recipes?: boolean
+          ai_chat?: boolean
+          ai_chat_requests?: number
+          aliases_seed_version?: number
           aliases_seeded?: boolean
+          layout_upgraded?: boolean
           kitchen_seeded?: boolean
           locations_seeded?: boolean
+          nutrition_seeded?: boolean
           user_id?: string
         }
         Update: {
           ai_check?: boolean
           ai_lines_sent?: number
+          ai_recipe_requests?: number
+          ai_recipes?: boolean
+          ai_chat?: boolean
+          ai_chat_requests?: number
+          aliases_seed_version?: number
           aliases_seeded?: boolean
+          layout_upgraded?: boolean
           kitchen_seeded?: boolean
           locations_seeded?: boolean
+          nutrition_seeded?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shopping_list: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          name: string
+          quantity: number | null
+          unit: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          name: string
+          quantity?: number | null
+          unit?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          name?: string
+          quantity?: number | null
+          unit?: string | null
           user_id?: string
         }
         Relationships: []
@@ -492,7 +744,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cook_recipe: {
+        Args: {
+          p_carbs_g?: number | null
+          p_changes: Json
+          p_fat_g?: number | null
+          p_kcal: number | null
+          p_kcal_missing: number
+          p_portions?: number | null
+          p_protein_g: number | null
+          p_recipe_id: string | null
+          p_servings: number
+          p_title: string
+        }
+        Returns: string
+      }
       seed_example_plan: { Args: never; Returns: undefined }
+      undo_cook: { Args: { p_log_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
